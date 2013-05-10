@@ -8,6 +8,7 @@ from sqlalchemy.orm import *
 
 import bauble
 import bauble.db as db
+import bauble.search as search
 #from bauble.utils.log import debug
 
 
@@ -94,3 +95,6 @@ Geography.children = relation(Geography,
                               backref=backref("parent",
                                     remote_side=[Geography.__table__.c.id]),
                               order_by=[Geography.name])
+
+# setup search mapper
+mapper_search.add_meta(('geography', 'geo'), Geography, ['name'])

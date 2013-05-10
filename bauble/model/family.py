@@ -13,6 +13,8 @@ import bauble.db as db
 #from bauble.utils.log import debug
 #import bauble.utils.web as web
 import bauble.types as types
+import bauble.search as search
+
 
 
 def family_markup_func(family):
@@ -186,3 +188,11 @@ class FamilySynonym(db.Base):
             d['family'] = self.family.json(depth=depth - 1)
             d['synonym'] = self.synonym.json(depth=depth - 1)
         return d
+
+
+
+#
+# setup the search matchers
+#
+mapper_search = search.get_strategy('MapperSearch')
+mapper_search.add_meta(('family', 'fam'), Family, ['family'])

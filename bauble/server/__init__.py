@@ -136,4 +136,4 @@ def start(host='localhost', port=8080, debug=False):
     resource.PlantResource()
     resource.LocationResource()
     resource.SourceDetailResource()
-    app.run(host=host, port=port, reloader=True, debug=debug)
+    app.run(host=host, port=port, server="gunicorn" reloader=True, debug=debug)

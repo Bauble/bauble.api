@@ -11,6 +11,7 @@ from bauble.model.geography import Geography
 #import bauble.utils as utils
 import bauble.types as types
 #from bauble.utils.log import debug
+import bauble.search as search
 
 def coll_markup_func(coll):
     acc = coll.source.accession
@@ -216,3 +217,11 @@ class Collection(db.Base):
                 d['source'] = self.source.json(depth=depth - 1)
 
         return d
+
+
+# setup the search mapper
+mapper_search = search.get_strategy('MapperSearch')
+mapper_search.add_meta(('contact', 'contacts', 'person', 'org',
+                        'source'), SourceDetail, ['name'])
+mapper_search.add_meta(('collection', 'col', 'coll'),
+                       Collection, ['locale'])

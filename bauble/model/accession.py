@@ -7,6 +7,7 @@ from sqlalchemy.orm.session import object_session
 import bauble.db as db
 import bauble.types as types
 from bauble.model.taxon import Taxon
+import bauble.search as search
 
 prov_type_values = {'Wild': 'Wild',
                     'Cultivated': 'Propagule of cultivated wild plant',
@@ -474,3 +475,6 @@ class Accession(db.Base):
 
         return d
 
+# setup the search matcher
+mapper_search = search.get_strategy('MapperSearch')
+mapper_search.add_meta(('accession', 'acc'), Accession, ['code'])

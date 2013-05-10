@@ -16,7 +16,7 @@ from sqlalchemy.orm import *
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.exc import DBAPIError
 
-import bauble.db as db
+#import bauble.db as db
 from bauble.error import check, CheckConditionError
 
 import bauble.paths as pathsn
@@ -25,6 +25,7 @@ from bauble.model.location import Location
 from bauble.model.propagation import PlantPropagation
 import bauble.types as types
 import bauble.utils as utils
+import bauble.search as search
 #from bauble.utils.log import debug
 
 
@@ -484,3 +485,9 @@ class Plant(db.Base):
             d['memorial'] = self.memorial
 
         return d
+
+
+# setup the search mapper
+mapper_search = search.get_strategy('MapperSearch')
+mapper_search.add_meta(('plant', 'plants'), Plant, ['code'])
+#search.add_strategy(PlantSearch)

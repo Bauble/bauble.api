@@ -1,25 +1,11 @@
-Mako==0.7.3
-MarkupSafe==0.15
-bottle==0.11.4
-py==1.4.12
-pyparsing==1.5.6
-pytest==2.3.4
+SQLAlchemy==0.8.1
+distribute==0.6.34
+gunicorn==0.17.4
+pyparsing==2.0.0
 python-dateutil==2.1
-six==1.2.0
+requests==1.2.0
+six==1.3.0
 
-# wsgiref comes with python 3
-#wsgiref==0.1.2
-
-# SQLAlchemy 0.8.0 isn't in PyPI yet so get it from SourceForge
-SQLAlchemy==0.8.0
-
-# don't explicitly install distribute
-#distribute==0.6.24
-
-# Required for requests
-chardet2
-urllib3
-
-# The requests 0.14.2 package is broken for Python 3 so use this temp package for now
-requests-packaging-fixes
-#requests==0.14.2
+# These are only for development
+#py==1.4.14
+#ppytest==2.3.5

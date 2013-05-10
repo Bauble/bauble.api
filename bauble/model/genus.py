@@ -22,6 +22,7 @@ import bauble.types as types
 #from bauble.utils.log import debug
 import bauble.paths as paths
 #from bauble.prefs import prefs
+import bauble.search as search
 
 from bauble.model.family import Family
 
@@ -221,3 +222,8 @@ class GenusSynonym(db.Base):
 Genus.taxa = relation('Taxon', cascade='all, delete-orphan',
                       #order_by=[Taxon.sp],
                       backref=backref('genus', uselist=False))
+
+
+#  setup the search matches
+mapper_search = search.get_strategy('MapperSearch')
+mapper_search.add_meta(('genus', 'gen'), Genus, ['genus'])

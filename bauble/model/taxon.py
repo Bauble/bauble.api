@@ -19,6 +19,7 @@ import bauble.db as db
 import bauble.types as types
 from bauble.model.geography import Geography
 from bauble.model.genus import Genus
+import bauble.search as search
 
 
 class VNList(list):
@@ -693,3 +694,15 @@ class Color(db.Base):
             d['code'] = self.code
             d['str'] = str(self)
         return d
+
+
+# setup search matcher
+mapper_search = search.get_strategy('MapperSearch')
+mapper_search.add_meta(('species', 'sp'), Taxon,
+                       ['sp', 'sp2', 'infrasp1', 'infrasp2',
+                        'infrasp3', 'infrasp4'])
+mapper_search.add_meta(('taxon', 'sp'), Taxon,
+                       ['sp', 'sp2', 'infrasp1', 'infrasp2',
+                        'infrasp3', 'infrasp4'])
+mapper_search.add_meta(('vernacular', 'vern', 'common'),
+                       VernacularName, ['name'])
