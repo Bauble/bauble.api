@@ -97,4 +97,5 @@ Geography.children = relation(Geography,
                               order_by=[Geography.name])
 
 # setup search mapper
+mapper_search = search.get_strategy('MapperSearch')
 mapper_search.add_meta(('geography', 'geo'), Geography, ['name'])

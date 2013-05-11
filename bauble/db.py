@@ -10,10 +10,11 @@ import bauble.types as types
 """
 """
 
-def connect():
+def connect(url):
     from sqlalchemy import create_engine
     global engine, Session, metadata
-    engine = create_engine('sqlite:///test.db')#, echo=True)
+    #engine = create_engine('sqlite:///test.db')#, echo=True)
+    engine = create_engine(url)#, echo=True)
     Session = orm.sessionmaker(bind=engine)
     return Session()
 

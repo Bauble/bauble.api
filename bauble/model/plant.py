@@ -16,7 +16,7 @@ from sqlalchemy.orm import *
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.exc import DBAPIError
 
-#import bauble.db as db
+import bauble.db as db
 from bauble.error import check, CheckConditionError
 
 import bauble.paths as pathsn
