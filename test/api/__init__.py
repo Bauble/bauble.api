@@ -3,9 +3,10 @@ import random
 
 import requests
 
-
-server = "http://localhost:8010"
+server = "http://localhost:9090"
 api_root = server + "/api/v1"
+user="test"
+password="test"
 
 
 def get_random_name():
