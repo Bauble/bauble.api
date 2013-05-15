@@ -7,3 +7,5 @@ from bauble.model.plant import Plant
 from bauble.model.location import Location
 from bauble.model.source import Source, SourceDetail, Collection
 from bauble.model.geography import Geography
+
+from bauble.model.user import User

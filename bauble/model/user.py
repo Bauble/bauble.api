@@ -13,6 +13,7 @@ import bauble.types as types
 import bauble.search as search
 
 class User(db.Base):
+    __tablename__ = 'user'
     username = Column(String)
     fullname = Column(String)
     title = Column(String)

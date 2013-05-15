@@ -19,28 +19,25 @@ DB_NAME=db.db_url_template.split('/')[-1]
 def initdb():
     auth_header = request.headers['Authorization']
     user, password = bottle.parse_auth(auth_header)
-    session = db.connect(user=user, password=password, schema='public')
-    bind = session.get_bind()
-    conn = bind.connect()
-    
+    db_url = "postgresql://{user}:{password}@localhost/postgres"\
+        .format(user=user, password=password)
+    engine = sa.create_engine(db_url)
+    conn = engine.connect()
     
     # check if database already exists
-    sql = "SELECT 1 from pg_database WHERE datname='{dbname}';".\
-        format(dbname=DB_NAME)
-    value = conn.execute(sql)
-    print('value: ', value)
-    if values == '1':
-        abort("500", "Database already exists")
-
+    result = conn.execute("SELECT 1 from pg_database where datname='{dbname}'"\
+        .format(dbname=DB_NAME))
+    if result.first() == 1:
+        bottle.abort("409", "Database already exists")
+    
     # create the database
-    conn.execute("create database {dbname}", dbname=DB_NAME)
+    conn.execute('commit')  # commit implicit transaction
+    conn.execute("create database {dbname};".format(dbname=DB_NAME))
+    conn.close()
     
-    # we just need to create the initial system level database, not 
-    # a user/organization databse
-    import bauble.mode.user as user
-    user.User.create(session.get_bind())
-
-
-    
-    
-    
+    # connect with out session and setup the default tables
+    import bauble.model as model
+    session = db.connect(user, password)
+    table = sa.inspect(model.User).local_table
+    table.create(session.get_bind())
+    session.close()
