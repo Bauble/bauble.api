@@ -14,13 +14,10 @@ db_url_template = "postgresql://{user}:{password}@localhost/bauble"
 def connect(user, password, schema=None):
     from sqlalchemy import create_engine
     global engine, Session, metadata
-    #engine = create_engine('sqlite:///test.db')#, echo=True)
+
     db_url = db_url_template.format(user=user, password=password)
-    print('db_url: ', db_url)
     engine = create_engine(db_url)
-    Session = orm.sessionmaker(bind=engine)
-    
-    session = Session()
+    session = orm.sessionmaker(bind=engine)()
     if schema:
         session.execute("SET search_path TO " + schema)
     return session
