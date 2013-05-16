@@ -69,7 +69,10 @@ class Resource:
         if request.method == "OPTIONS":
             return {}
 
-        session = db.connect()
+        auth_header = request.headers['Authorization']
+        user, password = bottle.parse_auth(auth_header)
+        session = db.connect(user, password)
+        
         count = session.query(self.mapped_class).count()
         session.close()
         return str(count)
@@ -83,7 +86,9 @@ class Resource:
         if request.method == "OPTIONS":
             return {}
 
-        session = db.connect()
+        auth_header = request.headers['Authorization']
+        user, password = bottle.parse_auth(auth_header)
+        session = db.connect(user, password)
 
         # get the mapper for the last item in the list of relations
         mapper = orm.class_mapper(self.mapped_class)
@@ -121,7 +126,9 @@ class Resource:
         if JSON_MIMETYPE in accepted and 'depth' in accepted[JSON_MIMETYPE]:
             depth = accepted[JSON_MIMETYPE]['depth']
 
-        session = db.connect()
+        auth_header = request.headers['Authorization']
+        user, password = bottle.parse_auth(auth_header)
+        session = db.connect(user, password)
 
         # get the mapper for the last item in the list of relations
         mapper = orm.class_mapper(self.mapped_class)
@@ -160,7 +167,10 @@ class Resource:
         if 'depth' in accepted[JSON_MIMETYPE]:
             depth = accepted[JSON_MIMETYPE]['depth']
 
-        session = db.connect()
+        auth_header = request.headers['Authorization']
+        user, password = bottle.parse_auth(auth_header)
+        session = db.connect(user, password)
+
         obj = session.query(self.mapped_class).get(resource_id)
 
         response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
@@ -253,7 +263,9 @@ class Resource:
         if 'depth' in accepted[JSON_MIMETYPE]:
             depth = accepted[JSON_MIMETYPE]['depth']
 
-        session = db.connect()
+        auth_header = request.headers['Authorization']
+        user, password = bottle.parse_auth(auth_header)
+        session = db.connect(user, password)
 
         # TODO: should split on either / or . to allow dot or slash delimeters
         # between references
@@ -312,7 +324,11 @@ class Resource:
         """
         if request.method == 'OPTIONS':
             return {}
-        session = db.connect()
+        
+        auth_header = request.headers['Authorization']
+        user, password = bottle.parse_auth(auth_header)
+        session = db.connect(user, password)
+
         obj = session.query(self.mapped_class).get(resource_id)
         session.delete(obj)
         session.commit()
@@ -344,8 +360,11 @@ class Resource:
             depth = accepted[JSON_MIMETYPE]['depth']
 
         response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
-        session = db.connect()
-
+        
+        auth_header = request.headers['Authorization']
+        user, password = bottle.parse_auth(auth_header)
+        session = db.connect(user, password)
+        
         # we assume all requests are in utf-8
         data = json.loads(request.body.read().decode('utf-8'))
 

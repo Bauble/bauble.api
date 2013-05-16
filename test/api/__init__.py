@@ -2,6 +2,7 @@ import json
 import random
 
 import requests
+import requests.auth as auth
 
 server = "http://localhost:9090"
 api_root = server + "/api/v1"
@@ -46,7 +47,9 @@ def create_resource(resource, data):
     if not isinstance(data, str):
         data = json.dumps(data)
 
-    response = requests.post(api_root + resource, data=data, headers=headers)
+    response = requests.post(api_root + resource, data=data, headers=headers,
+                             auth=auth.HTTPBasicAuth(user, password))
+
     assert response.status_code == 201
     return json.loads(response.text)
 
@@ -107,6 +110,6 @@ def delete_resource(ref):
     if(not ref.startswith(api_root)):
         ref = api_root + ref
     print('deleting ', ref)
-    response = requests.delete(ref)
+    response = requests.delete(ref, auth=auth.HTTPBasicAuth(user, password))
     assert response.status_code == 200
     return response
