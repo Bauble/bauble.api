@@ -16,4 +16,6 @@ class User(db.Base):
     fullname = Column(String)
     title = Column(String)
     email = Column(String)
+    password = Column(String)
     organization_id = Column(Integer, ForeignKey('organization.id'))
+    
