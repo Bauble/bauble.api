@@ -36,8 +36,10 @@ def initdb():
     conn.close()
     
     # connect with out session and setup the default tables
-    import bauble.model as model
+    from bauble.model import User, Organization
     session = db.connect(user, password)
-    table = sa.inspect(model.User).local_table
-    table.create(session.get_bind())
+    tables = [sa.inspect(mapped_class).local_table for mapped_class \
+                  in (User, Organization)]
+    db.metadata.create_all(bind=session.get_bind(), tables=tables)
     session.close()
+    

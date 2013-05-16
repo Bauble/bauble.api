@@ -9,3 +9,4 @@ from bauble.model.source import Source, SourceDetail, Collection
 from bauble.model.geography import Geography
 
 from bauble.model.user import User
+from bauble.model.organization import Organization

@@ -1,8 +1,5 @@
 from sqlalchemy import *
 from sqlalchemy.orm import *
-from sqlalchemy.orm.session import object_session
-from sqlalchemy.exc import DBAPIError
-from sqlalchemy.ext.associationproxy import association_proxy
 
 import bauble
 import bauble.db as db
@@ -14,8 +11,9 @@ import bauble.search as search
 
 class User(db.Base):
     __tablename__ = 'user'
+
     username = Column(String)
     fullname = Column(String)
     title = Column(String)
     email = Column(String)
-    organization = Column(String)
+    organization_id = Column(Integer, ForeignKey('organization.id'))
