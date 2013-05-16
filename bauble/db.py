@@ -19,7 +19,8 @@ def connect(user, password, schema=None):
     engine = create_engine(db_url)
     session = orm.sessionmaker(bind=engine)()
     if schema:
-        session.execute("SET search_path TO " + schema)
+        session.execute("SET search_path TO {schema};".format(schema=schema));
+        
     return session
 
 
@@ -130,6 +131,15 @@ metadata = Base.metadata
 """The default metadata for all Bauble tables.
 
 An instance of :class:`sqlalchemy.schema.Metadata`
+"""
+
+
+system_metadata = sa.schema.MetaData()
+"""The metadata for system level tables
+"""
+
+SystemBase = declarative_base(metaclass=MapperBase, metadata=system_metadata)
+"""A mapper for system level tables
 """
 
 

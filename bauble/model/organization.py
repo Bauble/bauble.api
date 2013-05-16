@@ -8,11 +8,14 @@ import bauble.db as db
 #import bauble.utils.web as web
 import bauble.types as types
 
-class Organization(db.Base):
+class Organization(db.SystemBase):
     __tablename__ = 'organization'
 
     name = Column(String)   
     short_name = Column(String)
+
+    pg_schema = Column(String, unique=True)
+
     owners = relationship('User')
     users = relationship('User')
 

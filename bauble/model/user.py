@@ -9,7 +9,7 @@ import bauble.db as db
 import bauble.types as types
 import bauble.search as search
 
-class User(db.Base):
+class User(db.SystemBase):
     __tablename__ = 'user'
 
     username = Column(String)
