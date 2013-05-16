@@ -129,6 +129,7 @@ def start(host='localhost', port=8080, debug=False):
     #db.Base.metadata.create_all(db.engine)
     
     import bauble.server.admin
+    import bauble.server.organization
     import bauble.server.resource as resource
     
     resource.FamilyResource()
