@@ -8,7 +8,7 @@ import sqlalchemy.orm as orm
 
 import bauble.db as db
 import bauble.i18n
-import bauble.model.organization as org
+from bauble.model import Organization, User
 from bauble.server import app, API_ROOT, parse_accept_header, JSON_MIMETYPE, TEXT_MIMETYPE
 from bauble.server.resource import Resource
 import bauble.types as types
@@ -24,7 +24,7 @@ DB_NAME=db.db_url_template.split('/')[-1]
 class OrganizationResource(Resource):
 
     resource = '/organization'
-    mapped_class = org.Organization
+    mapped_class = Organization
 
     def save_or_update(self, resource_id=None):
         response = super().save_or_update(resource_id)
@@ -39,7 +39,7 @@ class OrganizationResource(Resource):
         # that can own the schema
 
         # create the organization database schema
-        organization = session.query(org.Organization).get(self.get_ref_id(response))
+        organization = session.query(Organization).get(self.get_ref_id(response))
         schema_name = "bbl_" + str(uuid.uuid4()).replace("-", "_")
         organization.pg_schema = schema_name
         session.execute("CREATE SCHEMA {name};".format(name=schema_name))
