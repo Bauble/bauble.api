@@ -23,6 +23,27 @@ import bauble.types as types
 import bauble.utils as utils
 
 
+class accept(object):
+    """Decorator class to handle parsing the HTTP Accept header.
+    """
+
+    def __init__(self, mimetype):
+        self.mimetype = mimetype
+
+    def __call__(self, func):
+        def inner(*args, **kwargs):
+            accepted = parse_accept_header()
+            if self.mimetype not in accepted and '*/*' not in accepted:
+                raise bottle.HTTPError('406 Not Accepted',
+                                       'Expected application/json')
+
+            if 'depth' in kwargs and 'depth' in accepted[self.mimetype]:
+                kwargs['depth'] = int(accepted[self.mimetype]['depth'])
+
+            return func(*args, **kwargs)
+        return inner
+
+
 class Resource:
     """
     """
@@ -39,50 +60,48 @@ class Resource:
 
         super().__init__()
 
-        app.route(API_ROOT + self.resource + "/<resource_id>", ['OPTIONS', 'GET'], self.get)
+        app.route(API_ROOT + self.resource + "/<resource_id>", ['OPTIONS', 'GET'],
+                  self.get)
         app.route(API_ROOT + self.resource, ['OPTIONS', 'GET'], self.query)
         app.route(API_ROOT + self.resource, ['OPTIONS', 'PUT'], self.save_or_update)
         app.route(API_ROOT + self.resource + "/<resource_id>", ['OPTIONS', 'PUT'],
                   self.save_or_update)
-        app.route(API_ROOT + self.resource, ['OPTIONS', 'POST'], self.save_or_update)
-        app.route(API_ROOT + self.resource + "/<resource_id>", ['OPTIONS', 'DELETE'], self.delete)
+        app.route(API_ROOT + self.resource, ['OPTIONS', 'POST'],
+                  self.save_or_update)
+        app.route(API_ROOT + self.resource + "/<resource_id>",
+                  ['OPTIONS', 'DELETE'], self.delete)
 
         # count methods
         app.route(API_ROOT + self.resource + "/count", ['OPTIONS', 'GET'],
                   self.count)
-        app.route(API_ROOT + self.resource + "/<resource_id>/<relation:path>/count", ['OPTIONS', 'GET'],
-                  self.count_relations)
+        app.route(API_ROOT + self.resource +"/<resource_id>/<relation:path>/count",
+                  ['OPTIONS', 'GET'], self.count_relations)
 
         # URL for relations
-        app.route(API_ROOT + self.resource + "/schema", ['OPTIONS', 'GET'], self.get_schema)
-        app.route(API_ROOT + self.resource + "/<relation:path>/schema", ['OPTIONS', 'GET'],
+        app.route(API_ROOT + self.resource + "/schema", ['OPTIONS', 'GET'],
                   self.get_schema)
-        app.route(API_ROOT + self.resource + "/<resource_id>/<relation:path>", ['OPTIONS', 'GET'],
-                  self.get_relation)
+        app.route(API_ROOT + self.resource + "/<relation:path>/schema",
+                  ['OPTIONS', 'GET'], self.get_schema)
+        app.route(API_ROOT + self.resource + "/<resource_id>/<relation:path>",
+                  ['OPTIONS', 'GET'], self.get_relation)
 
 
+    @accept(TEXT_MIMETYPE)
     def count(self, resource_id):
-        accepted = parse_accept_header()
-        if TEXT_MIMETYPE not in accepted and '*/*' not in accepted:
-            raise bottle.HTTPError('406 Not Accepted', 'Expected application/json')
-
         if request.method == "OPTIONS":
             return {}
 
         auth_header = request.headers['Authorization']
         user, password = bottle.parse_auth(auth_header)
         session = db.connect(user, password)
-        
+
         count = session.query(self.mapped_class).count()
         session.close()
         return str(count)
 
 
+    @accept(TEXT_MIMETYPE)
     def count_relations(self, resource_id, relation):
-        accepted = parse_accept_header()
-        if TEXT_MIMETYPE not in accepted and '*/*' not in accepted:
-            raise bottle.HTTPError('406 Not Accepted', 'Expected application/json')
-
         if request.method == "OPTIONS":
             return {}
 
@@ -106,7 +125,8 @@ class Resource:
         return str(count)
 
 
-    def get_relation(self, resource_id, relation):
+    @accept(JSON_MIMETYPE)
+    def get_relation(self, resource_id, relation, depth=1):
         """
         Handle GET requests on relation rooted at this resource.
 
@@ -114,17 +134,8 @@ class Resource:
         from the relation end point.  e.g. /family/1/genera/taxa would return
         all the taxa related to the family with id=1.
         """
-
-        accepted = parse_accept_header()
-        if JSON_MIMETYPE not in accepted and '*/*' not in accepted:
-            raise bottle.HTTPError('406 Not Accepted', 'Expected application/json')
-
         if request.method == "OPTIONS":
             return {}
-
-        depth = 1
-        if JSON_MIMETYPE in accepted and 'depth' in accepted[JSON_MIMETYPE]:
-            depth = accepted[JSON_MIMETYPE]['depth']
 
         auth_header = request.headers['Authorization']
         user, password = bottle.parse_auth(auth_header)
@@ -142,13 +153,14 @@ class Resource:
             join(*relation.split('/'))
 
         response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
-        results = [obj.json(depth=int(depth)) for parent, obj in query]
+        results = [obj.json(depth=depth) for parent, obj in query]
         response_json = {'results': results}
         session.close()
         return response_json
 
 
-    def get(self, resource_id):
+    @accept(JSON_MIMETYPE)
+    def get(self, resource_id, depth=1):
         """
         Handle GET requests on this resource.
 
@@ -156,16 +168,8 @@ class Resource:
         where the queried objects are returned in the json object in
         the collection_name array.
         """
-        accepted = parse_accept_header()
-        if JSON_MIMETYPE not in accepted and '*/*' not in accepted:
-            raise bottle.HTTPError('406 Not Accepted', 'Expected application/json')
-
         if request.method == "OPTIONS":
             return {}
-
-        depth = 1
-        if 'depth' in accepted[JSON_MIMETYPE]:
-            depth = accepted[JSON_MIMETYPE]['depth']
 
         auth_header = request.headers['Authorization']
         user, password = bottle.parse_auth(auth_header)
@@ -174,7 +178,7 @@ class Resource:
         obj = session.query(self.mapped_class).get(resource_id)
 
         response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
-        response_json = obj.json(depth=int(depth))
+        response_json = obj.json(depth=depth)
         session.close()
         return response_json
 
@@ -229,26 +233,11 @@ class Resource:
         return schema
 
 
-    @staticmethod
-    def get_ref_id(ref):
-        # assume that if ref is not a str then it is a resource JSON object
-        if not isinstance(ref, str):
-            ref = ref['ref']
-        return ref.split('/')[-1]
-
-
-    def apply_query(self, query, query_string):
-        raise bottle.HTTPError("404 Not Found", "Query on " + self.resource + " not supported")
-
-
-    def query(self):
+    @accept(JSON_MIMETYPE)
+    def query(self, depth=1):
         """
         Handle GET /resource?q= requests on this resource.
         """
-        accepted = parse_accept_header()
-        if JSON_MIMETYPE not in accepted and '*/*' not in accepted:
-            raise bottle.HTTPError('406 Not Accepted', 'Expected application/json')
-
         if request.method == "OPTIONS":
             return {}
 
@@ -258,10 +247,6 @@ class Resource:
             relations = [relation.strip() for relation in relations.split(',')]
         else:
             relations = []
-
-        depth = 1
-        if 'depth' in accepted[JSON_MIMETYPE]:
-            depth = accepted[JSON_MIMETYPE]['depth']
 
         auth_header = request.headers['Authorization']
         user, password = bottle.parse_auth(auth_header)
@@ -295,13 +280,13 @@ class Resource:
 
                     # add the resource_json to unique_objs if it doesn't already exist
                     if resource.id not in unique_objs:
-                        resource_json = resource.json(int(depth))
+                        resource_json = resource.json(depth)
                         resource_json[relation] = []
                         unique_objs[resource.id] = resource_json
                     else:
                         resource_json = unique_objs[resource.id]
 
-                    resource_json[relation].append(result[1].json(depth=int(depth)))
+                    resource_json[relation].append(result[1].json(depth=depth))
 
             # create a list of json objs that should maintain the
             json_objs = [obj for obj in unique_objs.values()]
@@ -310,7 +295,7 @@ class Resource:
             query = session.query(self.mapped_class)
             if(q):
                 query = self.apply_query(query, q)
-            json_objs = [obj.json(int(depth)) for obj in query]
+            json_objs = [obj.json(depth) for obj in query]
 
         session.close()
         response_json = {'results': json_objs}
@@ -324,7 +309,7 @@ class Resource:
         """
         if request.method == 'OPTIONS':
             return {}
-        
+
         auth_header = request.headers['Authorization']
         user, password = bottle.parse_auth(auth_header)
         session = db.connect(user, password)
@@ -335,7 +320,8 @@ class Resource:
         session.close()
 
 
-    def save_or_update(self, resource_id=None):
+    @accept(JSON_MIMETYPE)
+    def save_or_update(self, resource_id=None, depth=1):
         """
         Handle POST and PUT requests on this resource.
 
@@ -344,10 +330,6 @@ class Resource:
 
         A JSON object that represents the created Family will be returned in the response.
         """
-        accepted = parse_accept_header()
-        if JSON_MIMETYPE not in accepted and '*/*' not in accepted:
-            raise bottle.HTTPError('406 Not Accepted', 'Expected application/json')
-
         if request.method == "OPTIONS":
             return {}
 
@@ -355,16 +337,12 @@ class Resource:
         if JSON_MIMETYPE not in request.headers.get("Content-Type"):
             raise bottle.HTTPError('415 Unsupported Media Type', 'Expected application/json')
 
-        depth = 1
-        if 'depth' in accepted[JSON_MIMETYPE]:
-            depth = accepted[JSON_MIMETYPE]['depth']
-
         response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
-        
+
         auth_header = request.headers['Authorization']
         user, password = bottle.parse_auth(auth_header)
         session = db.connect(user, password)
-        
+
         # we assume all requests are in utf-8
         data = json.loads(request.body.read().decode('utf-8'))
 
@@ -397,9 +375,22 @@ class Resource:
 
         session.add(instance)
         session.commit()
-        response_json = instance.json(depth=int(depth))
+        response_json = instance.json(depth=depth)
         session.close()
         return response_json
+
+
+    @staticmethod
+    def get_ref_id(ref):
+        # assume that if ref is not a str then it is a resource JSON object
+        if not isinstance(ref, str):
+            ref = ref['ref']
+        return ref.split('/')[-1]
+
+
+    def apply_query(self, query, query_string):
+        raise bottle.HTTPError("404 Not Found", "Query on " + self.resource +
+                               " not supported")
 
 
     @classmethod
