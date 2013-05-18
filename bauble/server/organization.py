@@ -15,7 +15,7 @@ import bauble.types as types
 import bauble.utils as utils
 
 # TODO: create() should return a URL that creates a new database so we
-# don't accidentally destroy and existing databsae
+# don't accidentally destroy an existing databsae
 
 ORG_ROOT = API_ROOT + "/organization"
 DB_NAME=db.db_url_template.split('/')[-1]
@@ -25,6 +25,59 @@ class OrganizationResource(Resource):
 
     resource = '/organization'
     mapped_class = Organization
+    relations = {
+        'owners': 'handle_owners',
+        'users': 'handle_users'
+        }
+
+    def handle_users(self, organization, users, session):
+        for user in users:
+            if 'ref' in user:
+                # if this is an existing user it can't be saved if it's not
+                # part of this organization
+                if organization in session.new and \
+                        user[organization['ref']] is not None:
+                    raise ValueError("User is already in an organization")
+
+                if organization not in session.new and \
+                        user['organiation']['ref'] != organization.get_ref():
+                    raise ValueError("User is not a member of this organization")
+
+                user_id = self.get_ref_id(user.pop('ref'))
+                existing = session.query(User).get(user_id)
+                relations = sa.inspect(User).relationships.keys()
+                for key, value in user.items():
+                    if not key in relations:
+                        setattr(existing, key, value)
+                session.add(existing)
+            else:
+                new_user = User(**user)
+                organization.users.append(new_user)
+                if user.get('is_org_owner', False):
+                    organization.owners.append(new_user)
+
+
+    def handle_owners(self, organization, users, session):
+        # make sure anything passed in the owners list has the
+        # is_org_owner flag set
+        for user in users:
+            user['is_org_owner'] = True
+        self.handle_users(organization, users, session)
+
+
+    def __init__(self):
+        super().__init__()
+
+        # routes for organization users
+        # app.route(API_ROOT + self.resource + "/<org_id>/user/<user_id>",
+        #           ['OPTIONS', 'GET'], self.get_user)
+        # app.route(API_ROOT + self.resource + "/<org_id>/user/<user_id>",
+        #           ['OPTIONS', 'PUT'], self.save_or_update)
+        # app.route(API_ROOT + self.resource + "/<org_id>/user",
+        #           ['OPTIONS', 'POST'], self.save_or_update)
+        # app.route(API_ROOT + self.resource + "/<resource_id>",
+        #           ['OPTIONS', 'DELETE'], self.delete)
+
 
     def save_or_update(self, resource_id=None):
         response = super().save_or_update(resource_id)
@@ -35,8 +88,8 @@ class OrganizationResource(Resource):
         user, password = bottle.parse_auth(auth_header)
         session = db.connect(user, password)
 
-        # TODO: maybe we should create a database level user for each organization
-        # that can own the schema
+        # TODO: maybe we should create a database level user for each
+        # organization that can own the schema
 
         # create the organization database schema
         organization = session.query(Organization).get(self.get_ref_id(response))
@@ -71,3 +124,13 @@ class OrganizationResource(Resource):
 
     def get_relation(self):
         bottle.abort(404)
+
+
+
+class UserResource(Resource):
+
+    resource = '/organization/:org_id/user'
+    mapped_class = User
+
+    def get(org_id, user_id, depth=1):
+        pass

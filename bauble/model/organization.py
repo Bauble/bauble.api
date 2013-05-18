@@ -1,5 +1,6 @@
 from sqlalchemy import *
 from sqlalchemy.orm import *
+import sqlalchemy.event as event
 
 import bauble
 import bauble.db as db
@@ -11,21 +12,44 @@ import bauble.types as types
 class Organization(db.SystemBase):
     __tablename__ = 'organization'
 
-    name = Column(String)   
+    name = Column(String)
     short_name = Column(String)
 
     pg_schema = Column(String, unique=True)
 
-    owners = relationship('User')
-    users = relationship('User')
+    # TODO: do we need this????
+    #pg_user = Column(String, unique=True)
+
+    owners = relationship('User', primaryjoin="and_(Organization.id==User.organization_id, "\
+                              "User.is_org_owner==True)")
+    users = relationship('User', cascade="all, delete-orphan",
+                         backref=backref("organization"))
+
+
+    def get_ref(self):
+        return "/organization/" + str(self.id) if self.id is not None else None;
+
 
     def json(self, depth=1):
-        d = dict(ref="/organization/" + str(self.id))
-        if(depth > 0):
+        d = dict()
+        if self.id:
+            d['ref'] = self.get_ref()
+
+        if depth > 0:
             d['name'] = self.name
             d['short_name'] = self.short_name
 
-        if(depth > 1):
+        if depth > 1:
             d['users'] = [users.json(depth=depth-1) for user in self.users]
 
         return d
+
+
+def before_insert(mapper, connection, organization):
+    # new organiations require at least one owner
+    print(str(organization))
+    if(len(organization.owners) < 1):
+        raise ValueError("An owner user is required for new organizations")
+
+
+event.listen(Organization, "before_insert", before_insert)

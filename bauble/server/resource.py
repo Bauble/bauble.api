@@ -23,7 +23,7 @@ import bauble.types as types
 import bauble.utils as utils
 
 
-class accept(object):
+class accept:
     """Decorator class to handle parsing the HTTP Accept header.
     """
 
@@ -44,6 +44,15 @@ class accept(object):
         return inner
 
 
+class authorize:
+
+    def __init__(self):
+        pass
+
+    def __call__(self, func):
+        pass
+
+
 class Resource:
     """
     """
@@ -60,12 +69,13 @@ class Resource:
 
         super().__init__()
 
-        app.route(API_ROOT + self.resource + "/<resource_id>", ['OPTIONS', 'GET'],
-                  self.get)
+        app.route(API_ROOT + self.resource + "/<resource_id>",
+                  ['OPTIONS', 'GET'], self.get)
         app.route(API_ROOT + self.resource, ['OPTIONS', 'GET'], self.query)
-        app.route(API_ROOT + self.resource, ['OPTIONS', 'PUT'], self.save_or_update)
-        app.route(API_ROOT + self.resource + "/<resource_id>", ['OPTIONS', 'PUT'],
+        app.route(API_ROOT + self.resource, ['OPTIONS', 'PUT'],
                   self.save_or_update)
+        app.route(API_ROOT + self.resource + "/<resource_id>",
+                  ['OPTIONS', 'PUT'], self.save_or_update)
         app.route(API_ROOT + self.resource, ['OPTIONS', 'POST'],
                   self.save_or_update)
         app.route(API_ROOT + self.resource + "/<resource_id>",
@@ -335,7 +345,8 @@ class Resource:
 
         # make sure the content is JSON
         if JSON_MIMETYPE not in request.headers.get("Content-Type"):
-            raise bottle.HTTPError('415 Unsupported Media Type', 'Expected application/json')
+            raise bottle.HTTPError('415 Unsupported Media Type',
+                                   'Expected application/json')
 
         response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
 

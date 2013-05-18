@@ -17,5 +17,6 @@ class User(db.SystemBase):
     title = Column(String)
     email = Column(String)
     password = Column(String)
+
+    is_org_owner = Column(Boolean)
     organization_id = Column(Integer, ForeignKey('organization.id'))
-    
