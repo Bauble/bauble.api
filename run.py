@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 
+import os
 import sys
 
 import bauble
 import bauble.server as server
 
-host='api.bauble.io'
-port=80
 debug=False
 
-db_url="postgresql://{host}/bauble".format(host=host)
-
-if len(sys.argv) > 1 and sys.argv[1] == 'local':
+# NOTE: environment variables set in .env will be picked up by
+# heroku's foreman
+if os.environ.get('BAUBLE_ENV') == "development" or sys.argv[1] == 'local':
     host = 'localhost'
     port = '9090'
-
-#db_url='sqlite:///test.db'
+else:
+    host='api.bauble.io'
+    port=80
 
 app = server.start(host=host, port=port)
