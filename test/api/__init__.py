@@ -4,10 +4,14 @@ import random
 import requests
 import requests.auth as auth
 
+# WARNING: DO NOT RUN THIS SCRIPT ON THE PRODUCTION SERVER
 server = "http://localhost:9090"
 api_root = server + "/api/v1"
-user="test"
-password="test"
+default_user = "admin"
+
+
+if "api.bauble.io" in server:
+    print("BUT THATS THE PRODUCTION SERVER YOU FOOL!")
 
 
 def get_random_name():
@@ -36,7 +40,7 @@ def get_schema(resource):
     return json.loads(response.text)
 
 
-def create_resource(resource, data):
+def create_resource(resource, data, user=default_user, password=None):
     """
     Create a server based resource with fields in kwargs with a POST
     """
@@ -54,7 +58,7 @@ def create_resource(resource, data):
     return json.loads(response.text)
 
 
-def update_resource(data):
+def update_resource(data, user=default_user, password=None):
     """
     Create or update a server based resource using a http PUT
     """
@@ -72,7 +76,7 @@ def update_resource(data):
     return json.loads(response.text)
 
 
-def get_resource(ref, depth=1, relations=[]):
+def get_resource(ref, depth=1, relations=[], user=default_user, password=None):
     """
     Get a server based resource with id=id
     """
@@ -87,7 +91,7 @@ def get_resource(ref, depth=1, relations=[]):
     return json.loads(response.text)
 
 
-def query_resource(resource, q, depth=1, relations=[]):
+def query_resource(resource, q, depth=1, relations=[], user=default_user, password=None):
     """
     """
     if not resource.startswith(api_root):
@@ -100,7 +104,7 @@ def query_resource(resource, q, depth=1, relations=[]):
     return json.loads(response.text)
 
 
-def delete_resource(ref):
+def delete_resource(ref, user=default_user, password=None):
     """
     Delete a server based resource with id=id
     """

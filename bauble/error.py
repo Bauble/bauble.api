@@ -22,6 +22,9 @@ class CommitException(Exception):
         return str(self.exc)
 
 
+class LoginError(BaubleError):
+    pass
+
 class DatabaseError(BaubleError):
     pass
 

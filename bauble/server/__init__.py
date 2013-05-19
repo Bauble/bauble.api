@@ -120,18 +120,10 @@ def start(host='localhost', port=8080, debug=False):
     """
     Start the Bauble server.
     """
-    # start the application
-    #db.connect()
-
-    # *******
-    # TODO: the tables shouldn't be created everytime the application is started
-    # *******
-    #db.Base.metadata.create_all(db.engine)
-    
     import bauble.server.admin
     import bauble.server.organization
     import bauble.server.resource as resource
-    
+
     resource.FamilyResource()
     resource.GenusResource()
     resource.TaxonResource()
@@ -142,6 +134,6 @@ def start(host='localhost', port=8080, debug=False):
 
     organization.OrganizationResource()
 
-    app.run(host=host, port=port, server="gunicorn", reloader=True, 
+    app.run(host=host, port=port, server="gunicorn", reloader=True,
             debug=debug)
     return app

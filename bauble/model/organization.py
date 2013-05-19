@@ -15,16 +15,18 @@ class Organization(db.SystemBase):
     name = Column(String)
     short_name = Column(String)
 
+    # pg_user and pg_schema should be the same
+    pg_user = Column(String, unique=True)
     pg_schema = Column(String, unique=True)
 
     # TODO: do we need this????
     #pg_user = Column(String, unique=True)
 
-    owners = relationship('User', primaryjoin="and_(Organization.id==User.organization_id, "\
+    owners = relationship('User', primaryjoin="and_("\
+                              "Organization.id==User.organization_id,"\
                               "User.is_org_owner==True)")
     users = relationship('User', cascade="all, delete-orphan",
                          backref=backref("organization"))
-
 
     def get_ref(self):
         return "/organization/" + str(self.id) if self.id is not None else None;

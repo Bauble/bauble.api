@@ -12,11 +12,13 @@ import bauble.search as search
 class User(db.SystemBase):
     __tablename__ = 'user'
 
-    username = Column(String)
+    username = Column(String, nullable=False, unique=True)
     fullname = Column(String)
     title = Column(String)
     email = Column(String)
     password = Column(String)
+
+    is_sysadmin = Column(Boolean)
 
     is_org_owner = Column(Boolean)
     organization_id = Column(Integer, ForeignKey('organization.id'))

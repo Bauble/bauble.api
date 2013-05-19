@@ -13,33 +13,20 @@ import bauble.utils as utils
 # don't accidentally destroy and existing databsae
 
 ADMIN_ROOT = API_ROOT + "/admin"
-DB_NAME=db.db_url_template.split('/')[-1] 
+#DB_NAME=db.db_url_template.split('/')[-1]
 
 @app.post(ADMIN_ROOT + "/initdb")
 def initdb():
-    auth_header = request.headers['Authorization']
-    user, password = bottle.parse_auth(auth_header)
-    db_url = "postgresql://{user}:{password}@localhost/postgres"\
-        .format(user=user, password=password)
-    engine = sa.create_engine(db_url)
-    conn = engine.connect()
-    
-    # check if database already exists
-    result = conn.execute("SELECT 1 from pg_database where datname='{dbname}'"\
-        .format(dbname=DB_NAME))
-    if result.first() == 1:
-        bottle.abort("409", "Database already exists")
-    
-    # create the database
-    conn.execute('commit')  # commit implicit transaction
-    conn.execute("create database {dbname};".format(dbname=DB_NAME))
-    conn.close()
-    
-    # connect with out session and setup the default tables
+    # setup the default tables
     from bauble.model import User, Organization
-    session = db.connect(user, password)
+    session = db.connect()
     tables = [sa.inspect(mapped_class).local_table for mapped_class \
                   in (User, Organization)]
     db.metadata.create_all(bind=session.get_bind(), tables=tables)
+
+    # NOTE: the default admin user does not have a password when the
+    # database is first created
+    admin_user = User(username="admin", is_sysadmin=True)
+    session.add(admin_user)
+    session.commit()
     session.close()
-    

@@ -18,8 +18,6 @@ import bauble.utils as utils
 # don't accidentally destroy an existing databsae
 
 ORG_ROOT = API_ROOT + "/organization"
-DB_NAME=db.db_url_template.split('/')[-1]
-
 
 class OrganizationResource(Resource):
 
@@ -28,7 +26,7 @@ class OrganizationResource(Resource):
     relations = {
         'owners': 'handle_owners',
         'users': 'handle_users'
-        }
+    }
 
     def handle_users(self, organization, users, session):
         for user in users:
@@ -84,18 +82,22 @@ class OrganizationResource(Resource):
 
         # now that the organization has been created create its schema
         # and setup the default tables
-        auth_header = request.headers['Authorization']
-        user, password = bottle.parse_auth(auth_header)
-        session = db.connect(user, password)
-
-        # TODO: maybe we should create a database level user for each
-        # organization that can own the schema
+        session = this.connect()
 
         # create the organization database schema
         organization = session.query(Organization).get(self.get_ref_id(response))
-        schema_name = "bbl_" + str(uuid.uuid4()).replace("-", "_")
-        organization.pg_schema = schema_name
-        session.execute("CREATE SCHEMA {name};".format(name=schema_name))
+        unique_name = "bbl_" + str(uuid.uuid4()).replace("-", "_")
+        organization.pg_schema = unique_name
+
+        # user is created without a password since we will be authenticating
+        # bauble users from the "user" table althought all database
+        # actions will be done by the postgresql role that owns the schema
+        user_permissions = "NOSUPERUSER NOCREATEDB NOCREATEROLE " + \
+            "NOCREATEUSER INHERIT LOGIN"
+        session.execute("CREATE ROLE {name} WITH {perms};".\
+                            format(name=unique_name, perms=user_permissions))
+        session.execute("CREATE SCHEMA {name} AUTHORIZATION {name};".\
+                            format(name=unique_name))
         session.commit()
         session.close()
 

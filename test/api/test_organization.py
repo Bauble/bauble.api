@@ -14,7 +14,7 @@ def test_organization():
 
     org_data = {
         "name": test.get_random_name(),
-        #"owners": [user_data]
+        "owners": [user_data]
     }
 
 

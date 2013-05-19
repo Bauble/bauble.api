@@ -96,14 +96,28 @@ class Resource:
                   ['OPTIONS', 'GET'], self.get_relation)
 
 
+    session_events = []
+
+    def connect(self):
+        auth_header = request.headers['Authorization']
+        user, password = bottle.parse_auth(auth_header)
+
+        # validate the password
+        session = db.connect(user, password)
+
+        # connect any session event listeners
+        for event, callback in self.session_events:
+            sa.event.list(session, event, callback)
+
+        return session
+
+
     @accept(TEXT_MIMETYPE)
     def count(self, resource_id):
         if request.method == "OPTIONS":
             return {}
 
-        auth_header = request.headers['Authorization']
-        user, password = bottle.parse_auth(auth_header)
-        session = db.connect(user, password)
+        session = self.connect();
 
         count = session.query(self.mapped_class).count()
         session.close()
@@ -115,9 +129,7 @@ class Resource:
         if request.method == "OPTIONS":
             return {}
 
-        auth_header = request.headers['Authorization']
-        user, password = bottle.parse_auth(auth_header)
-        session = db.connect(user, password)
+        session = self.connect()
 
         # get the mapper for the last item in the list of relations
         mapper = orm.class_mapper(self.mapped_class)
@@ -350,9 +362,7 @@ class Resource:
 
         response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
 
-        auth_header = request.headers['Authorization']
-        user, password = bottle.parse_auth(auth_header)
-        session = db.connect(user, password)
+        session = self.connect()
 
         # we assume all requests are in utf-8
         data = json.loads(request.body.read().decode('utf-8'))
@@ -377,8 +387,9 @@ class Resource:
             instance = self.mapped_class(**data)
             response.status = 201
 
-        # TODO: we should check for any fields that aren't defined in the class or
-        # in self.relations and show an error instead waiting for SQLAlchemy to catch it
+        # TODO: we should check for any fields that aren't defined in
+        # the class or in self.relations and show an error instead
+        # waiting for SQLAlchemy to catch it
 
         # this should only contain relations that are already in self.relations
         for name in relation_data:

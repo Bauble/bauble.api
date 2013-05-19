@@ -1,26 +1,48 @@
+
 import datetime
+import os
 
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 import sqlalchemy.orm as orm
 
+import bauble.error as error
 import bauble.types as types
 
 """
 """
+admin_username = "admin"
 
-db_url_template = "postgresql://{user}:{password}@localhost/bauble"
+# TODO:
+# 1. when a new organization is created the "validator" user creates
+# the organization and the owner user
+# 2. the validator then sends a verification email to the new user
+# 3. when the verification is clicked the user account is activated
+# 4. need to set the password on the organization's pg role and
+# store it in the organization table...this will at least prevent logging in and if they can login with the admin we're screwed anyways
 
-def connect(user, password, schema=None):
+
+db_url = os.getenv('DATABASE_URL')
+
+def connect(user=None, password=None):
+    """The role and password are postgresql roles not bauble users"""
+
     from sqlalchemy import create_engine
     global engine, Session, metadata
 
-    db_url = db_url_template.format(user=user, password=password)
     engine = create_engine(db_url)
     session = orm.sessionmaker(bind=engine)()
-    if schema:
+
+    # username is unique
+    if user:
+        user = session.query(User).filter_by(username=user).first()
+        if not user or not bcrypt.hashpw(password, user.password):
+            # unknown user or bad password
+            raise error
+
+        schema = user.organization.pg_schema
         session.execute("SET search_path TO {schema};".format(schema=schema));
-        
+
     return session
 
 
