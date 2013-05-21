@@ -9,6 +9,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
 import bauble.db as db
+import bauble.error as error
 import bauble.i18n
 from bauble.model.family import Family, FamilySynonym, FamilyNote
 from bauble.model.genus import Genus, GenusNote
@@ -98,12 +99,30 @@ class Resource:
 
     session_events = []
 
+
+    def check_permissions(self, user):
+        """
+        Raises a PermissionError depending on if a user has the permissions to complete
+        the current request.  By default a user has full permissions to create, read or
+        update this resource.
+        """
+        return True
+
+
     def connect(self):
         auth_header = request.headers['Authorization']
         user, password = bottle.parse_auth(auth_header)
 
+        try:
+            self.check_permissions(user)
+        except error.PermissionError as exc:
+            bottle.abort(403, "You don't have permission to access this resouce")
+
         # validate the password
-        session = db.connect(user, password)
+        try:
+            session = db.connect(user, password)
+        except error.AuthenticationError as exc:
+            bottle.abort(401)
 
         # connect any session event listeners
         for event, callback in self.session_events:

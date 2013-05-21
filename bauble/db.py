@@ -2,6 +2,7 @@
 import datetime
 import os
 
+import bcrypt
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 import sqlalchemy.orm as orm
@@ -34,10 +35,12 @@ def connect(user=None, password=None):
 
     # username is unique
     if user:
+        from bauble.model import User
         user = session.query(User).filter_by(username=user).first()
-        if not user or not bcrypt.hashpw(password, user.password):
+        if not user or password != user.password or \
+           not bcrypt.hashpw(password, user.password.encode("utf-8")):
             # unknown user or bad password
-            raise error
+            raise error.AuthenticationError
 
         schema = user.organization.pg_schema
         session.execute("SET search_path TO {schema};".format(schema=schema));
