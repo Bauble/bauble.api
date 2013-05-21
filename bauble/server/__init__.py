@@ -125,10 +125,13 @@ def start(host='localhost', port=8080, debug=False):
     import bauble.server.resource as resource
 
     # first make sure we can connect to the database
-    session = db.connect()
-    if not session or not session.execute("SELECT 1;").first():
-        raise Exception("Could not connect to database: ", os.environ['DATABASE_URL'])
-    session.close()
+    try:
+        session = db.connect()
+        if not session or not session.execute("SELECT 1;").first():
+            raise Exception("Could not connect to database: ", os.environ['DATABASE_URL'])
+    finally:
+        if session:
+            session.close()
 
     resource.FamilyResource()
     resource.GenusResource()
