@@ -146,7 +146,6 @@ class UserResource(Resource):
     def check_permissions(self, user):
         # TODO: a user should be able to change their password and get information
         # about themselves but all other actions should be denied
-        if request.path.
         if not use.is_sysadmin:
             raise error.PermissionError
 
