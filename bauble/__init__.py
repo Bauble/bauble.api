@@ -1,6 +1,11 @@
 import os
 import sys
 
+#
+# TODO: check the permissions on this file and only read it if it's only readable
+# by the owner of this process
+#
+
 bauble_rcfile=os.path.join(os.environ['HOME'], ".bauble.api")
 
 # read environment variables from the bauble rcfile
