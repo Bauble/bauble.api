@@ -1,8 +1,11 @@
 import json
+import os
 import random
 
 import requests
 import requests.auth as auth
+
+import bauble
 
 # WARNING: DO NOT RUN THIS SCRIPT ON THE PRODUCTION SERVER
 server = "http://localhost:9090"
@@ -10,8 +13,16 @@ api_root = server + "/api/v1"
 default_user = "admin"
 
 
-if "api.bauble.io" in server:
-    print("BUT THATS THE PRODUCTION SERVER YOU FOOL!")
+if "api.bauble.io" in server or os.environ.get('BAUBLE_ENV') != 'development':
+    print("NOT IN PRODUCTION YOU FOOL!")
+
+
+def setup_module(module):
+    pass
+
+
+def teardown_module(module):
+    pass
 
 
 def get_random_name():
