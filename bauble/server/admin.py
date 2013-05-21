@@ -17,12 +17,20 @@ ADMIN_ROOT = API_ROOT + "/admin"
 
 @app.post(ADMIN_ROOT + "/initdb")
 def initdb():
+    """
+    Create the default databases tables and admin user. This request doesn't
+    do any authentication because it can only be run on an empty database.
+    """
     # setup the default tables
     from bauble.model import User, Organization
     session = db.connect()
-    tables = [sa.inspect(mapped_class).local_table for mapped_class \
-                  in (User, Organization)]
-    db.metadata.create_all(bind=session.get_bind(), tables=tables)
+    bind = session.get_bind()
+
+    for table in db.system_metadata.sorted_tables:
+        if table.exists(bind):
+            bottle.abort(409, table.name + " already exists")
+
+    db.system_metadata.create_all(bind=session.get_bind())
 
     # NOTE: the default admin user does not have a password when the
     # database is first created
@@ -30,3 +38,5 @@ def initdb():
     session.add(admin_user)
     session.commit()
     session.close()
+
+    response.status = 201
