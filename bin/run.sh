@@ -1,8 +1,11 @@
 #!/bin/bash
-#while ! ./run.py local
+#
+# Description: run the api server in a loop
+#
+
 while `true`
 do
   sleep 1
   echo "Starting..."
-  foreman start  
+  python run.py
 done

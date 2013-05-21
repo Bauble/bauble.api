@@ -21,8 +21,7 @@ admin_username = "admin"
 # 4. need to set the password on the organization's pg role and
 # store it in the organization table...this will at least prevent logging in and if they can login with the admin we're screwed anyways
 
-
-db_url = os.getenv('DATABASE_URL')
+db_url = os.environ['DATABASE_URL']
 
 def connect(user=None, password=None):
     """The role and password are postgresql roles not bauble users"""
