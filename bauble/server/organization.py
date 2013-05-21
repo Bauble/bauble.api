@@ -7,6 +7,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
 import bauble.db as db
+import bauble.error as error
 import bauble.i18n
 from bauble.model import Organization, User
 from bauble.server import app, API_ROOT, parse_accept_header, JSON_MIMETYPE, TEXT_MIMETYPE
@@ -131,8 +132,62 @@ class OrganizationResource(Resource):
 
 class UserResource(Resource):
 
-    resource = '/organization/:org_id/user'
+
+    # TODO: only sysadmins should be available at /users, all other
+    # users should be relative to an organization
+    resource = '/user'
     mapped_class = User
 
+    def __init__(self):
+        app.route(API_ROOT + self.resource + "/<resource_id>/password",
+                  ['OPTIONS', 'POST'], self.set_password)
+
+
+    def check_permissions(self, user):
+        # TODO: a user should be able to change their password and get information
+        # about themselves but all other actions should be denied
+        if request.path.
+        if not use.is_sysadmin:
+            raise error.PermissionError
+
+
+    def set_password(self):
+        pass
+
+
     def get(org_id, user_id, depth=1):
+        pass
+
+
+
+class OrgUserResource(UserResource):
+
+    resource = "/organization/<org_id/user"
+
+    # TODO: it would be best if we could just get all the routes for the regular
+    # /user resource and iterate through them and add a decorator to check that
+    # the request for Authentication header is valid for this organization
+
+    def count():
+        pass
+
+    def count_relations():
+        pass
+
+    def get_relation():
+        pass
+
+    def get():
+        pass
+
+    def get_schema():
+        pass
+
+    def query():
+        pass
+
+    def delete():
+        pass
+
+    def save_or_update():
         pass
