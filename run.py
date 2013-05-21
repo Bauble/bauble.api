@@ -11,9 +11,9 @@ debug=False
 if os.environ.get('BAUBLE_ENV') == ("development")  or \
    (len(sys.argv) > 1 and sys.argv[1].lower().startswith("dev")):
     host = 'localhost'
-    port = '9090'
+    port = 9090
 else:
     host='api.bauble.io'
     port=80
 
-app = server.start()
+app = server.start(host, port)
