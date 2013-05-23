@@ -11,6 +11,7 @@ import bauble
 server = "http://localhost:9090"
 api_root = server + "/api/v1"
 default_user = "admin"
+default_password = "test"
 
 
 if "api.bauble.io" in server or os.environ.get('BAUBLE_ENV') != 'development':
@@ -51,7 +52,7 @@ def get_schema(resource):
     return json.loads(response.text)
 
 
-def create_resource(resource, data, user=default_user, password=None):
+def create_resource(resource, data, user=default_user, password=default_password):
     """
     Create a server based resource with fields in kwargs with a POST
     """
@@ -69,7 +70,7 @@ def create_resource(resource, data, user=default_user, password=None):
     return json.loads(response.text)
 
 
-def update_resource(data, user=default_user, password=None):
+def update_resource(data, user=default_user, password=default_password):
     """
     Create or update a server based resource using a http PUT
     """
@@ -87,7 +88,7 @@ def update_resource(data, user=default_user, password=None):
     return json.loads(response.text)
 
 
-def get_resource(ref, depth=1, relations=[], user=default_user, password=None):
+def get_resource(ref, depth=1, relations=[], user=default_user, password=default_password):
     """
     Get a server based resource with id=id
     """
@@ -102,7 +103,7 @@ def get_resource(ref, depth=1, relations=[], user=default_user, password=None):
     return json.loads(response.text)
 
 
-def query_resource(resource, q, depth=1, relations=[], user=default_user, password=None):
+def query_resource(resource, q, depth=1, relations=[], user=default_user, password=default_password):
     """
     """
     if not resource.startswith(api_root):
@@ -115,7 +116,7 @@ def query_resource(resource, q, depth=1, relations=[], user=default_user, passwo
     return json.loads(response.text)
 
 
-def delete_resource(ref, user=default_user, password=None):
+def delete_resource(ref, user=default_user, password=default_password):
     """
     Delete a server based resource with id=id
     """

@@ -1,3 +1,5 @@
+
+import bcrypt
 from sqlalchemy import *
 from sqlalchemy.orm import *
 
@@ -22,3 +24,12 @@ class User(db.SystemBase):
 
     is_org_owner = Column(Boolean)
     organization_id = Column(Integer, ForeignKey('organization.id'))
+
+    # TODO: This should probably be made into a property so that
+    # passwords are always hashed
+    def set_password(self, password):
+        """Encrypt and set the password.  This method should
+        """
+        import bcrypt
+        hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+        self.password = hashed.decode("utf-8")

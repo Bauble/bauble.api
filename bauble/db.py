@@ -24,26 +24,39 @@ admin_username = "admin"
 
 db_url = os.environ['DATABASE_URL']
 
+
+def authenticate(user, password, session):
+    """Authenticate a user and password against the user table.
+
+    Return a user instance if the user instance on success else returns False
+    """
+    from bauble.model import User
+    if isinstance(user, str):
+        user = session.query(User).filter_by(username=user).first()
+
+    encode = lambda s: s.encode("utf-8")
+
+    if not user or \
+       not (bcrypt.hashpw(encode(password), encode(user.password)) == encode(user.password) \
+            and password != user.password):
+        # unknown user or bad password
+        return False
+
+    return user
+
+
 def connect(user=None, password=None):
     """The role and password are postgresql roles not bauble users"""
 
-    from sqlalchemy import create_engine
-    global engine, Session, metadata
-
-    engine = create_engine(db_url)
-    session = orm.sessionmaker(bind=engine)()
-
-    # username is unique
+    session = get_session()
+    # if no user is passed then don't authenticate against the user table
     if user:
-        from bauble.model import User
-        user = session.query(User).filter_by(username=user).first()
-        if not user or password != user.password or \
-           not bcrypt.hashpw(password, user.password.encode("utf-8")):
-            # unknown user or bad password
-            raise error.AuthenticationError
-
-        schema = user.organization.pg_schema
-        session.execute("SET search_path TO {schema};".format(schema=schema));
+        user = authenticate(user, password, session)
+        if not user:
+            raise error.AuthenticationError()
+        if user.organization and user.organization.pg_schema:
+            schema = user.organization.pg_schema
+            session.execute("SET search_path TO {schema};".format(schema=schema));
 
     return session
 
@@ -118,17 +131,15 @@ class MapperBase(DeclarativeMeta):
         super(MapperBase, cls).__init__(classname, bases, dict_)
 
 
+def get_session():
+    engine = sa.create_engine(db_url)
+    return orm.sessionmaker(bind=engine)()
 
 
-
-engine = None
-"""A :class:`sqlalchemy.engine.base.Engine` used as the default
-connection to the database.
 """
 
+# TODO: these session docs are from bauble1 and need to be updated
 
-Session = None
-"""
 bauble.db.Session is created after the database has been opened with
 :func:`bauble.db.open()`. bauble.db.Session should be used when you need
 to do ORM based activities on a bauble database.  To create a new

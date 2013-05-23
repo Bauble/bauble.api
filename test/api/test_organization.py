@@ -17,14 +17,23 @@ def test_organization():
         "owners": [user_data]
     }
 
-
     # create a new organization
     org = test.create_resource("/organization", org_data)
     assert org['name'] == data['name']
+    print(org)
+
+    owner = org['owners'][0]
+    user = test.get_resource(owner['ref'], user_data['username'], user_data['password'])
+    assert user['ref'] == owner['ref']
+    raise
 
     #user = test.create_resource(org['ref'] + 'user', user_data)
     #assert user['name'] == user_data['name']
     #assert user['org']['ref'] == org['ref']
+
+    # add another user to the organization
+
+
 
     # delete the organization (should also delete the users)
     test.delete_resource(org['ref'])

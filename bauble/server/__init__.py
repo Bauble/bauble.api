@@ -121,10 +121,10 @@ def start(host='localhost', port=8080, debug=False):
     Start the Bauble server.
     """
     import bauble.server.admin
-    import bauble.server.organization
     import bauble.server.resource as resource
 
     # first make sure we can connect to the database
+    session = None
     try:
         session = db.connect()
         if not session or not session.execute("SELECT 1;").first():
@@ -141,7 +141,8 @@ def start(host='localhost', port=8080, debug=False):
     resource.LocationResource()
     resource.SourceDetailResource()
 
-    organization.OrganizationResource()
+    resource.OrganizationResource()
+    resource.UserResource()
 
     app.run(host=host, port=port, server="gunicorn", reloader=True,
             debug=debug)
