@@ -73,6 +73,7 @@ def parse_accept_header(header=None):
     """
     if(not header):
         header = request.headers.get("Accept")
+
     ranges = [rng.strip() for rng in header.split(',')]
 
     result = {}

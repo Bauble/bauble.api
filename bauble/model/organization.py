@@ -42,14 +42,14 @@ class Organization(db.SystemBase):
             d['short_name'] = self.short_name
 
         if depth > 1:
-            d['users'] = [users.json(depth=depth-1) for user in self.users]
+            d['users'] = [user.json(depth=depth-1) for user in self.users]
+            d['owners'] = [owner.json(depth=depth-1) for owner in self.owners]
 
         return d
 
 
 def before_insert(mapper, connection, organization):
     # new organiations require at least one owner
-    print(str(organization))
     if(len(organization.owners) < 1):
         raise ValueError("An owner user is required for new organizations")
 

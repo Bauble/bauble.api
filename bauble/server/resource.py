@@ -37,16 +37,25 @@ class accept:
     def __call__(self, func):
         def inner(*args, **kwargs):
             accepted = parse_accept_header()
-            if self.mimetype not in accepted and '*/*' not in accepted:
-                raise bottle.HTTPError('406 Not Accepted',
-                                       'Expected application/json')
 
-            if 'depth' in kwargs and 'depth' in accepted[self.mimetype]:
-                kwargs['depth'] = int(accepted[self.mimetype]['depth'])
+            def set_depth(mimetype):
+                if 'depth' in accepted[mimetype]:
+                    kwargs['depth'] = int(accepted[self.mimetype]['depth'])
+
+            if self.mimetype in accepted:
+                set_depth(self.mimetype)
+            elif '*/*' in accepted:
+                set_depth('*/*')
+            else:
+                abort(406, 'Expected application/json')
+                # raise bottle.HTTPError('406 Not Accepted',
+                #                        'Expected application/json')
 
             return func(*args, **kwargs)
         return inner
 
+# TODO: should probably rename this to connect_as_user and on success
+# add a session parameter to the wrapped method
 
 class auth_user:
     """Decorator class to authorize the current request against the user table.
@@ -57,6 +66,8 @@ class auth_user:
 
     def __call__(self, *args, **kwargs):
         def inner(*args, **kwargs):
+            if 'Authorization' not in requests.headers:
+                abort(401, "No Authorization header.")
             username, password = parse_auth_header()
             session = db.get_session()
             user = db.authenticate(username, password)
@@ -66,7 +77,7 @@ class auth_user:
             if user.id != resource_id and not user.is_sysadmin:
                 # don't allow change other users data
                 abort(403)
-            return self, func(*args, **kwargs)
+            return func(*args, **kwargs)
         return inner
 
 
@@ -128,9 +139,10 @@ class Resource:
 
     def check_permissions(self, user):
         """
-        Raises a PermissionError depending on if a user has the permissions to complete
-        the current request.  By default a user has full permissions to create, read or
-        update this resource.
+        Raises a PermissionError depending on if a user has the
+        permissions to complete the current request.  By default a
+        user has full permissions to create, read or update this
+        resource.
         """
         return True
 
@@ -181,8 +193,9 @@ class Resource:
         for name in relation.split('/'):
             mapper = getattr(mapper.relationships, name).mapper
 
-        # query the mapped class and the end point relation using the list of the passed
-        # relations to create the join between the two
+        # query the mapped class and the end point relation using the
+        # list of the passed relations to create the join between the
+        # two
         query = session.query(self.mapped_class, mapper.class_).\
             filter(getattr(self.mapped_class, 'id') == resource_id).\
             join(*relation.split('/'))
@@ -204,17 +217,16 @@ class Resource:
         if request.method == "OPTIONS":
             return {}
 
-        auth_header = request.headers['Authorization']
-        user, password = bottle.parse_auth(auth_header)
-        session = db.connect(user, password)
+        session = self.connect()
 
         # get the mapper for the last item in the list of relations
         mapper = orm.class_mapper(self.mapped_class)
         for name in relation.split('/'):
             mapper = getattr(mapper.relationships, name).mapper
 
-        # query the mapped class and the end point relation using the list of the passed
-        # relations to create the join between the two
+        # query the mapped class and the end point relation using the
+        # list of the passed relations to create the join between the
+        # two
         query = session.query(self.mapped_class, mapper.class_).\
             filter(getattr(self.mapped_class, 'id') == resource_id).\
             join(*relation.split('/'))
@@ -226,8 +238,9 @@ class Resource:
         return response_json
 
 
+    #@auth_user
     @accept(JSON_MIMETYPE)
-    def get(self, resource_id, depth=1):
+    def get(self, resource_id, session=None, depth=1):
         """
         Handle GET requests on this resource.
 
@@ -238,10 +251,7 @@ class Resource:
         if request.method == "OPTIONS":
             return {}
 
-        auth_header = request.headers['Authorization']
-        user, password = bottle.parse_auth(auth_header)
-        session = db.connect(user, password)
-
+        session = self.connect()
         obj = session.query(self.mapped_class).get(resource_id)
 
         response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
@@ -252,15 +262,16 @@ class Resource:
 
     def get_schema(self, relation=None):
         """
-        Return a JSON representation of the queryable schema of this resource or one
-        of it's relations.
+        Return a JSON representation of the queryable schema of this
+        resource or one of it's relations.
 
         This doesn't necessarily represent the json object that is returned
         for this resource.  It is more for the queryable parts of this resources
         to be used for building reports and query strings.
 
-        A schema object can be declared in the class or else a schema will be generated
-        from the mapper.  If a schema is not to be returned then set schema to None.
+        A schema object can be declared in the class or else a schema
+        will be generated from the mapper.  If a schema is not to be
+        returned then set schema to None.
         """
         flags = request.query.flags
         if(flags):
@@ -315,9 +326,7 @@ class Resource:
         else:
             relations = []
 
-        auth_header = request.headers['Authorization']
-        user, password = bottle.parse_auth(auth_header)
-        session = db.connect(user, password)
+        session = self.connect()
 
         # TODO: should split on either / or . to allow dot or slash delimeters
         # between references
@@ -331,11 +340,13 @@ class Resource:
 
         json_objs = []
         if relations:
-            # use an OrderedDict so we can maintain the default sort order on the resource and
+            # use an OrderedDict so we can maintain the default sort
+            # order on the resource and
             unique_objs = OrderedDict()
 
-            # get the json objects for each of the relations and add them to the
-            # main resource json at resource[relation_name], e.g. resource['genera.taxa']
+            # get the json objects for each of the relations and add
+            # them to the main resource json at
+            # resource[relation_name], e.g. resource['genera.taxa']
             for relation in relations:
                 query = session.query(self.mapped_class, get_relation_class(relation)).\
                     join(*relation.split('.'))
@@ -345,7 +356,8 @@ class Resource:
                 for result in query:
                     resource = result[0]
 
-                    # add the resource_json to unique_objs if it doesn't already exist
+                    # add the resource_json to unique_objs if it
+                    # doesn't already exist
                     if resource.id not in unique_objs:
                         resource_json = resource.json(depth)
                         resource_json[relation] = []
@@ -377,9 +389,7 @@ class Resource:
         if request.method == 'OPTIONS':
             return {}
 
-        auth_header = request.headers['Authorization']
-        user, password = bottle.parse_auth(auth_header)
-        session = db.connect(user, password)
+        session = self.connect()
 
         obj = session.query(self.mapped_class).get(resource_id)
         session.delete(obj)
@@ -392,10 +402,12 @@ class Resource:
         """
         Handle POST and PUT requests on this resource.
 
-        If a family_id is passed the family will be updated. Otherwise it will be
-        created.  The request body should contain a Family json object.
+        If a family_id is passed the family will be updated. Otherwise
+        it will be created.  The request body should contain a Family
+        json object.
 
-        A JSON object that represents the created Family will be returned in the response.
+        A JSON object that represents the created Family will be
+        returned in the response.
         """
         if request.method == "OPTIONS":
             return {}
@@ -438,7 +450,8 @@ class Resource:
 
         # this should only contain relations that are already in self.relations
         for name in relation_data:
-            getattr(self, self.relations[name])(instance, relation_data[name], session)
+            getattr(self, self.relations[name])(instance, relation_data[name],
+                                                session)
 
         session.add(instance)
         session.commit()
@@ -591,7 +604,6 @@ class AccessionResource(Resource):
 
 
     def handle_source(self, accession, source, session):
-        print('source: ', source)
         accession.source = Source()
         if 'source_detail' in source:
             accession.source.source_detaild_id = self.get_ref_id(source['source_detail'])
@@ -719,12 +731,56 @@ class OrganizationResource(Resource):
         #           ['OPTIONS', 'GET'], self.get_user)
         # app.route(API_ROOT + self.resource + "/<org_id>/user/<user_id>",
         #           ['OPTIONS', 'PUT'], self.save_or_update)
-        # app.route(API_ROOT + self.resource + "/<org_id>/user",
-        #           ['OPTIONS', 'POST'], self.save_or_update)
+        app.route(API_ROOT + self.resource + "/<org_id>/user",
+                  ['OPTIONS', 'POST'], self.save_or_update)
         # app.route(API_ROOT + self.resource + "/<resource_id>",
         #           ['OPTIONS', 'DELETE'], self.delete)
 
 
+    @accept(JSON_MIMETYPE)
+    def save_user(self, org_id):
+
+        if request.method == "OPTIONS":
+            return {}
+
+        # make sure the content is JSON
+        if JSON_MIMETYPE not in request.headers.get("Content-Type"):
+            raise bottle.HTTPError('415 Unsupported Media Type',
+                                   'Expected application/json')
+
+        response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
+
+        user, password = parse_accept_header()
+        session = self.connect(user, password)
+
+        # make sure the organization is valid
+        organization = session.query(Organization).get(org_id)
+        if not organization:
+            abort(404, "Unknown organization.")
+
+        # we assume all requests are in utf-8
+        data = json.loads(request.body.read().decode('utf-8'))
+
+        # check that the username isn't already take
+        user = session.query(User).filter_by(username=data['username']).first()
+        if user:
+            abort(409, "Username already exists")  # conflict
+
+        forbidden_props = ["organization", "is_sysadmin"]
+        for key in forbidden_props:
+            data.pop(key, None)
+
+        user = User(**data)
+        user.organization = organization
+        session.add(user)
+        session.commit(user)
+        session.close()
+        response.status = 201
+
+
+
+    # TODO: only sysadmins should be able to create other sysadmins, all other
+    # users should be created at /organization/<resource_id>/user
     def save_or_update(self, resource_id=None):
         response = super().save_or_update(resource_id)
 
@@ -740,9 +796,8 @@ class OrganizationResource(Resource):
         # user is created without a password since we will be authenticating
         # bauble users from the "user" table althought all database
         # actions will be done by the postgresql role that owns the schema
-        user_permissions = "NOSUPERUSER NOCREATEDB NOCREATEROLE " + \
-            "NOCREATEUSER INHERIT LOGIN"
-        session.execute("CREATE ROLE {name} WITH {perms};".\
+        user_permissions = "NOSUPERUSER NOCREATEDB NOCREATEROLE NOLOGIN INHERIT"
+        session.execute("CREATE ROLE {name} {perms};".\
                             format(name=unique_name, perms=user_permissions))
         session.execute("CREATE SCHEMA {name} AUTHORIZATION {name};".\
                             format(name=unique_name))
@@ -752,7 +807,7 @@ class OrganizationResource(Resource):
         # now create all the default tables for the organizations schema
         tables = db.Base.metadata.sorted_tables
         for table in tables:
-            table.schema = schema_name
+            table.schema = unique_name
         db.Base.metadata.create_all(session.get_bind(), tables=tables)
         session.close()
 
@@ -783,6 +838,7 @@ class UserResource(Resource):
     mapped_class = User
 
     def __init__(self):
+        super().__init__()
         app.route(API_ROOT + self.resource + "/<resource_id>/password",
                   ['OPTIONS', 'POST'], self.set_password)
 
@@ -790,8 +846,9 @@ class UserResource(Resource):
     def check_permissions(self, user):
         # TODO: a user should be able to change their password and get information
         # about themselves but all other actions should be denied
-        if not use.is_sysadmin:
-            raise error.PermissionError
+        # if not user.is_sysadmin:
+        #     raise error.PermissionError
+        pass
 
 
     def count(*args, **kwargs):
@@ -803,9 +860,9 @@ class UserResource(Resource):
     def get_relation(*args, **kwargs):
         bottle.abort(404)
 
-    @auth_user
-    def get(self, resource_id):
-        super().get(resource_id)
+    # @auth_user
+    # def get(self, resource_id):
+    #     super().get(resource_id)
 
 
     def get_schema():
@@ -826,5 +883,5 @@ class UserResource(Resource):
         pass
 
 
-    def get(org_id, user_id, depth=1):
-        pass
+    # def get(org_id, user_id, depth=1):
+    #     pass

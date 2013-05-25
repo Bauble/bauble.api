@@ -34,15 +34,11 @@ def authenticate(user, password, session):
     if isinstance(user, str):
         user = session.query(User).filter_by(username=user).first()
 
-    encode = lambda s: s.encode("utf-8")
+    encode = lambda s: s.encode("utf-8") if s else "".encode("utf-8")
 
-    if not user or \
-       not (bcrypt.hashpw(encode(password), encode(user.password)) == encode(user.password) \
-            and password != user.password):
-        # unknown user or bad password
-        return False
-
-    return user
+    if user and (user.password and password) and (user.password == password or bcrypt.hashpw(encode(password), encode(user.password)) == encode(user.password)):
+        return user
+    return False
 
 
 def connect(user=None, password=None):

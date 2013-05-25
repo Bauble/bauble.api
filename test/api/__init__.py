@@ -64,7 +64,7 @@ def create_resource(resource, data, user=default_user, password=default_password
         data = json.dumps(data)
 
     response = requests.post(api_root + resource, data=data, headers=headers,
-                             auth=auth.HTTPBasicAuth(user, password))
+                             auth=(user, password))
 
     assert response.status_code == 201
     return json.loads(response.text)
@@ -88,7 +88,8 @@ def update_resource(data, user=default_user, password=default_password):
     return json.loads(response.text)
 
 
-def get_resource(ref, depth=1, relations=[], user=default_user, password=default_password):
+def get_resource(ref, depth=1, relations=[], user=default_user,
+                 password=default_password):
     """
     Get a server based resource with id=id
     """
@@ -97,7 +98,9 @@ def get_resource(ref, depth=1, relations=[], user=default_user, password=default
     params = {}
     if relations:
         params['relations'] = relations
-    response = requests.get(ref, headers=get_headers(depth=depth), params=params)
+    print("headers: ", get_headers(depth=depth))
+    response = requests.get(ref, headers=get_headers(depth=depth), params=params,
+                            auth=(user,password))
     #print('response: ', response.text)
     assert response.status_code == 200
     return json.loads(response.text)

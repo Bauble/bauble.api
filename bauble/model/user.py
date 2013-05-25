@@ -33,3 +33,24 @@ class User(db.SystemBase):
         import bcrypt
         hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
         self.password = hashed.decode("utf-8")
+
+
+    def get_ref(self):
+        return "/user/" + str(self.id) if self.id is not None else None;
+
+    def json(self, depth=1):
+        d = dict()
+        if self.id:
+            d['ref'] = self.get_ref()
+
+        if depth > 0:
+            d['username'] = self.username
+            d['fullname'] = self.fullname
+            d['title'] = self.title
+            d['email'] = self.email
+            d['is_sysadmin'] = self.is_sysadmin
+
+        if depth > 1:
+            d['organization'] = self.organization.json(depth-1)
+
+        return d

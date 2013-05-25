@@ -19,21 +19,24 @@ def test_organization():
 
     # create a new organization
     org = test.create_resource("/organization", org_data)
-    assert org['name'] == data['name']
+    assert org['name'] == org_data['name']
     print(org)
 
+    # get the org with depth=2 so we can get its relations
+    org = test.get_resource(org['ref'], depth=2)
+    print(org)
     owner = org['owners'][0]
-    user = test.get_resource(owner['ref'], user_data['username'], user_data['password'])
+    user = test.get_resource(owner['ref'])
     assert user['ref'] == owner['ref']
-    raise
 
     #user = test.create_resource(org['ref'] + 'user', user_data)
     #assert user['name'] == user_data['name']
     #assert user['org']['ref'] == org['ref']
 
     # add another user to the organization
-
-
+    user2_data = user_data.copy()
+    user2_data['username'] = test.get_random_name()
+    user2 = test.create_resource(org['ref'] + "/user", user2_data)
 
     # delete the organization (should also delete the users)
     test.delete_resource(org['ref'])
