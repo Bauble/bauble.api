@@ -90,6 +90,7 @@ def parse_auth_header(header=None):
     return  bottle.parse_auth(header)
 
 
+
 class Resource:
     """
     """
