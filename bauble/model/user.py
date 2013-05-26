@@ -20,9 +20,11 @@ class User(db.SystemBase):
     email = Column(String)
     password = Column(String)
 
+    # system permissions
     is_sysadmin = Column(Boolean)
-
     is_org_owner = Column(Boolean)
+    is_org_admin = Column(Boolean)
+
     organization_id = Column(Integer, ForeignKey('organization.id'))
 
     # TODO: This should probably be made into a property so that

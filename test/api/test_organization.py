@@ -36,7 +36,8 @@ def test_organization():
     # add another user to the organization
     user2_data = user_data.copy()
     user2_data['username'] = test.get_random_name()
-    user2 = test.create_resource(org['ref'] + "/user", user2_data)
+    user2_data['organization'] = org
+    user2 = test.create_resource("/user", user2_data)
 
     # delete the organization (should also delete the users)
     test.delete_resource(org['ref'])

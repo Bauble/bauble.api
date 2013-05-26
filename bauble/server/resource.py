@@ -137,24 +137,9 @@ class Resource:
     session_events = []
 
 
-    def check_permissions(self, user):
-        """
-        Raises a PermissionError depending on if a user has the
-        permissions to complete the current request.  By default a
-        user has full permissions to create, read or update this
-        resource.
-        """
-        return True
-
-
     def connect(self):
         auth_header = request.headers['Authorization']
         user, password = bottle.parse_auth(auth_header)
-
-        try:
-            self.check_permissions(user)
-        except error.PermissionError as exc:
-            bottle.abort(403, "You don't have permission to access this resouce")
 
         # validate the password
         try:
@@ -238,7 +223,6 @@ class Resource:
         return response_json
 
 
-    #@auth_user
     @accept(JSON_MIMETYPE)
     def get(self, resource_id, session=None, depth=1):
         """
@@ -726,58 +710,6 @@ class OrganizationResource(Resource):
     def __init__(self):
         super().__init__()
 
-        # routes for organization users
-        # app.route(API_ROOT + self.resource + "/<org_id>/user/<user_id>",
-        #           ['OPTIONS', 'GET'], self.get_user)
-        # app.route(API_ROOT + self.resource + "/<org_id>/user/<user_id>",
-        #           ['OPTIONS', 'PUT'], self.save_or_update)
-        app.route(API_ROOT + self.resource + "/<org_id>/user",
-                  ['OPTIONS', 'POST'], self.save_or_update)
-        # app.route(API_ROOT + self.resource + "/<resource_id>",
-        #           ['OPTIONS', 'DELETE'], self.delete)
-
-
-    @accept(JSON_MIMETYPE)
-    def save_user(self, org_id):
-
-        if request.method == "OPTIONS":
-            return {}
-
-        # make sure the content is JSON
-        if JSON_MIMETYPE not in request.headers.get("Content-Type"):
-            raise bottle.HTTPError('415 Unsupported Media Type',
-                                   'Expected application/json')
-
-        response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
-
-        user, password = parse_accept_header()
-        session = self.connect(user, password)
-
-        # make sure the organization is valid
-        organization = session.query(Organization).get(org_id)
-        if not organization:
-            abort(404, "Unknown organization.")
-
-        # we assume all requests are in utf-8
-        data = json.loads(request.body.read().decode('utf-8'))
-
-        # check that the username isn't already take
-        user = session.query(User).filter_by(username=data['username']).first()
-        if user:
-            abort(409, "Username already exists")  # conflict
-
-        forbidden_props = ["organization", "is_sysadmin"]
-        for key in forbidden_props:
-            data.pop(key, None)
-
-        user = User(**data)
-        user.organization = organization
-        session.add(user)
-        session.commit(user)
-        session.close()
-        response.status = 201
-
-
 
     # TODO: only sysadmins should be able to create other sysadmins, all other
     # users should be created at /organization/<resource_id>/user
@@ -836,6 +768,20 @@ class UserResource(Resource):
 
     resource = '/user'
     mapped_class = User
+    relations = {
+        'organization': 'handle_organization'
+    }
+
+
+    def save_or_update(self, resource_id=None, depth=1):
+        session = self.connect()
+        request_user, password = parse_auth_header()
+
+        # TODO: make sure the user making this request is an admin of the
+        # organization that this user is a part of
+        super().save_or_update(self, resource_id, depth):
+
+
 
     def __init__(self):
         super().__init__()
@@ -843,45 +789,10 @@ class UserResource(Resource):
                   ['OPTIONS', 'POST'], self.set_password)
 
 
-    def check_permissions(self, user):
-        # TODO: a user should be able to change their password and get information
-        # about themselves but all other actions should be denied
-        # if not user.is_sysadmin:
-        #     raise error.PermissionError
-        pass
+    def handle_organization(self, user, organization, session):
+        user.organization_id = org_id = self.get_ref_id(organization)
 
-
-    def count(*args, **kwargs):
-        bottle.abort(404)
-
-    def count_relations(*args, **kwargs):
-        bottle.abort(404)
-
-    def get_relation(*args, **kwargs):
-        bottle.abort(404)
-
-    # @auth_user
-    # def get(self, resource_id):
-    #     super().get(resource_id)
-
-
-    def get_schema():
-        pass
-
-    def query():
-        pass
-
-    def delete():
-        pass
-
-    def save_or_update():
-        pass
 
     @auth_user
     def set_password(self, user_id):
-
         pass
-
-
-    # def get(org_id, user_id, depth=1):
-    #     pass
