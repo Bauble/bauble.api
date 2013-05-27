@@ -27,7 +27,7 @@ class Organization(db.SystemBase):
                               "User.is_org_owner==True)")
     admins = relationship('User', primaryjoin="and_("\
                               "Organization.id==User.organization_id,"\
-                              "or_(User.is_org_owner==True, User.is_org_admin)==True")
+                              "or_(User.is_org_owner==True, User.is_org_admin)==True)")
     users = relationship('User', cascade="all, delete-orphan",
                          backref=backref("organization"))
 
