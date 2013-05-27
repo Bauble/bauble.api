@@ -22,7 +22,7 @@ from bauble.model.propagation import Propagation, PlantPropagation
 from bauble.model.location import Location
 from bauble.model.organization import Organization
 from bauble.model.user import User
-from bauble.server import app, API_ROOT, parse_accept_header, JSON_MIMETYPE, TEXT_MIMETYPE
+from bauble.server import app, API_ROOT, parse_accept_header, JSON_MIMETYPE, TEXT_MIMETYPE, enable_cors
 import bauble.types as types
 import bauble.utils as utils
 
@@ -33,6 +33,7 @@ class accept:
 
     def __init__(self, mimetype):
         self.mimetype = mimetype
+
 
     def __call__(self, func):
         def inner(*args, **kwargs):
@@ -47,7 +48,7 @@ class accept:
             elif '*/*' in accepted:
                 set_depth('*/*')
             else:
-                abort(406, 'Expected application/json')
+                bottle.abort(406, 'Expected application/json')
                 # raise bottle.HTTPError('406 Not Accepted',
                 #                        'Expected application/json')
 
@@ -66,17 +67,18 @@ class auth_user:
 
     def __call__(self, *args, **kwargs):
         def inner(*args, **kwargs):
-            if 'Authorization' not in requests.headers:
-                abort(401, "No Authorization header.")
+            auth_header = request.headers.get('Authorization')
+            if not auth_header:
+                bottle.abort(401, "No Authorization header.")
             username, password = parse_auth_header()
             session = db.get_session()
             user = db.authenticate(username, password)
             session.close()
             if not user:
-                abort(401)
+                bottle.abort(401)
             if user.id != resource_id and not user.is_sysadmin:
                 # don't allow change other users data
-                abort(403)
+                bottle.abort(403)
             return func(*args, **kwargs)
         return inner
 
@@ -86,7 +88,7 @@ def parse_auth_header(header=None):
     then use the header from the current request.
     """
     if not header:
-        header = request.headers['Authorization']
+        header = request.headers.get('Authorization')
     return  bottle.parse_auth(header)
 
 
@@ -108,39 +110,69 @@ class Resource:
 
         super().__init__()
 
-        app.route(API_ROOT + self.resource + "/<resource_id>",
-                  ['OPTIONS', 'GET'], self.get)
-        app.route(API_ROOT + self.resource, ['OPTIONS', 'GET'], self.query)
-        app.route(API_ROOT + self.resource, ['OPTIONS', 'PUT'],
-                  self.save_or_update)
-        app.route(API_ROOT + self.resource + "/<resource_id>",
-                  ['OPTIONS', 'PUT'], self.save_or_update)
-        app.route(API_ROOT + self.resource, ['OPTIONS', 'POST'],
-                  self.save_or_update)
-        app.route(API_ROOT + self.resource + "/<resource_id>",
-                  ['OPTIONS', 'DELETE'], self.delete)
+        self.add_route(API_ROOT + self.resource, {
+                "GET": self.query,
+                "OPTIONS": self.options_response,
+                "PUT": self.save_or_update,
+                })
 
-        # count methods
-        app.route(API_ROOT + self.resource + "/count", ['OPTIONS', 'GET'],
-                  self.count)
-        app.route(API_ROOT + self.resource +"/<resource_id>/<relation:path>/count",
-                  ['OPTIONS', 'GET'], self.count_relations)
+        self.add_route(API_ROOT + self.resource + '/<resource_id>', {
+                "GET": self.get,
+                "OPTIONS": self.options_response,
+                "POST": self.save_or_update,
+                "PUT": self.save_or_update,
+                "DELETE": self.delete
+                })
 
-        # URL for relations
-        app.route(API_ROOT + self.resource + "/schema", ['OPTIONS', 'GET'],
-                  self.get_schema)
-        app.route(API_ROOT + self.resource + "/<relation:path>/schema",
-                  ['OPTIONS', 'GET'], self.get_schema)
-        app.route(API_ROOT + self.resource + "/<resource_id>/<relation:path>",
-                  ['OPTIONS', 'GET'], self.get_relation)
+        self.add_route(API_ROOT + self.resource + '/count', {
+                "GET": self.count,
+                "OPTIONS": self.options_response,
+                })
 
+        self.add_route(API_ROOT +
+                       self.resource +"/<resource_id>/<relation:path>/count", {
+                "GET": self.count_relations,
+                "OPTIONS": self.options_response,
+                })
+
+        self.add_route(API_ROOT + self.resource + "/schema", {
+                "OPTIONS": self.options_response,
+                "GET": self.get_schema
+                })
+        self.add_route(API_ROOT + self.resource + "/<relation:path>/schema", {
+                "OPTIONS": self.options_response,
+                'GET': self.get_schema
+                })
+        self.add_route(API_ROOT +
+                       self.resource + "/<resource_id>/<relation:path>", {
+                "OPTIONS": self.options_response,
+                "GET": self.get_relation
+                })
 
     session_events = []
 
 
+    def options_response(self, *args, **kwargs):
+        pass
+
+
+    def add_route(self, route, method_map):
+        """Add route that supports multiple methods on the same
+        resource location.
+        """
+        def route_handler(*args, **kwargs):
+            if request.method in method_map:
+                method_map[request.method](*args, **kwargs)
+            else:
+                abort(404)
+        app.route(route, list(method_map.keys()), route_handler)
+
+
     def connect(self):
-        auth_header = request.headers['Authorization']
-        user, password = bottle.parse_auth(auth_header)
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            bottle.abort(401, "No Authorization header.")
+        user, password = parse_auth_header(auth_header)
 
         # validate the password
         try:
@@ -301,9 +333,6 @@ class Resource:
         """
         Handle GET /resource?q= requests on this resource.
         """
-        if request.method == "OPTIONS":
-            return {}
-
         q = request.query.q
         relations = request.query.relations
         if(relations):
@@ -371,9 +400,6 @@ class Resource:
         """
         Handle DELETE requests on this resource.
         """
-        if request.method == 'OPTIONS':
-            return {}
-
         session = self.connect()
 
         obj = session.query(self.mapped_class).get(resource_id)
@@ -394,9 +420,6 @@ class Resource:
         A JSON object that represents the created Family will be
         returned in the response.
         """
-        if request.method == "OPTIONS":
-            return {}
-
         # make sure the content is JSON
         if JSON_MIMETYPE not in request.headers.get("Content-Type"):
             raise bottle.HTTPError('415 Unsupported Media Type',
@@ -773,6 +796,13 @@ class UserResource(Resource):
         'organization': 'handle_organization'
     }
 
+    def __init__(self):
+        super().__init__()
+
+        self.add_route(API_ROOT + self.resource + "/<resource_id>/password", {
+                'POST': self.set_password,
+                'OPTIONS': self.options_response
+                })
 
     def save_or_update(self, resource_id=None, depth=1):
         session = self.connect()
@@ -780,14 +810,11 @@ class UserResource(Resource):
 
         # TODO: make sure the user making this request is an admin of the
         # organization that this user is a part of
-        super().save_or_update(self, resource_id, depth):
+        super().save_or_update(self, resource_id, depth)
 
 
-
-    def __init__(self):
-        super().__init__()
-        app.route(API_ROOT + self.resource + "/<resource_id>/password",
-                  ['OPTIONS', 'POST'], self.set_password)
+    def apply_query(self, query, query_string):
+        return query.filter(User.username.like(query_string))
 
 
     def handle_organization(self, user, organization, session):
