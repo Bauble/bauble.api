@@ -29,7 +29,15 @@ test_dir = os.path.join(cwd, 'test')
 bottle.TEMPLATE_PATH.insert(0, cwd)
 
 
-@app.error()
+@app.error(401)
+def error_handler_401(error):
+    enable_cors()
+    header = request.headers.get('Authorization')
+    user, password = bottle.parse_auth(header)
+    return("Could not authorize user: ", user)
+
+
+@app.error(500)
 def error_handler(error):
     enable_cors()
     if error.body:
@@ -51,6 +59,8 @@ def enable_cors():
                         'PUT, GET, POST, DELETE, OPTIONS')
     response.set_header('Access-Control-Allow-Headers',
                         'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token, Authorization')
+    # print(request.url, "(", request.method, "): ",
+    #       [(k, v) for k, v in response.headers.items()])
 
 
 @app.get('/test')
