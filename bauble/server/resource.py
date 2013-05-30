@@ -162,7 +162,7 @@ class Resource:
         """
         def route_handler(*args, **kwargs):
             if request.method in method_map:
-                method_map[request.method](*args, **kwargs)
+                return method_map[request.method](*args, **kwargs)
             else:
                 abort(404)
         app.route(route, list(method_map.keys()), route_handler)
