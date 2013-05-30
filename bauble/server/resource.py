@@ -814,7 +814,7 @@ class UserResource(Resource):
 
 
     def apply_query(self, query, query_string):
-        return query.filter(User.username.like(query_string))
+        return query.filter(User.username.ilike(query_string))
 
 
     def handle_organization(self, user, organization, session):
