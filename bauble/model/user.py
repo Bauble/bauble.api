@@ -40,7 +40,10 @@ class User(db.SystemBase):
     def get_ref(self):
         return "/user/" + str(self.id) if self.id is not None else None;
 
+
     def json(self, depth=1):
+        """Return a dict/JSON representation of this User.
+        """
         d = dict()
         if self.id:
             d['ref'] = self.get_ref()
@@ -51,6 +54,8 @@ class User(db.SystemBase):
             d['title'] = self.title
             d['email'] = self.email
             d['is_sysadmin'] = self.is_sysadmin
+            d['is_org_owner'] = self.is_org_owner
+            d['is_org_admin'] = self.is_org_admin
 
         if depth > 1:
             d['organization'] = self.organization.json(depth-1) \
