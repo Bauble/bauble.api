@@ -53,6 +53,7 @@ class User(db.SystemBase):
             d['is_sysadmin'] = self.is_sysadmin
 
         if depth > 1:
-            d['organization'] = self.organization.json(depth-1)
+            d['organization'] = self.organization.json(depth-1) \
+                if self.organization else {}
 
         return d
