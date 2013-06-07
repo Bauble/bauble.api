@@ -113,13 +113,13 @@ class Resource:
         self.add_route(API_ROOT + self.resource, {
                 "GET": self.query,
                 "OPTIONS": self.options_response,
-                "PUT": self.save_or_update,
+                "POST": self.save_or_update,
                 })
 
         self.add_route(API_ROOT + self.resource + '/<resource_id>', {
                 "GET": self.get,
                 "OPTIONS": self.options_response,
-                "POST": self.save_or_update,
+                #"POST": self.save_or_update,
                 "PUT": self.save_or_update,
                 "DELETE": self.delete
                 })
