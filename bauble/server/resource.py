@@ -1,7 +1,6 @@
 from collections import OrderedDict
 
 import json
-import os
 import uuid
 
 import bottle
@@ -79,7 +78,7 @@ class auth_user:
             if user.id != resource_id and not user.is_sysadmin:
                 # don't allow change other users data
                 bottle.abort(403)
-            return func(*args, **kwargs)
+            return self.func(*args, **kwargs)
         return inner
 
 
@@ -89,7 +88,7 @@ def parse_auth_header(header=None):
     """
     if not header:
         header = request.headers.get('Authorization')
-    return  bottle.parse_auth(header)
+    return bottle.parse_auth(header)
 
 
 
@@ -110,44 +109,44 @@ class Resource:
 
         super().__init__()
 
-        self.add_route(API_ROOT + self.resource, {
-                "GET": self.query,
-                "OPTIONS": self.options_response,
-                "POST": self.save_or_update,
-                })
+        self.add_route(API_ROOT + self.resource,
+                       {"GET": self.query,
+                        "OPTIONS": self.options_response,
+                        "POST": self.save_or_update,
+                        })
 
-        self.add_route(API_ROOT + self.resource + '/<resource_id>', {
-                "GET": self.get,
-                "OPTIONS": self.options_response,
-                #"POST": self.save_or_update,
-                "PUT": self.save_or_update,
-                "DELETE": self.delete
-                })
+        self.add_route(API_ROOT + self.resource + '/<resource_id>',
+                       {"GET": self.get,
+                        "OPTIONS": self.options_response,
+                        #"POST": self.save_or_update,
+                        "PUT": self.save_or_update,
+                        "DELETE": self.delete
+                        })
 
-        self.add_route(API_ROOT + self.resource + '/count', {
-                "GET": self.count,
-                "OPTIONS": self.options_response,
-                })
+        self.add_route(API_ROOT + self.resource + '/count',
+                       {"GET": self.count,
+                        "OPTIONS": self.options_response,
+                        })
 
         self.add_route(API_ROOT +
-                       self.resource +"/<resource_id>/<relation:path>/count", {
-                "GET": self.count_relations,
-                "OPTIONS": self.options_response,
-                })
+                       self.resource + "/<resource_id>/<relation:path>/count",
+                       {"GET": self.count_relations,
+                        "OPTIONS": self.options_response,
+                        })
 
-        self.add_route(API_ROOT + self.resource + "/schema", {
-                "OPTIONS": self.options_response,
-                "GET": self.get_schema
-                })
-        self.add_route(API_ROOT + self.resource + "/<relation:path>/schema", {
-                "OPTIONS": self.options_response,
-                'GET': self.get_schema
-                })
+        self.add_route(API_ROOT + self.resource + "/schema",
+                       {"OPTIONS": self.options_response,
+                        "GET": self.get_schema
+                        })
+        self.add_route(API_ROOT + self.resource + "/<relation:path>/schema",
+                       {"OPTIONS": self.options_response,
+                        'GET': self.get_schema
+                        })
         self.add_route(API_ROOT +
-                       self.resource + "/<resource_id>/<relation:path>", {
-                "OPTIONS": self.options_response,
-                "GET": self.get_relation
-                })
+                       self.resource + "/<resource_id>/<relation:path>",
+                       {"OPTIONS": self.options_response,
+                        "GET": self.get_relation
+                        })
 
     session_events = []
 
@@ -192,7 +191,7 @@ class Resource:
         if request.method == "OPTIONS":
             return {}
 
-        session = self.connect();
+        session = self.connect()
 
         count = session.query(self.mapped_class).count()
         session.close()
@@ -671,7 +670,7 @@ class PlantResource(Resource):
         return query.filter(Plant.code.like(query_string))
 
     def handle_notes(self, plant, notes, session):
-        self.note_handler(plant, notes, AccessionNote, session)
+        self.note_handler(plant, notes, PlantNote, session)
 
 
 class LocationResource(Resource):
@@ -753,10 +752,10 @@ class OrganizationResource(Resource):
         # bauble users from the "user" table althought all database
         # actions will be done by the postgresql role that owns the schema
         user_permissions = "NOSUPERUSER NOCREATEDB NOCREATEROLE NOLOGIN INHERIT"
-        session.execute("CREATE ROLE {name} {perms};".\
-                            format(name=unique_name, perms=user_permissions))
-        session.execute("CREATE SCHEMA {name} AUTHORIZATION {name};".\
-                            format(name=unique_name))
+        session.execute("CREATE ROLE {name} {perms};".
+                        format(name=unique_name, perms=user_permissions))
+        session.execute("CREATE SCHEMA {name} AUTHORIZATION {name};".
+                        format(name=unique_name))
         session.commit()
         session.close()
 
@@ -799,13 +798,13 @@ class UserResource(Resource):
     def __init__(self):
         super().__init__()
 
-        self.add_route(API_ROOT + self.resource + "/<resource_id>/password", {
-                'POST': self.set_password,
-                'OPTIONS': self.options_response
-                })
+        self.add_route(API_ROOT + self.resource + "/<resource_id>/password",
+                       {'POST': self.set_password,
+                        'OPTIONS': self.options_response
+                        })
+
 
     def save_or_update(self, resource_id=None, depth=1):
-        session = self.connect()
         request_user, password = parse_auth_header()
 
         # TODO: make sure the user making this request is an admin of the
@@ -818,7 +817,7 @@ class UserResource(Resource):
 
 
     def handle_organization(self, user, organization, session):
-        user.organization_id = org_id = self.get_ref_id(organization)
+        user.organization_id = self.get_ref_id(organization)
 
 
     @auth_user
