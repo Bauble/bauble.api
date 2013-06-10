@@ -842,7 +842,7 @@ class UserResource(Resource):
 
         # TODO: make sure the user making this request is an admin of the
         # organization that this user is a part of
-        super().save_or_update(self, resource_id, depth)
+        return super().save_or_update(resource_id, depth)
 
 
     def apply_query(self, query, query_string):
