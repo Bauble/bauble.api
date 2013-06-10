@@ -39,8 +39,23 @@ class accept:
             accepted = parse_accept_header()
 
             def set_depth(mimetype):
-                if 'depth' in accepted[mimetype]:
-                    kwargs['depth'] = int(accepted[self.mimetype]['depth'])
+                if 'depth' not in accepted[mimetype]:
+                    return
+                nonlocal args
+                # insert the depth into the argument list
+                depth = int(accepted[self.mimetype]['depth'])
+                argspec = inspect.getfullargspec(func)[0]
+
+                if 'depth' in argspec:
+                    new_args = list(args)
+                    index = argspec.index('depth')
+                    if len(new_args) > index:
+                        new_args[index] = depth
+                    else:
+                        new_args.insert(argspec.index('depth'), depth)
+                    args = tuple(new_args)
+                else:
+                    kwargs['depth'] = depth
 
             if self.mimetype in accepted:
                 set_depth(self.mimetype)
