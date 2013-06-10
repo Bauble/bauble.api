@@ -269,7 +269,7 @@ class Resource:
 
 
     @accept(JSON_MIMETYPE)
-    def get(self, resource_id, session=None, depth=1):
+    def get(self, resource_id, depth=1):
         """
         Handle GET requests on this resource.
 
@@ -404,7 +404,6 @@ class Resource:
 
         session.close()
         response_json = {'results': json_objs}
-        response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
         return response_json
 
 
@@ -743,10 +742,6 @@ class OrganizationResource(Resource):
         self.handle_users(organization, users, session)
 
 
-    def __init__(self):
-        super().__init__()
-
-
     # TODO: only sysadmins should be able to create other sysadmins, all other
     # users should be created at /organization/<resource_id>/user
     def save_or_update(self, resource_id=None):
@@ -828,11 +823,5 @@ class UserResource(Resource):
     def apply_query(self, query, query_string):
         return query.filter(User.username.ilike(query_string))
 
-
     def handle_organization(self, user, organization, session):
         user.organization_id = self.get_ref_id(organization)
-
-
-    @auth_user
-    def set_password(self, user_id):
-        pass
