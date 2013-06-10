@@ -805,12 +805,36 @@ class UserResource(Resource):
     }
 
     def __init__(self):
-        super().__init__()
-
+        # add my route before initializing the rest of the resource
+        # so my route with match before the default routes
         self.add_route(API_ROOT + self.resource + "/<resource_id>/password",
                        {'POST': self.set_password,
                         'OPTIONS': self.options_response
                         })
+        super().__init__()
+
+
+    def set_password(self, resource_id):
+        """Change the password for the user making the request.
+        """
+        if JSON_MIMETYPE not in request.headers.get("Content-Type"):
+            bottle.abort(415, 'Expected application/json')
+
+        session = self.connect()
+        user = session.query(User).get(resource_id)
+
+        username, password = parse_auth_header()
+        if user.username != username:
+            bottle.abort(403, 'Cannot change another users password')
+
+        # we assume all requests are in utf-8
+        data = json.loads(request.body.read().decode('utf-8'))
+        if data.get('password', "") == "":
+            bottle.abort(400, "Invalid password")
+
+        user.set_password(data['password'])
+        session.commit()
+        session.close()
 
 
     def save_or_update(self, resource_id=None, depth=1):
