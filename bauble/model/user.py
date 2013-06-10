@@ -30,7 +30,7 @@ class User(db.SystemBase):
     # TODO: This should probably be made into a property so that
     # passwords are always hashed
     def set_password(self, password):
-        """Encrypt and set the password.  This method should
+        """Encrypt and set the password.
         """
         import bcrypt
         hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())

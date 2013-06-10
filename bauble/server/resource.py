@@ -48,8 +48,6 @@ class accept:
                 set_depth('*/*')
             else:
                 bottle.abort(406, 'Expected application/json')
-                # raise bottle.HTTPError('406 Not Accepted',
-                #                        'Expected application/json')
 
             return func(*args, **kwargs)
         return inner
@@ -163,7 +161,7 @@ class Resource:
             if request.method in method_map:
                 return method_map[request.method](*args, **kwargs)
             else:
-                abort(404)
+                bottle.abort(404)
         app.route(route, list(method_map.keys()), route_handler)
 
 

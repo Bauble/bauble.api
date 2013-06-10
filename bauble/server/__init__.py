@@ -28,6 +28,16 @@ test_dir = os.path.join(cwd, 'test')
 
 bottle.TEMPLATE_PATH.insert(0, cwd)
 
+def default_error_handler(error):
+    enable_cors()
+    if error.body:
+        return str(error.body)
+    elif error.exception:
+        return str(error.exception)
+
+@app.error(400)
+def error_handler_400(error):
+    return default_error_handler(error)
 
 @app.error(401)
 def error_handler_401(error):
@@ -36,14 +46,25 @@ def error_handler_401(error):
     user, password = bottle.parse_auth(header)
     return("Could not authorize user: ", user)
 
+@app.error(403)
+def error_hanndler_403(error):
+    return default_error_handler(error)
+
+@app.error(404)
+def error_handler_404(error):
+    return default_error_handler(error)
+
+@app.error(406)
+def error_handler_406(error):
+    return default_error_handler(error)
+
+@app.error(415)
+def error_handler_415(something):
+    return default_error_handler(error)
 
 @app.error(500)
-def error_handler(error):
-    enable_cors()
-    if error.body:
-        return str(error.body)
-    elif error.exception:
-        return str(error.exception)
+def error_handler_500(error):
+    return default_error_handler(error)
 
 
 @app.hook('before_request')
