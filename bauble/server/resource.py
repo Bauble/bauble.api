@@ -803,6 +803,7 @@ class UserResource(Resource):
     relations = {
         'organization': 'handle_organization'
     }
+    ignore = ['ref', 'str', 'password']
 
     def __init__(self):
         # add my route before initializing the rest of the resource
