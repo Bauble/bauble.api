@@ -28,7 +28,11 @@ test_dir = os.path.join(cwd, 'test')
 
 bottle.TEMPLATE_PATH.insert(0, cwd)
 
+
 def default_error_handler(error):
+    # TODO: only print the error when the debug flag is set
+    # make sure the error is printed in the log
+    print("error: " + str(error))
     enable_cors()
     if error.body:
         return str(error.body)
@@ -165,6 +169,9 @@ def start(host='localhost', port=8080, debug=False):
         session = db.connect()
         if not session or not session.execute("SELECT 1;").first():
             raise Exception("Could not connect to database: ", os.environ['DATABASE_URL'])
+    except Exception as exc:
+        print(exc)
+        print("** Check the user/pwd in DATABASE_URL?")
     finally:
         if session:
             session.close()

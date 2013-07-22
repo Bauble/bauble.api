@@ -175,9 +175,13 @@ class Resource:
         """
         def route_handler(*args, **kwargs):
             if request.method in method_map:
-                return method_map[request.method](*args, **kwargs)
+                try:
+                    return method_map[request.method](*args, **kwargs)
+                except Exception as e:
+                    print('** Error: ' + str(e))
+                    raise
             else:
-                bottle.abort(404)
+                bottle.abort(404)        
         app.route(route, list(method_map.keys()), route_handler)
 
 
