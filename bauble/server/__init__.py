@@ -47,8 +47,12 @@ def error_handler_400(error):
 def error_handler_401(error):
     enable_cors()
     header = request.headers.get('Authorization')
-    user, password = bottle.parse_auth(header)
-    return("Could not authorize user: ", user)
+    if header:
+        user, password = bottle.parse_auth(header)
+        return "Could not authorize user: {user}".format(user=user)
+    else:
+        return "No Authorization header."
+
 
 @app.error(403)
 def error_hanndler_403(error):
@@ -135,28 +139,36 @@ def get_search():
     #mimetype, depth = parse_accept_header()
     accepted = parse_accept_header()
 
-    if JSON_MIMETYPE not in accepted and '*/*' not in accepted and request.method != 'OPTIONS':
-        raise bottle.HTTPError('406 Not Accepted - Expected application/json')
+    # if JSON_MIMETYPE not in accepted and '*/*' not in accepted and request.method != 'OPTIONS':
+    #     raise bottle.HTTPError('406 Not Accepted - Expected application/json')
+    if JSON_MIMETYPE in accepted:
+        mimetype = JSON__MIMETYPE
+    elif '*/*' in accepted:
+        mimetype = '*/*'
+    else:
+        raise bottle.HTTPError('406 Not Accepted', 'Expected application/json')
 
     if(request.method == 'OPTIONS'):
-        return ''
+        #return ''
         return {}
 
     depth = 1
-    if 'depth' in accepted[JSON_MIMETYPE]:
-        depth = accepted[JSON_MIMETYPE]['depth']
+    if 'depth' in accepted[mimetype]:
+        depth = accepted[mimetype]['depth']
 
     query = request.query.q
     if not query:
-        raise bottle.HTTPError('400 Bad Request')
+        raise bottle.HTTPError('400 Bad Request', 'Query parameter is required')
 
     session = db.connect()
     results = search.search(query, session)
+
+    # if accepted type was */* or json then we always return json
     response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
     return {'results': [r.json(depth=depth) for r in results]}
 
 
-def start(host='localhost', port=8080, debug=False):
+def init():
     """
     Start the Bauble server.
     """
