@@ -16,4 +16,8 @@ else:
     host='api.bauble.io'
     port=80
 
-app = server.start(host, port)
+application = server.init()
+
+if __name__ == "__main__":
+    application.run(host=host, port=port, reloader=True, debug=debug)
+
