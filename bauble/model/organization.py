@@ -15,7 +15,8 @@ class Organization(db.SystemBase):
     name = Column(String)
     short_name = Column(String)
 
-    # pg_user and pg_schema should be the same
+    # pg_user and pg_schema should be the same, these are create automatically
+    # when a a new account is created
     pg_user = Column(String, unique=True)
     pg_schema = Column(String, unique=True)
 

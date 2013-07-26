@@ -181,7 +181,7 @@ class Resource:
                     print('** Error: ' + str(e))
                     raise
             else:
-                bottle.abort(404)        
+                bottle.abort(404)
         app.route(route, list(method_map.keys()), route_handler)
 
 
@@ -844,10 +844,25 @@ class UserResource(Resource):
 
     def save_or_update(self, resource_id=None, depth=1):
         request_user, password = parse_auth_header()
+        # TODO: if this is a new user then we need to make sure a password is sent
+        # in the request
 
         # TODO: make sure the user making this request is an admin of the
         # organization that this user is a part of
-        return super().save_or_update(resource_id, depth)
+        response = super().save_or_update(resource_id, depth)
+
+        # if this is a new user set the password
+        if request.method == 'POST' and response:
+            session = self.connect()
+            resource_id if resource_id else this.get_ref_id(response['ref'])
+            user = session.query(User).get(resource_id)
+            # we assume all requests are in utf-8
+            data = json.loads(request.body.read().decode('utf-8'))
+            user.set_password(data['password'])
+
+        return response
+
+
 
 
     def apply_query(self, query, query_string):
