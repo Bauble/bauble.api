@@ -115,6 +115,10 @@ class Resource:
     mapped_class = None
     resource = None
 
+    # allow requests to be fullfilled without requiring the request to be
+    # authorized with the user and password in the auth header
+    use_auth_header = True
+
     def __init__(self):
         if not self.resource:
             raise NotImplementedError("resource is required")
@@ -186,14 +190,26 @@ class Resource:
 
 
     def connect(self):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            bottle.abort(401, "No Authorization header.")
-        user, password = parse_auth_header(auth_header)
+        if self.use_auth_header:
+            auth_header = request.headers.get('Authorization')
+            if not auth_header:
+                bottle.abort(401, "No Authorization header.")
+            username, password = parse_auth_header(auth_header)
+
+            # make sure the user's organization has been approved and that the
+            # organization and the user hasn't been suspended
+            session = db.connect()
+            user = session.query(User).filter_by(username=username).one()
+            if user.organization and not user.organization.date_approved:
+                bottle.abort(480)
+            if user.organization and user.organization.date_suspended:
+                bottle.abort(481)
+            if user.date_suspended:
+                bottle.abort(482)
 
         # validate the password
         try:
-            session = db.connect(user, password)
+            session = db.connect(username, password)
         except error.AuthenticationError as exc:
             bottle.abort(401)
 
@@ -707,6 +723,7 @@ class OrganizationResource(Resource):
 
     resource = '/organization'
     mapped_class = Organization
+    ignore = ['date_created', 'date_approved', 'data_suspended']
     relations = {
         'owners': 'handle_owners',
         'users': 'handle_users'
@@ -750,6 +767,14 @@ class OrganizationResource(Resource):
     # TODO: only sysadmins should be able to create other sysadmins, all other
     # users should be created at /organization/<resource_id>/user
     def save_or_update(self, resource_id=None):
+        try:
+            request_user, password = parse_auth_header()
+        except Exception as exc:
+            # The save/update an organization was not made with by an authorized
+            # user which means it is a request for a new account.  This allows the
+            self.use_auth_header = False
+            return
+
         response = super().save_or_update(resource_id)
 
         # now that the organization has been created create its schema
@@ -854,7 +879,7 @@ class UserResource(Resource):
         # if this is a new user set the password
         if request.method == 'POST' and response:
             session = self.connect()
-            resource_id if resource_id else this.get_ref_id(response['ref'])
+            resource_id if resource_id else self.get_ref_id(response['ref'])
             user = session.query(User).get(resource_id)
             # we assume all requests are in utf-8
             data = json.loads(request.body.read().decode('utf-8'))

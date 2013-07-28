@@ -25,6 +25,10 @@ class User(db.SystemBase):
     is_org_owner = Column(Boolean)
     is_org_admin = Column(Boolean)
 
+    date_suspended = Column(types.Date)
+
+    # the user->organization relationship is created as a backref on the
+    # organization object
     organization_id = Column(Integer, ForeignKey('organization.id'))
 
     # TODO: This should probably be made into a property so that

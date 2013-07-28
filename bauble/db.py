@@ -166,11 +166,12 @@ An instance of :class:`sqlalchemy.schema.Metadata`
 
 
 system_metadata = sa.schema.MetaData()
-"""The metadata for system level tables
+"""The metadata for system level tables.
 """
 
 SystemBase = declarative_base(metaclass=MapperBase, metadata=system_metadata)
-"""A mapper for system level tables
+"""A mapper for system level tables.  Any tables using base will only be
+created once in the database and won't be attached to an organization's schema.
 """
 
 

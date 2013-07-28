@@ -30,7 +30,12 @@ class Organization(db.SystemBase):
                               "Organization.id==User.organization_id,"\
                               "or_(User.is_org_owner==True, User.is_org_admin)==True)")
     users = relationship('User', cascade="all, delete-orphan",
-                         backref=backref("organization"))
+                         backref=backref("organization", uselist=False))
+
+    date_approved = Column(types.Date)
+    date_created = Column(types.Date, default=func.now())
+    date_suspended = Column(types.Date)
+
 
     def get_ref(self):
         return "/organization/" + str(self.id) if self.id is not None else None;

@@ -168,6 +168,7 @@ def get_search():
     return {'results': [r.json(depth=depth) for r in results]}
 
 
+
 def init():
     """
     Start the Bauble server.
