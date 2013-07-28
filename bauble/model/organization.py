@@ -41,6 +41,26 @@ class Organization(db.SystemBase):
         return "/organization/" + str(self.id) if self.id is not None else None;
 
 
+    def create_schema(self):
+        # create the organization database schema
+        session = object_session(self)
+        unique_name = "bbl_" + str(uuid.uuid4()).replace("-", "_")
+        organization.pg_schema = unique_name
+
+        # user is created without a password since we will be authenticating
+        # bauble users from the "user" table althought all database
+        # actions will be done by the postgresql role that owns the schema
+        user_permissions = "NOSUPERUSER NOCREATEDB NOCREATEROLE NOLOGIN INHERIT"
+        session.execute("CREATE ROLE {name} {perms};".
+                        format(name=unique_name, perms=user_permissions))
+        session.execute("CREATE SCHEMA {name} AUTHORIZATION {name};".
+                        format(name=unique_name))
+        session.commit()
+        session.close()
+        return unique_name
+
+
+
     def json(self, depth=1):
         d = dict()
         if self.id:

@@ -779,28 +779,17 @@ class OrganizationResource(Resource):
 
         # now that the organization has been created create its schema
         # and setup the default tables
-        session = self.connect()
+        # session = self.connect()
 
-        # create the organization datAbase schema
+        # create the organization database schema
         organization = session.query(Organization).get(self.get_ref_id(response))
-        unique_name = "bbl_" + str(uuid.uuid4()).replace("-", "_")
-        organization.pg_schema = unique_name
+        schema_name = organization.create_schema()
 
-        # user is created without a password since we will be authenticating
-        # bauble users from the "user" table althought all database
-        # actions will be done by the postgresql role that owns the schema
-        user_permissions = "NOSUPERUSER NOCREATEDB NOCREATEROLE NOLOGIN INHERIT"
-        session.execute("CREATE ROLE {name} {perms};".
-                        format(name=unique_name, perms=user_permissions))
-        session.execute("CREATE SCHEMA {name} AUTHORIZATION {name};".
-                        format(name=unique_name))
-        session.commit()
-        session.close()
-
-        # now create all the default tables for the organizations schema
+        # create the default tables for the organization
+        session = self.connect()
         tables = db.Base.metadata.sorted_tables
         for table in tables:
-            table.schema = unique_name
+            table.schema = schema_name
         db.Base.metadata.create_all(session.get_bind(), tables=tables)
         session.close()
 
