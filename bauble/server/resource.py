@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 import inspect
 import json
-import uuid
 
 import bottle
 from bottle import request, response
@@ -47,14 +46,15 @@ class accept:
                 depth = int(accepted[self.mimetype]['depth'])
                 argspec = inspect.getfullargspec(func)[0]
 
-                if 'depth' in argspec:
-                    new_args = list(args)
+                # kwargs['depth'] = depth
+                if 'depth' in argspec and 'depth' not in kwargs:
                     index = argspec.index('depth')
-                    if len(new_args) > index:
+                    if args and len(args) > index and args[index] is not None:
+                        new_args = list(args)
                         new_args[index] = depth
+                        args = tuple(new_args)
                     else:
-                        new_args.insert(argspec.index('depth'), depth)
-                    args = tuple(new_args)
+                        kwargs['depth'] = depth
                 else:
                     kwargs['depth'] = depth
 
@@ -64,7 +64,6 @@ class accept:
                 set_depth('*/*')
             else:
                 bottle.abort(406, 'Expected application/json')
-
             return func(*args, **kwargs)
         return inner
 
@@ -190,6 +189,7 @@ class Resource:
 
 
     def connect(self):
+        username = password = None
         if self.use_auth_header:
             auth_header = request.headers.get('Authorization')
             if not auth_header:
@@ -729,6 +729,41 @@ class OrganizationResource(Resource):
         'users': 'handle_users'
     }
 
+    def __init__(self):
+        # add my route before initializing the rest of the resource
+        # so my route with match before the default routes
+        self.add_route(API_ROOT + self.resource + "/<resource_id>/approve",
+                       {'POST': self.approve,
+                        'OPTIONS': self.options_response
+                        })
+        self.add_route(API_ROOT + self.resource + "/<resource_id>/admin",
+                       {'GET': self.get_admin_data,
+                        'OPTIONS': self.options_response
+                        })
+        super().__init__()
+
+    def approve(self, resource_id):
+        username, password = parse_auth_header()
+        session = self.connect()
+        user = session.query(User).filter_by(username=username).one()
+        if not user.is_sysadmin:
+            bottle.abort(403, "Only a sysadmin can approve an organization.")
+
+        org = session.query(Organization).get(resource_id)
+        org.date_approved = datetime.date.today()
+
+
+    def get_admin_data(self, resource_id):
+        username, password = parse_auth_header()
+        session = self.connect()
+        user = session.query(User).filter_by(username=username).one()
+        if not user.is_sysadmin:
+            bottle.abort(403, "Only a sysadmin can view the organizations admin data.")
+
+        org = session.query(Organization).get(resource_id)
+        return org.admin_json()
+
+
     def handle_users(self, organization, users, session):
         for user in users:
             if 'ref' in user:
@@ -764,9 +799,8 @@ class OrganizationResource(Resource):
         self.handle_users(organization, users, session)
 
 
-    # TODO: only sysadmins should be able to create other sysadmins, all other
-    # users should be created at /organization/<resource_id>/user
     def save_or_update(self, resource_id=None):
+        # TODO: also make sure only sysadmins can create organizations otherwise
         try:
             request_user, password = parse_auth_header()
         except Exception as exc:
@@ -777,19 +811,15 @@ class OrganizationResource(Resource):
 
         response = super().save_or_update(resource_id)
 
-        # now that the organization has been created create its schema
-        # and setup the default tables
-        # session = self.connect()
-
-        # create the organization database schema
-        organization = session.query(Organization).get(self.get_ref_id(response))
-        schema_name = organization.create_schema()
-
         # create the default tables for the organization
         session = self.connect()
+        organization = session.query(Organization).get(self.get_ref_id(response))
+        if not organization.pg_schema:
+            bottle.abort(500, "Couldn't create the organization's schema")
+
         tables = db.Base.metadata.sorted_tables
         for table in tables:
-            table.schema = schema_name
+            table.schema = organization.pg_schema
         db.Base.metadata.create_all(session.get_bind(), tables=tables)
         session.close()
 
@@ -821,7 +851,8 @@ class UserResource(Resource):
     relations = {
         'organization': 'handle_organization'
     }
-    ignore = ['ref', 'str', 'password']
+    ignore = ['ref', 'str', 'password', 'is_sysadmin', 'is_org_owner',
+              'is_org_admin']
 
     def __init__(self):
         # add my route before initializing the rest of the resource
@@ -868,15 +899,13 @@ class UserResource(Resource):
         # if this is a new user set the password
         if request.method == 'POST' and response:
             session = self.connect()
-            resource_id if resource_id else self.get_ref_id(response['ref'])
+            resource_id = resource_id if resource_id else self.get_ref_id(response['ref'])
             user = session.query(User).get(resource_id)
             # we assume all requests are in utf-8
             data = json.loads(request.body.read().decode('utf-8'))
             user.set_password(data['password'])
 
         return response
-
-
 
 
     def apply_query(self, query, query_string):

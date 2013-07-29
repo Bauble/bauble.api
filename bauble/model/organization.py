@@ -41,26 +41,6 @@ class Organization(db.SystemBase):
         return "/organization/" + str(self.id) if self.id is not None else None;
 
 
-    def create_schema(self):
-        # create the organization database schema
-        session = object_session(self)
-        unique_name = "bbl_" + str(uuid.uuid4()).replace("-", "_")
-        organization.pg_schema = unique_name
-
-        # user is created without a password since we will be authenticating
-        # bauble users from the "user" table althought all database
-        # actions will be done by the postgresql role that owns the schema
-        user_permissions = "NOSUPERUSER NOCREATEDB NOCREATEROLE NOLOGIN INHERIT"
-        session.execute("CREATE ROLE {name} {perms};".
-                        format(name=unique_name, perms=user_permissions))
-        session.execute("CREATE SCHEMA {name} AUTHORIZATION {name};".
-                        format(name=unique_name))
-        session.commit()
-        session.close()
-        return unique_name
-
-
-
     def json(self, depth=1):
         d = dict()
         if self.id:
@@ -77,10 +57,30 @@ class Organization(db.SystemBase):
         return d
 
 
+    def admin_json(self, depth=1):
+        d = self.json()
+        d['date_suspended'] = self.date_suspended
+        d['date_created'] = self.data_created
+        d['date_approved'] = self.date_approved
+        d['pg_schema'] = self.pg_schema
+
+
+@event.listens_for(Organization, 'before_insert')
 def before_insert(mapper, connection, organization):
     # new organiations require at least one owner
     if(len(organization.owners) < 1):
         raise ValueError("An owner user is required for new organizations")
 
 
-event.listen(Organization, "before_insert", before_insert)
+@event.listens_for(Organization, 'after_insert')
+def after_insert(mapper, connection, organization):
+    org_table = object_mapper(organization).local_table
+    stmt = org_table.update().where(org_table.c.id==organization.id)\
+        .values(pg_schema=db.create_unique_schema())
+    connection.execute(stmt)
+
+
+@event.listens_for(Organization, 'after_delete')
+def after_delete(mapper, connection, organization):
+    # TODO: delete the schema associated with the organization
+    pass
