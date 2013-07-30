@@ -143,8 +143,13 @@ class MapperBase(DeclarativeMeta):
         super(MapperBase, cls).__init__(classname, bases, dict_)
 
 
+engine = None
+
 def get_session():
-    engine = sa.create_engine(db_url)
+    global engine
+    if not engine:
+        engine = sa.create_engine(db_url, pool_size=20)
+
     return orm.sessionmaker(bind=engine)()
 
 
