@@ -76,8 +76,9 @@ def before_insert(mapper, connection, organization):
 @event.listens_for(Organization, 'after_insert')
 def after_insert(mapper, connection, organization):
     org_table = object_mapper(organization).local_table
+    schema_name = db.create_unique_schema()
     stmt = org_table.update().where(org_table.c.id==organization.id)\
-        .values(pg_schema=db.create_unique_schema())
+        .values(pg_schema=schema_name)
     connection.execute(stmt)
 
 
