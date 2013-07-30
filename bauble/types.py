@@ -9,6 +9,7 @@ import sqlalchemy.types as types
 import sqlalchemy.exc as exc
 
 import bauble.error as error
+import bauble.config as config
 #import bauble.prefs as prefs
 #from bauble.utils.log import debug
 
@@ -162,3 +163,5 @@ class Date(types.TypeDecorator):
     def copy(self):
         return Date()
 
+    def __str__(self):
+        return self.strftime(config.default_date_format)

@@ -59,10 +59,11 @@ class Organization(db.SystemBase):
 
     def admin_json(self, depth=1):
         d = self.json()
-        d['date_suspended'] = self.date_suspended
-        d['date_created'] = self.data_created
-        d['date_approved'] = self.date_approved
+        d['date_suspended'] = str(self.date_suspended)
+        d['date_created'] = str(self.date_created)
+        d['date_approved'] = str(self.date_approved)
         d['pg_schema'] = self.pg_schema
+        return d
 
 
 @event.listens_for(Organization, 'before_insert')
