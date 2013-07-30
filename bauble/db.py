@@ -85,15 +85,16 @@ class HistoryExtension(orm.MapperExtension):
         Add a new entry to the history table.
         """
         user = None
-        try:
-            if engine.name in ('postgres', 'postgresql'):
-                import bauble.plugins.users as users
-                user = users.current_user()
-        except:
-            if 'USER' in os.environ and os.environ['USER']:
-                user = os.environ['USER']
-            elif 'USERNAME' in os.environ and os.environ['USERNAME']:
-                user = os.environ['USERNAME']
+        # TODO: we need to reenable logging the username for the history entry
+        # try:
+        #     # if engine.name in ('postgres', 'postgresql'):
+        #     #     import bauble.plugins.users as users
+        #     #     user = users.current_user()
+        # except:
+        #     if 'USER' in os.environ and os.environ['USER']:
+        #         user = os.environ['USER']
+        #     elif 'USERNAME' in os.environ and os.environ['USERNAME']:
+        #         user = os.environ['USERNAME']
 
         row = {}
         for c in mapper.local_table.c:
