@@ -39,9 +39,9 @@ def default_error_handler(error):
     elif error.exception:
         return str(error.exception)
 
-@app.error(400)
-def error_handler_400(error):
-    return default_error_handler(error)
+common_errors = [400, 403, 403, 406, 409, 415, 500]
+for code in common_errors:
+    app.error(code)(default_error_handler)
 
 @app.error(401)
 def error_handler_401(error):
@@ -53,26 +53,21 @@ def error_handler_401(error):
     else:
         return "No Authorization header."
 
+#
+# 480 and up are custom response codes
+#
+@app.error(480)
+def error_handler_480(error):
+    return default_error_handler("Account has not been approved")
 
-@app.error(403)
-def error_hanndler_403(error):
-    return default_error_handler(error)
+@app.error(481)
+def error_handler_481(error):
+    return default_error_handler("Organization account has been suspended")
 
-@app.error(404)
-def error_handler_404(error):
-    return default_error_handler(error)
+@app.error(482)
+def error_handler_482(error):
+    return default_error_handler("User account has been suspended")
 
-@app.error(406)
-def error_handler_406(error):
-    return default_error_handler(error)
-
-@app.error(415)
-def error_handler_415(something):
-    return default_error_handler(error)
-
-@app.error(500)
-def error_handler_500(error):
-    return default_error_handler(error)
 
 
 @app.hook('before_request')
