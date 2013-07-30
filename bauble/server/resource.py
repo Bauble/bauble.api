@@ -800,16 +800,19 @@ class OrganizationResource(Resource):
 
 
     def save_or_update(self, resource_id=None):
-        # TODO: also make sure only sysadmins can create organizations otherwise
+       # TODO: also make sure only sysadmins can create organizations otherwise
+        request_user = password = None
         try:
-            request_user, password = parse_auth_header()
+            (request_user, password) = parse_auth_header()
         except Exception as exc:
             # The save/update an organization was not made with by an authorized
             # user which means it is a request for a new account.  This allows the
             self.use_auth_header = False
-            return
 
-        response = super().save_or_update(resource_id)
+        try:
+            response = super().save_or_update(resource_id)
+        except sa.exc.IntegrityError:
+            bottle.abort(409)
 
         # create the default tables for the organization
         session = self.connect()
