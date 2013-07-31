@@ -22,51 +22,11 @@ from bauble.model.propagation import Propagation, PlantPropagation
 from bauble.model.location import Location
 from bauble.model.organization import Organization
 from bauble.model.user import User
-from bauble.server import app, API_ROOT, parse_accept_header, JSON_MIMETYPE, TEXT_MIMETYPE, enable_cors
+from bauble.server import app, API_ROOT, parse_accept_header, JSON_MIMETYPE, \
+    TEXT_MIMETYPE, parse_auth_header, accept
 import bauble.types as types
 import bauble.utils as utils
 
-
-class accept:
-    """Decorator class to handle parsing the HTTP Accept header.
-    """
-
-    def __init__(self, mimetype):
-        self.mimetype = mimetype
-
-
-    def __call__(self, func):
-        def inner(*args, **kwargs):
-            accepted = parse_accept_header()
-
-            def set_depth(mimetype):
-                if 'depth' not in accepted[mimetype]:
-                    return
-                nonlocal args
-                # insert the depth into the argument list
-                depth = int(accepted[self.mimetype]['depth'])
-                argspec = inspect.getfullargspec(func)[0]
-
-                # kwargs['depth'] = depth
-                if 'depth' in argspec and 'depth' not in kwargs:
-                    index = argspec.index('depth')
-                    if args and len(args) > index and args[index] is not None:
-                        new_args = list(args)
-                        new_args[index] = depth
-                        args = tuple(new_args)
-                    else:
-                        kwargs['depth'] = depth
-                else:
-                    kwargs['depth'] = depth
-
-            if self.mimetype in accepted:
-                set_depth(self.mimetype)
-            elif '*/*' in accepted:
-                set_depth('*/*')
-            else:
-                bottle.abort(406, 'Expected application/json')
-            return func(*args, **kwargs)
-        return inner
 
 # TODO: should probably rename this to connect_as_user and on success
 # add a session parameter to the wrapped method
@@ -94,16 +54,6 @@ class auth_user:
                 bottle.abort(403)
             return self.func(*args, **kwargs)
         return inner
-
-
-def parse_auth_header(header=None):
-    """Parse the and return a (user, password) tuple.  If not header is passed
-    then use the header from the current request.
-    """
-    if not header:
-        header = request.headers.get('Authorization')
-    return bottle.parse_auth(header)
-
 
 
 class Resource:

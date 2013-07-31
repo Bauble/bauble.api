@@ -1,3 +1,4 @@
+import inspect
 import os
 import os.path
 
@@ -7,7 +8,6 @@ from bottle import request, response
 import bauble
 import bauble.db as db
 import bauble.i18n
-import bauble.search as search
 
 app = bottle.Bottle()
 
@@ -89,6 +89,58 @@ def enable_cors():
     #       [(k, v) for k, v in response.headers.items()])
 
 
+def parse_auth_header(header=None):
+    """Parse the and return a (user, password) tuple.  If not header is passed
+    then use the header from the current request.
+    """
+    if not header:
+        header = request.headers.get('Authorization')
+    return bottle.parse_auth(header)
+
+
+
+class accept:
+    """Decorator class to handle parsing the HTTP Accept header.
+    """
+
+    def __init__(self, mimetype):
+        self.mimetype = mimetype
+
+
+    def __call__(self, func):
+        def inner(*args, **kwargs):
+            accepted = parse_accept_header()
+
+            def set_depth(mimetype):
+                if 'depth' not in accepted[mimetype]:
+                    return
+                nonlocal args
+                # insert the depth into the argument list
+                depth = int(accepted[self.mimetype]['depth'])
+                argspec = inspect.getfullargspec(func)[0]
+
+                # kwargs['depth'] = depth
+                if 'depth' in argspec and 'depth' not in kwargs:
+                    index = argspec.index('depth')
+                    if args and len(args) > index and args[index] is not None:
+                        new_args = list(args)
+                        new_args[index] = depth
+                        args = tuple(new_args)
+                    else:
+                        kwargs['depth'] = depth
+                else:
+                    kwargs['depth'] = depth
+
+            if self.mimetype in accepted:
+                set_depth(self.mimetype)
+            elif '*/*' in accepted:
+                set_depth('*/*')
+            else:
+                bottle.abort(406, 'Expected application/json')
+            return func(*args, **kwargs)
+        return inner
+
+
 @app.get('/test')
 def test_index():
     return bottle.static_file('index.html', root=test_dir)
@@ -128,50 +180,13 @@ def parse_accept_header(header=None):
     return result
 
 
-#
-# Handle search requests
-#
-@app.route(API_ROOT + "/search", method=['OPTIONS', 'GET'])
-def get_search():
-    #mimetype, depth = parse_accept_header()
-    accepted = parse_accept_header()
-
-    # if JSON_MIMETYPE not in accepted and '*/*' not in accepted and request.method != 'OPTIONS':
-    #     raise bottle.HTTPError('406 Not Accepted - Expected application/json')
-    if JSON_MIMETYPE in accepted:
-        mimetype = JSON__MIMETYPE
-    elif '*/*' in accepted:
-        mimetype = '*/*'
-    else:
-        raise bottle.HTTPError('406 Not Accepted', 'Expected application/json')
-
-    if(request.method == 'OPTIONS'):
-        #return ''
-        return {}
-
-    depth = 1
-    if 'depth' in accepted[mimetype]:
-        depth = accepted[mimetype]['depth']
-
-    query = request.query.q
-    if not query:
-        raise bottle.HTTPError('400 Bad Request', 'Query parameter is required')
-
-    session = db.connect()
-    results = search.search(query, session)
-
-    # if accepted type was */* or json then we always return json
-    response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
-    return {'results': [r.json(depth=depth) for r in results]}
-
-
-
 def init():
     """
     Start the Bauble server.
     """
     import bauble.server.admin
     import bauble.server.resource as resource
+    import bauble.server.search
 
     # first make sure we can connect to the database
     session = None
