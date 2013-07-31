@@ -67,7 +67,8 @@ def connect(user=None, password=None):
             raise error.AuthenticationError()
         if user.organization and user.organization.pg_schema:
             schema = user.organization.pg_schema
-            session.execute("SET search_path TO {schema};".format(schema=schema));
+            session.execute("SET search_path TO {schema},public;".\
+                                format(schema=schema));
 
     return session
 
