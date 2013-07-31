@@ -1,5 +1,6 @@
-from collections import OrderedDict
 
+from collections import OrderedDict
+import datetime
 import inspect
 import json
 
@@ -751,6 +752,10 @@ class OrganizationResource(Resource):
 
         org = session.query(Organization).get(resource_id)
         org.date_approved = datetime.date.today()
+        session.commit()
+        response = org.json()
+        session.close()
+        return response
 
 
     def get_admin_data(self, resource_id):
@@ -913,6 +918,7 @@ class UserResource(Resource):
 
     def apply_query(self, query, query_string):
         return query.filter(User.username.ilike(query_string))
+
 
     def handle_organization(self, user, organization, session):
         user.organization_id = self.get_ref_id(organization)
