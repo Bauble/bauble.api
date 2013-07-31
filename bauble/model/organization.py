@@ -59,9 +59,9 @@ class Organization(db.SystemBase):
 
     def admin_json(self, depth=1):
         d = self.json()
-        d['date_suspended'] = str(self.date_suspended)
-        d['date_created'] = str(self.date_created)
-        d['date_approved'] = str(self.date_approved)
+        d['date_suspended'] = str(self.date_suspended) if self.date_suspended else None
+        d['date_created'] = str(self.date_created) if self.date_created else None
+        d['date_approved'] = str(self.date_approved) if self.date_approved else None
         d['pg_schema'] = self.pg_schema
         return d
 
