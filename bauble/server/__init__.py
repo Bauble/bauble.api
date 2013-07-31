@@ -34,7 +34,9 @@ def default_error_handler(error):
     # make sure the error is printed in the log
     print("error: " + str(error))
     enable_cors()
-    if error.body:
+    if isinstance(error, str):
+        return error
+    elif error.body:
         return str(error.body)
     elif error.exception:
         return str(error.exception)
