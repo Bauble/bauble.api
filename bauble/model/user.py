@@ -25,6 +25,7 @@ class User(db.SystemBase):
     is_org_owner = Column(Boolean)
     is_org_admin = Column(Boolean)
 
+    last_accessed = Column(types.DateTime)
     date_suspended = Column(types.Date)
 
     # the user->organization relationship is created as a backref on the
