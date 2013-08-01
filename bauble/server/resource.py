@@ -480,6 +480,13 @@ class Resource:
                 obj.notes.append(obj_note)
 
 
+    def from_json(self, json):
+        # TODO: build the objects from json data....factor out the code from
+        # save_or_update so that other resources can reuse the same code if
+        # saving a relation resource
+        pass
+
+
 
 class FamilyResource(Resource):
 
@@ -721,6 +728,8 @@ class OrganizationResource(Resource):
 
     def handle_users(self, organization, users, session):
         for user in users:
+            password = user.pop("password", None)
+
             if 'ref' in user:
                 # if this is an existing user it can't be saved if it's not
                 # part of this organization
@@ -739,11 +748,15 @@ class OrganizationResource(Resource):
                     if not key in relations:
                         setattr(existing, key, value)
                 session.add(existing)
+                if password:
+                    existing.set_password(password)
             else:
                 new_user = User(**user)
                 organization.users.append(new_user)
                 if user.get('is_org_owner', False):
                     organization.owners.append(new_user)
+                if password:
+                    new_user.set_password(password)
 
 
     def handle_owners(self, organization, users, session):
@@ -751,6 +764,7 @@ class OrganizationResource(Resource):
         # is_org_owner flag set
         for user in users:
             user['is_org_owner'] = True
+            user['is_org_admin'] = True
         self.handle_users(organization, users, session)
 
 

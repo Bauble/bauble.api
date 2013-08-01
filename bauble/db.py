@@ -50,6 +50,7 @@ def authenticate(user, password, session):
         user = session.query(User).filter_by(username=user).first()
 
     encode = lambda s: s.encode("utf-8") if s else "".encode("utf-8")
+    if user and (user.password and password) and bcrypt.hashpw(encode(password), encode(user.password)) == encode(user.password):
         try:
             tmp_session = connect()
             tmp_user = tmp_session.query(User).get(user.id)
@@ -58,7 +59,6 @@ def authenticate(user, password, session):
         finally:
             tmp_session.close()
 
-    if user and (user.password and password) and (user.password == password or bcrypt.hashpw(encode(password), encode(user.password)) == encode(user.password)):
         return user
     return False
 
