@@ -8,6 +8,7 @@ import bottle
 from bottle import request, response
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
+import sqlalchemy.exc as sa_exc
 
 import bauble.db as db
 import bauble.error as error
@@ -414,8 +415,6 @@ class Resource:
 
         response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
 
-        session = self.connect()
-
         # we assume all requests are in utf-8
         data = json.loads(request.body.read().decode('utf-8'))
 
@@ -428,31 +427,36 @@ class Resource:
             if name in data:
                 relation_data[name] = data.pop(name)
 
-        # if this is a PUT to a specific ID then get the existing family
-        # else we'll create a new one
-        if request.method == 'PUT' and resource_id is not None:
-            instance = session.query(self.mapped_class).get(resource_id)
-            for key in data.keys():
-                setattr(instance, key, data[key])
-            response.status = 200
-        else:
-            instance = self.mapped_class(**data)
-            response.status = 201
+        try:
+            session = self.connect()
+            # if this is a PUT to a specific ID then get the existing family
+            # else we'll create a new one
+            if request.method == 'PUT' and resource_id is not None:
+                instance = session.query(self.mapped_class).get(resource_id)
+                for key in data.keys():
+                    setattr(instance, key, data[key])
+                response.status = 200
+            else:
+                instance = self.mapped_class(**data)
+                response.status = 201
 
-        # TODO: we should check for any fields that aren't defined in
-        # the class or in self.relations and show an error instead
-        # waiting for SQLAlchemy to catch it
+            # TODO: we should check for any fields that aren't defined in
+            # the class or in self.relations and show an error instead
+            # waiting for SQLAlchemy to catch it
 
-        # this should only contain relations that are already in self.relations
-        for name in relation_data:
-            getattr(self, self.relations[name])(instance, relation_data[name],
-                                                session)
+            # this should only contain relations that are already in self.relations
+            for name in relation_data:
+                getattr(self, self.relations[name])(instance, relation_data[name],
+                                                    session)
 
-        session.add(instance)
-        session.commit()
-        response_json = instance.json(depth=depth)
-        session.close()
-        return response_json
+            session.add(instance)
+            session.commit()
+            return instance.json(depth=depth)
+        except sa_exc.IntegrityError as exc:
+            bottle.abort(409, str(exc))
+        finally:
+            if session:
+                session.close()
 
 
     @staticmethod
