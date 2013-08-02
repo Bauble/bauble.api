@@ -149,14 +149,18 @@ class Resource:
 
             # make sure the user's organization has been approved and that the
             # organization and the user hasn't been suspended
-            session = db.connect()
-            user = session.query(User).filter_by(username=username).one()
-            if user.organization and not user.organization.date_approved:
-                bottle.abort(480)
-            if user.organization and user.organization.date_suspended:
-                bottle.abort(481)
-            if user.date_suspended:
-                bottle.abort(482)
+            try:
+                session = db.connect()
+                user = session.query(User).filter_by(username=username).one()
+                if user.organization and not user.organization.date_approved:
+                    bottle.abort(480)
+                if user.organization and user.organization.date_suspended:
+                    bottle.abort(481)
+                if user.date_suspended:
+                    bottle.abort(482)
+            finally:
+                if session:
+                    session.close()
 
         # validate the password
         try:

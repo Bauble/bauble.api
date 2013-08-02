@@ -71,6 +71,7 @@ def connect(user=None, password=None):
     if user:
         user = authenticate(user, password, session)
         if not user:
+            session.close()
             raise error.AuthenticationError()
         if user.organization and user.organization.pg_schema:
             schema = user.organization.pg_schema
