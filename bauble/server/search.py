@@ -22,7 +22,6 @@ def get_search(depth=1):
     if not auth_header:
         bottle.abort(401, "No Authorization header.")
     username, password = parse_auth_header(auth_header)
-    response = { 'results': []}
     try:
         session = db.connect(username, password)
         query = request.query.q
@@ -33,8 +32,7 @@ def get_search(depth=1):
 
         # if accepted type was */* or json then we always return json
         response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
-        response = {'results': [r.json(depth=depth) for r in results]}
-        return response;
+        return {'results': [r.json(depth=depth) for r in results]}
     except error.AuthenticationError as exc:
         bottle.abort(401)
     finally:
