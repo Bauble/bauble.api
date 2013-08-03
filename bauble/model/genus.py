@@ -135,7 +135,7 @@ class Genus(db.Base):
     def json(self, depth=1):
         """Return a JSON respresentation of this Genus.
         """
-        d = dict(ref="/genus/" + str(self.id))
+        d = dict(ref="/genus/{}".format(self.id))
         if depth > 0:
             d['genus'] = self.genus
             d['str'] = str(self)
