@@ -75,8 +75,13 @@ def connect(user=None, password=None):
             raise error.AuthenticationError()
         if user.organization and user.organization.pg_schema:
             schema = user.organization.pg_schema
-            session.execute("SET search_path TO {schema},public;".\
-                                format(schema=schema));
+            def set_schema(session, transaction=None, connection=None):
+                session.execute("SET search_path TO {schema},public;".\
+                                    format(schema=schema))
+            # set the schema now and after any new transactions have begun since
+            # they will be started in a new isolated state
+            sa.event.listen(session, "after_begin", set_schema)
+            set_schema(session)
 
     return session
 
