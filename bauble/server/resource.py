@@ -29,34 +29,6 @@ import bauble.types as types
 import bauble.utils as utils
 
 
-# TODO: should probably rename this to connect_as_user and on success
-# add a session parameter to the wrapped method
-
-class auth_user:
-    """Decorator class to authorize the current request against the user table.
-    """
-
-    def __init__(self, func):
-        self.func = func
-
-    def __call__(self, *args, **kwargs):
-        def inner(*args, **kwargs):
-            auth_header = request.headers.get('Authorization')
-            if not auth_header:
-                bottle.abort(401, "No Authorization header.")
-            username, password = parse_auth_header()
-            session = db.get_session()
-            user = db.authenticate(username, password)
-            session.close()
-            if not user:
-                bottle.abort(401)
-            if user.id != resource_id and not user.is_sysadmin:
-                # don't allow change other users data
-                bottle.abort(403)
-            return self.func(*args, **kwargs)
-        return inner
-
-
 class Resource:
     """
     """
