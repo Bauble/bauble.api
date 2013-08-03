@@ -153,11 +153,14 @@ class Resource:
         if request.method == "OPTIONS":
             return {}
 
-        session = self.connect()
+        try:
+            session = self.connect()
+            count = session.query(self.mapped_class).count()
+            return str(count)
+        finally:
+            if session:
+                session.close()
 
-        count = session.query(self.mapped_class).count()
-        session.close()
-        return str(count)
 
 
     @accept(TEXT_MIMETYPE)
@@ -165,23 +168,25 @@ class Resource:
         if request.method == "OPTIONS":
             return {}
 
-        session = self.connect()
-
         # get the mapper for the last item in the list of relations
         mapper = orm.class_mapper(self.mapped_class)
         for name in relation.split('/'):
             mapper = getattr(mapper.relationships, name).mapper
 
-        # query the mapped class and the end point relation using the
-        # list of the passed relations to create the join between the
-        # two
-        query = session.query(self.mapped_class, mapper.class_).\
-            filter(getattr(self.mapped_class, 'id') == resource_id).\
-            join(*relation.split('/'))
+        try:
+            session = self.connect()
 
-        count = query.count()
-        session.close()
-        return str(count)
+            # query the mapped class and the end point relation using the
+            # list of the passed relations to create the join between the
+            # two
+            query = session.query(self.mapped_class, mapper.class_).\
+                filter(getattr(self.mapped_class, 'id') == resource_id).\
+                join(*relation.split('/'))
+
+            count = query.count()
+            return str(count)
+        finally:
+            session.close()
 
 
     @accept(JSON_MIMETYPE)
@@ -196,25 +201,29 @@ class Resource:
         if request.method == "OPTIONS":
             return {}
 
-        session = self.connect()
+
 
         # get the mapper for the last item in the list of relations
         mapper = orm.class_mapper(self.mapped_class)
         for name in relation.split('/'):
             mapper = getattr(mapper.relationships, name).mapper
 
-        # query the mapped class and the end point relation using the
-        # list of the passed relations to create the join between the
-        # two
-        query = session.query(self.mapped_class, mapper.class_).\
-            filter(getattr(self.mapped_class, 'id') == resource_id).\
-            join(*relation.split('/'))
 
-        response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
-        results = [obj.json(depth=depth) for parent, obj in query]
-        response_json = {'results': results}
-        session.close()
-        return response_json
+        try:
+            session = self.connect()
+            # query the mapped class and the end point relation using the
+            # list of the passed relations to create the join between the
+            # two
+            query = session.query(self.mapped_class, mapper.class_).\
+                filter(getattr(self.mapped_class, 'id') == resource_id).\
+                join(*relation.split('/'))
+
+            response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
+            results = [obj.json(depth=depth) for parent, obj in query]
+            return {'results': results}
+        finally:
+            if(session):
+                session.close()
 
 
     @accept(JSON_MIMETYPE)
@@ -229,13 +238,14 @@ class Resource:
         if request.method == "OPTIONS":
             return {}
 
-        session = self.connect()
-        obj = session.query(self.mapped_class).get(resource_id)
+        try:
+            session = self.connect()
+            obj = session.query(self.mapped_class).get(resource_id)
 
-        response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
-        response_json = obj.json(depth=depth)
-        session.close()
-        return response_json
+            response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
+            return obj.json(depth=depth)
+        finally:
+            session.close()
 
 
     def get_schema(self, relation=None):
@@ -301,7 +311,6 @@ class Resource:
         else:
             relations = []
 
-        session = self.connect()
 
         # TODO: should split on either / or . to allow dot or slash delimeters
         # between references
@@ -313,59 +322,67 @@ class Resource:
                 relation_mapper = getattr(relation_mapper.relationships, kid).mapper
             return relation_mapper.class_
 
-        json_objs = []
-        if relations:
-            # use an OrderedDict so we can maintain the default sort
-            # order on the resource and
-            unique_objs = OrderedDict()
 
-            # get the json objects for each of the relations and add
-            # them to the main resource json at
-            # resource[relation_name], e.g. resource['genera.taxa']
-            for relation in relations:
-                query = session.query(self.mapped_class, get_relation_class(relation)).\
-                    join(*relation.split('.'))
+        try:
+            session = self.connect()
+            json_objs = []
+            if relations:
+                # use an OrderedDict so we can maintain the default sort
+                # order on the resource and
+                unique_objs = OrderedDict()
+
+                # get the json objects for each of the relations and add
+                # them to the main resource json at
+                # resource[relation_name], e.g. resource['genera.taxa']
+                for relation in relations:
+                    query = session.\
+                        query(self.mapped_class, get_relation_class(relation)).\
+                        join(*relation.split('.'))
+                    if(q):
+                        query = self.apply_query(query, q)
+
+                    for result in query:
+                        resource = result[0]
+
+                        # add the resource_json to unique_objs if it
+                        # doesn't already exist
+                        if resource.id not in unique_objs:
+                            resource_json = resource.json(depth)
+                            resource_json[relation] = []
+                            unique_objs[resource.id] = resource_json
+                        else:
+                            resource_json = unique_objs[resource.id]
+
+                        resource_json[relation].append(result[1].json(depth=depth))
+
+                # create a list of json objs that should maintain the
+                json_objs = [obj for obj in unique_objs.values()]
+
+            else:
+                query = session.query(self.mapped_class)
                 if(q):
                     query = self.apply_query(query, q)
+                json_objs = [obj.json(depth) for obj in query]
 
-                for result in query:
-                    resource = result[0]
-
-                    # add the resource_json to unique_objs if it
-                    # doesn't already exist
-                    if resource.id not in unique_objs:
-                        resource_json = resource.json(depth)
-                        resource_json[relation] = []
-                        unique_objs[resource.id] = resource_json
-                    else:
-                        resource_json = unique_objs[resource.id]
-
-                    resource_json[relation].append(result[1].json(depth=depth))
-
-            # create a list of json objs that should maintain the
-            json_objs = [obj for obj in unique_objs.values()]
-
-        else:
-            query = session.query(self.mapped_class)
-            if(q):
-                query = self.apply_query(query, q)
-            json_objs = [obj.json(depth) for obj in query]
-
-        session.close()
-        response_json = {'results': json_objs}
-        return response_json
+            session.close()
+            return {'results': json_objs}
+        finally:
+            if session:
+                session.close()
 
 
     def delete(self, resource_id):
         """
         Handle DELETE requests on this resource.
         """
-        session = self.connect()
-
-        obj = session.query(self.mapped_class).get(resource_id)
-        session.delete(obj)
-        session.commit()
-        session.close()
+        try:
+            session = self.connect()
+            obj = session.query(self.mapped_class).get(resource_id)
+            session.delete(obj)
+            session.commit()
+        finally:
+            if session:
+                session.close()
 
 
     @accept(JSON_MIMETYPE)
@@ -399,8 +416,8 @@ class Resource:
             if name in data:
                 relation_data[name] = data.pop(name)
 
+        session = self.connect()
         try:
-            session = self.connect()
             # if this is a PUT to a specific ID then get the existing family
             # else we'll create a new one
             if request.method == 'PUT' and resource_id is not None:
