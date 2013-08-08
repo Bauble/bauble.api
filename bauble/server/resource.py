@@ -517,7 +517,7 @@ class FamilyResource(Resource):
 
 
     def apply_query(self, query, query_string):
-        return query.filter(Family.family.like(query_string))
+        return query.filter(Family.family.ilike(query_string))
 
 
 class GenusResource(Resource):
@@ -535,7 +535,7 @@ class GenusResource(Resource):
         self.note_handler(genus, notes, GenusNote, session)
 
     def apply_query(self, query, query_string):
-        return query.filter(Genus.genus.like(query_string))
+        return query.filter(Genus.genus.ilike(query_string))
 
 
 class TaxonResource(Resource):
@@ -626,7 +626,7 @@ class AccessionResource(Resource):
 
 
     def apply_query(self, query, query_string):
-        return query.filter(Accession.code.like(query_string))
+        return query.filter(Accession.code.ilike(query_string))
 
     def handle_notes(self, accession, notes, session):
         self.note_handler(accession, notes, AccessionNote, session)
@@ -655,7 +655,7 @@ class PlantResource(Resource):
     def apply_query(self, query, query_string):
         # TODO: we also need to support searching will full accession.plant
         # strings like the PlantSearch mapper strategy from bauble 1
-        return query.filter(Plant.code.like(query_string))
+        return query.filter(Plant.code.ilike(query_string))
 
     def handle_notes(self, plant, notes, session):
         self.note_handler(plant, notes, PlantNote, session)
@@ -666,7 +666,7 @@ class LocationResource(Resource):
     mapped_class = Location
 
     def apply_query(self, query, query_string):
-        return query.filter(Location.code.like(query_string))
+        return query.filter(Location.code.ilike(query_string))
 
 
 class SourceDetailResource(Resource):
