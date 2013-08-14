@@ -573,9 +573,12 @@ class TaxonResource(Resource):
     def handle_vernacular_names(self, taxon, vernacular_names, session):
         for vern in vernacular_names:
             if 'ref' not in vern:
-                if 'default' in vern:
-                    vern['default'] = True if vern['default'].lower() == 'true' else False
+                default = vern.pop('default', None)
+                if isinstance(default, str):
+                    default = True if vern['default'].lower() == 'true' else False
                 new_vern = VernacularName(taxon=taxon, **vern)
+                if default:
+                    taxon.default_vernacular_name = new_vern
                 session.add(new_vern)
 
 
