@@ -605,13 +605,22 @@ class VernacularNameResource(Resource):
 class AccessionResource(Resource):
     resource = "/accession"
     mapped_class = Accession
+    ignore = ['ref', 'str', 'taxon_str']
 
     relations = {
         'taxon': 'handle_taxon',
         'source': 'handle_source',
-        'notes': 'handle_notes'
+        'notes': 'handle_notes',
+        'verifications': 'handle_verifications',
+        'vouchers': 'handle_vouchers',
     }
 
+
+    def handle_verifications(self, accession, verifications, session):
+        pass
+
+    def handle_vouchers(self, accession, vouchers, session):
+        pass
 
     def handle_source(self, accession, source, session):
         accession.source = Source()
@@ -693,7 +702,7 @@ class OrganizationResource(Resource):
 
     resource = '/organization'
     mapped_class = Organization
-    ignore = ['date_created', 'date_approved', 'data_suspended']
+    ignore = ['ref', 'str', 'date_created', 'date_approved', 'data_suspended']
     relations = {
         'owners': 'handle_owners',
         'users': 'handle_users'
