@@ -64,7 +64,7 @@ def authenticate(user, password, session):
 
 
 def connect(user=None, password=None):
-    """The role and password are postgresql roles not bauble users"""
+    """The user and password and for bauble users not postgresql roles"""
 
     session = get_session()
     # if no user is passed then don't authenticate against the user table
