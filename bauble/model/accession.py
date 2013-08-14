@@ -7,6 +7,7 @@ from sqlalchemy.orm.session import object_session
 import bauble.db as db
 import bauble.types as types
 from bauble.model.taxon import Taxon
+from bauble.model.genus import Genus
 import bauble.search as search
 
 prov_type_values = {'Wild': 'Wild',
@@ -416,8 +417,11 @@ class Accession(db.Base):
             self.__warned_about_id_qual = True
 
         # copy the taxon so we don't affect the original
-        session = db.Session()
-        taxon = session.merge(self.taxon)#, dont_load=True)
+        taxon = Taxon()
+        taxon.genus = self.taxon.genus#session.query(Genus).get(self.taxon.genus_id);
+        for col in object_mapper(self.taxon).local_table.c:
+            setattr(taxon, col.name, getattr(self.taxon, col.name))
+        del taxon.id
 
         # generate the string
         if self.id_qual in ('aff.', 'cf.'):
@@ -434,9 +438,9 @@ class Accession(db.Base):
         else:
             sp_str = Taxon.str(taxon, authors, markup)
 
-        # clean up and return the string
+        # kill our temporary taxon
         del taxon
-        session.close()
+
         self.__cached_taxon_str[(markup, authors)] = sp_str
         return sp_str
 
