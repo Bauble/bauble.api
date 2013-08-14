@@ -115,8 +115,13 @@ class accept:
                 if 'depth' not in accepted[mimetype]:
                     return
                 nonlocal args
+
                 # insert the depth into the argument list
-                depth = int(accepted[self.mimetype]['depth'])
+                try:
+                    depth = int(accepted[mimetype]['depth'])
+                except Exception as exc:
+                    bottle.abort(400,"Invalid depth value")
+
                 argspec = inspect.getfullargspec(func)[0]
 
                 # kwargs['depth'] = depth
