@@ -390,6 +390,7 @@ class Taxon(db.Base):
 
             d['synonyms'] = [syn.json(depth=depth - 1) for syn in self.synonyms]
             d['notes'] = [note.json(depth=depth - 1) for note in self.notes]
+            d['vernacular_names'] = [vn.json(depth=depth-1) for vn in self.vernacular_names]
 
         return d
 
@@ -516,7 +517,7 @@ class VernacularName(db.Base):
 
 
     def json(self, depth=1):
-        """Return a dictionary representation of the Habit.
+        """Return a dictionary representation of a VernacularName.
 
         Kwargs:
            depth (int): The level of detail to return in the dict
@@ -524,17 +525,16 @@ class VernacularName(db.Base):
            dict.
         """
 
-        # TODO: we probably don't need the self.id part here since there's should only be one default vernacular
         # name for the taxon
-        d = dict(ref="/taxon/" + str(self.taxon_id) + "/vernacular_name/" + str(self.id))
+        d = dict(ref="/vernacularname/" + str(self.id))
         if(depth > 0):
             d['name'] = self.name
             d['language'] = self.language
             d['taxon'] = self.taxon.json(depth=depth - 1)
             d['str'] = str(self)
-            d['default'] = False
-            if(self.taxon.default_vernacular_name == self):
-                d['default'] = True
+            d['default'] = True if self.taxon.default_vernacular_name == self else False
+            # if(self.taxon.default_vernacular_name == self):
+            #     d['default'] = True
         return d
 
 
@@ -576,26 +576,6 @@ class DefaultVernacularName(db.Base):
     def __str__(self):
         return str(self.vernacular_name)
 
-
-    def json(self, depth=1):
-        """Return a dictionary representation of the Habit.
-
-        Kwargs:
-           depth (int): The level of detail to return in the dict
-        Returns:
-           dict.
-        """
-
-        # TODO: we probably don't need the self.id part here since there's should only be one default vernacular
-        # name for the taxon
-        d = dict(ref="/taxon/" + str(self.taxon_id) + "/default_vernacular_name/" + str(self.id))
-        if(depth > 0):
-            d['taxon'] = self.taxon(depth=depth - 1)
-            d['str'] = str(self)
-            d['vernacular_name'] = None
-            if(self.vernacular_name):
-                self.vernacular_name.json(depth=depth - 1)
-        return d
 
 
 class TaxonDistribution(db.Base):

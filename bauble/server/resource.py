@@ -15,7 +15,7 @@ import bauble.error as error
 import bauble.i18n
 from bauble.model.family import Family, FamilySynonym, FamilyNote
 from bauble.model.genus import Genus, GenusNote
-from bauble.model.taxon import Taxon, TaxonSynonym, TaxonNote
+from bauble.model.taxon import Taxon, TaxonSynonym, TaxonNote, VernacularName
 from bauble.model.accession import Accession, AccessionNote
 from bauble.model.source import Source, SourceDetail, Collection
 from bauble.model.plant import Plant, PlantNote
@@ -571,7 +571,13 @@ class TaxonResource(Resource):
 
 
     def handle_vernacular_names(self, taxon, vernacular_names, session):
-        pass
+        for vern in vernacular_names:
+            if 'ref' not in vern:
+                if 'default' in vern:
+                    vern['default'] = True if vern['default'].lower() == 'true' else False
+                new_vern = VernacularName(taxon=taxon, **vern)
+                session.add(new_vern)
+
 
     def handle_notes(self, taxon, notes, session):
         self.note_handler(taxon, notes, TaxonNote, session)
@@ -584,6 +590,12 @@ class TaxonResource(Resource):
                       'infrasp3', 'infrasp4']
         ors = sa.or_(*[ilike(prop)(query) for prop in properties])
         return query.filter(ors)
+
+
+
+class VernacularNameResource(Resource):
+    resource = "/vernacularname"
+    mapped_class = VernacularName
 
 
 
