@@ -199,7 +199,7 @@ class Collection(db.Base):
         if depth > 0:
             d['collector'] = self.collector
             d['collectors_code'] = self.collectors_code
-            d['date'] = self.date
+            d['date'] = str(self.date)
             d['locale'] = self.locale
             d['latitude'] = self.latitude
             d['longitude'] = self.longitude

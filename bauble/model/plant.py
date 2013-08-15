@@ -121,7 +121,7 @@ class PlantNote(db.Base):
         """
         d = dict(ref="/plant/" + str(self.plant_id) + "/note/" + str(self.id))
         if(depth > 0):
-            d['date'] = self.date
+            d['date'] = str(self.date)
             d['user'] = self.user
             d['category'] = self.category
             d['note'] = self.note
@@ -301,7 +301,7 @@ class PlantStatus(db.Base):
         """
         d = dict(ref="/plant/" + str(self.plant_id) + "/status/" + str(self.id))
         if depth > 0:
-            d['date'] = self.data
+            d['date'] = str(self.date)
             d['condition'] = self.condition
             d['checked_by'] = self.condition
             d['flowering_status'] = self.flowering_status

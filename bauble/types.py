@@ -1,7 +1,7 @@
 #
 # types.py
 #
-import datetime
+from datetime import datetime, date
 import re
 
 import dateutil.parser as date_parser
@@ -109,20 +109,13 @@ class DateTime(types.TypeDecorator):
     _rx_tz = re.compile('[+-]')
 
     def process_bind_param(self, value, dialect):
-        if not isinstance(value, str):
-            return value
-        try:
-            DateTime._dayfirst
-            DateTime._yearfirst
-        except AttributeError:
-            # TODO: need global settings
-            # import bauble.prefs as prefs
-            # DateTime._dayfirst = prefs.prefs[prefs.parse_dayfirst_pref]
-            # DateTime._yearfirst = prefs.prefs[prefs.parse_yearfirst_pref]
-            DateTime._dayfirst = True
-            DateTime._yearfirst = False
-        return date_parser.parse(value, dayfirst=DateTime._dayfirst,
-                                 yearfirst=DateTime._yearfirst)
+        if isinstance(value, str):
+            # parse the datetime which should be iso 8601 format with a preference
+            # for YY-MM-DD, although the parser is a little bit loose on
+            # what it accepts
+            value = date_parse.parse(value, dayfirst=false, yearfirst=True)
+
+        return value
 
 
     def process_result_value(self, value, dialect):
@@ -131,6 +124,9 @@ class DateTime(types.TypeDecorator):
 
     def copy(self):
         return DateTime()
+
+    def __str__(self):
+        return self.isoformat()
 
 
 
@@ -141,19 +137,16 @@ class Date(types.TypeDecorator):
     impl = types.Date
 
     def process_bind_param(self, value, dialect):
-        if not isinstance(value, str):
-            return value
-        try:
-            Date._dayfirst
-            Date._yearfirst
-        except AttributeError:
-            # import bauble.prefs as prefs
-            # Date._dayfirst = prefs.prefs[prefs.parse_dayfirst_pref]
-            # Date._yearfirst = prefs.prefs[prefs.parse_yearfirst_pref]
-            Date._dayfirst = True
-            Date._yearfirst = False
-        return date_parser.parse(value, dayfirst=Date._dayfirst,
-                                 yearfirst=Date._yearfirst).date()
+        if isinstance(value, str):
+            # accept ISO 8601 formatted date strings only
+            if '-' in value:
+                value = datetime.strptime(value, "%Y-%m-%d").date()
+            elif len(str) == 8:
+                value = datetime.strptime(value, '%Y%m%d').date()
+            else:
+                raise ValueError("Could not parse date string: " + value)
+
+        return value
 
 
     def process_result_value(self, value, dialect):
@@ -164,4 +157,5 @@ class Date(types.TypeDecorator):
         return Date()
 
     def __str__(self):
-        return self.strftime(config.default_date_format)
+        return self.isoformat()
+        #return self.strftime(config.default_date_format)

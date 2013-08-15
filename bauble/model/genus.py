@@ -169,7 +169,7 @@ class GenusNote(db.Base):
         """
         d = dict(ref="/genus/" + str(self.genus_id) + "/note/" + str(self.id))
         if(depth > 0):
-            d['date'] = self.date.strftime("%d/%m/%Y")
+            d['date'] = str(self.date)
             d['user'] = self.user
             d['category'] = self.category
             d['note'] = self.note

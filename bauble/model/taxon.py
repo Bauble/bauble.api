@@ -436,7 +436,7 @@ class TaxonNote(db.Base):
         """
         d = dict(ref="/taxon/" + str(self.taxon_id) + "/note/" + str(self.id))
         if(depth > 0):
-            d['date'] = self.date.strftime("%d/%m/%Y")
+            d['date'] = str(self.date)
             d['user'] = self.user
             d['category'] = self.category
             d['note'] = self.note
