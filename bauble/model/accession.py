@@ -460,11 +460,11 @@ class Accession(db.Base):
             d['code'] = self.code
             d['taxon'] = self.taxon.json(depth=depth-1)
             d['str'] = str(self)
-            d['id_qual'] = self.id_qual
-
 
         if(depth > 1):
             d['taxon_str'] = self.taxon_str(markup=markup)
+            d['id_qual'] = self.id_qual
+            d['id_qual_rank'] = self.id_qual_rank
             d['prov_type'] = self.prov_type
             d['wild_prov_status'] = self.wild_prov_status
             d['date_accd'] = str(self.date_accd)
