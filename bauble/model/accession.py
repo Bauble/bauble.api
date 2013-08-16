@@ -403,18 +403,23 @@ class Accession(db.Base):
         if not self.taxon:
             return None
 
+
+        #
+        # TODO: this warning is left over from bauble.class.  it should probably be handled
+        # in bauble.web one way or another
+        #
         # show a warning if the id_qual is aff. or cf. but the
         # id_qual_rank is None, but only show it once
-        try:
-            self.__warned_about_id_qual
-        except AttributeError:
-            self.__warned_about_id_qual = False
-        if self.id_qual in ('aff.', 'cf.') and not self.id_qual_rank \
-                and not self.__warned_about_id_qual:
-            msg = _('If the id_qual is aff. or cf. '
-                    'then id_qual_rank is required. %s ' % self.code)
-            warning(msg)
-            self.__warned_about_id_qual = True
+        # try:
+        #     self.__warned_about_id_qual
+        # except AttributeError:
+        #     self.__warned_about_id_qual = False
+        # if self.id_qual in ('aff.', 'cf.') and not self.id_qual_rank \
+        #         and not self.__warned_about_id_qual:
+        #     msg = _('If the id_qual is aff. or cf. '
+        #             'then id_qual_rank is required. %s ' % self.code)
+        #     warning(msg)
+        #     self.__warned_about_id_qual = True
 
         # copy the taxon so we don't affect the original
         taxon = Taxon()
