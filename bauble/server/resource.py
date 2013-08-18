@@ -288,6 +288,8 @@ class Resource:
                 column_dict['type'] = 'datetime'
             elif isinstance(column.type, types.Date):
                 column_dict['type'] = 'date'
+            elif isinstance(column.type, sa.Boolean):
+                column_dict['type'] = 'boolean'
             else:
                 raise Exception("Unknown type %s for column %s: " % (str(column.type), column.name))
 
