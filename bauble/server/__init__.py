@@ -71,7 +71,6 @@ def error_handler_482(error):
     return default_error_handler("User account has been suspended")
 
 
-
 @app.hook('before_request')
 def enable_cors():
     """

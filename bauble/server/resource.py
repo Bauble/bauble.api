@@ -123,6 +123,7 @@ class Resource:
 
             # make sure the user's organization has been approved and that the
             # organization and the user hasn't been suspended
+            session = None
             try:
                 session = db.connect()
                 user = session.query(User).filter_by(username=username).one()
@@ -132,6 +133,8 @@ class Resource:
                     bottle.abort(481)
                 if user.date_suspended:
                     bottle.abort(482)
+            except orm.exc.NoResultFound:
+                bottle.abort(401)
             finally:
                 if session:
                     session.close()
@@ -325,7 +328,7 @@ class Resource:
                 relation_mapper = getattr(relation_mapper.relationships, kid).mapper
             return relation_mapper.class_
 
-
+        session = None
         try:
             session = self.connect()
             json_objs = []
