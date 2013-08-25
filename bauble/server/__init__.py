@@ -216,6 +216,7 @@ def init():
 
     resource.OrganizationResource()
     resource.UserResource()
+    resource.ReportDefResource()
 
     # app.run(host=host, port=port, server="gunicorn", reloader=True,
     #         debug=debug)

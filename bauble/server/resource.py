@@ -23,6 +23,7 @@ from bauble.model.propagation import Propagation, PlantPropagation
 from bauble.model.location import Location
 from bauble.model.organization import Organization
 from bauble.model.user import User
+from bauble.model.reportdef import ReportDef
 from bauble.server import app, API_ROOT, parse_accept_header, JSON_MIMETYPE, \
     TEXT_MIMETYPE, parse_auth_header, accept
 import bauble.types as types
@@ -909,3 +910,31 @@ class UserResource(Resource):
 
     def handle_organization(self, user, organization, session):
         user.organization_id = self.get_ref_id(organization)
+
+
+class ReportDefResource(Resource):
+
+    resource = '/report'
+    mapped_class = ReportDef
+    ignore = ['ref', 'str', 'created_by_user_id', 'last_updated_by_user_id']
+
+    def save_or_update(self, resource_id=None, depth=1):
+        username, password = parse_auth_header()
+        # TODO: if this is a new user then we need to make sure a password is sent
+        # in the request
+
+        # TODO: make sure the user making this request is an admin of the
+        # organization that this user is a part of
+        response = super().save_or_update(resource_id, depth)
+
+        print('response.status', response.status)
+        # update the created and last_updated users
+        if response and response.status == 200:
+            session = self.connect()
+            resource_id = resource_id if resource_id else self.get_ref_id(response['ref'])
+            report = session.query(ReportDef).get(resource_id)
+            user = session.query(User).filter_by(username=username).one()
+            report.last_updated_by_user = user
+            report.created_by_user = report.created_by if report.created_by else user
+            session.commit()
+        return response
