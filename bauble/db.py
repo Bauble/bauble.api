@@ -162,8 +162,7 @@ engine = None
 def get_session():
     global engine
     if not engine:
-        engine = sa.create_engine(db_url, pool_size=20)
-
+        engine = sa.create_engine(db_url, pool_size=20, encoding="utf-8")
     return orm.sessionmaker(bind=engine)()
 
 
