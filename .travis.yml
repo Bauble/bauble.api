@@ -1,0 +1,19 @@
+language: python
+python:
+  - "3.3"
+# command to install dependencies
+install:
+  - "pip install . --use-mirrors"
+  - "pip install pytest --use-mirrors"
+  - "pip install -r requirements.txt --use-mirrors"
+# command to run tests
+script: py.test
+env:
+  - DATABASE_URL=DATABASE_URL=postgresql://test:test@localhost/bauble
+before_script:
+  - psql -c 'create database bauble;' -U postgres
+  - psql -c 'create role test with login password \'test\';' -U postgres
+  - python run.py &  # TODO: start uwsgi same as on production server, can we sudo here?
+  - PYTHONPATH=. bin/initdb.py
+  - PYTHONPATH=. bin/set_admin_password.py 'test'
+  - PYTHONPATH=. bin/create_test_org.py
