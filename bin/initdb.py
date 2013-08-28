@@ -7,7 +7,7 @@ import requests.auth as auth
 
 import bauble
 
-if os.environ['BAUBLE_ENV'] == "development":
+if os.environ.get('BAUBLE_ENV', None) == "development":
     server = "http://localhost:9090"
 else:
     server = 'http://api.bauble.io'
