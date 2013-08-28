@@ -11,7 +11,7 @@ script: py.test
 env:
   - DATABASE_URL=postgresql://test:test@localhost/bauble BAUBLE_ENV=development
 before_script:
-  - sudo adduser -disabled-password bauble
+  - sudo adduser -disabled-password --gecos "" bauble
   - psql -c 'create database bauble;' -U postgres
   - psql -c "create role test with login password 'test\';" -U postgres bauble
   #- python run.py &  # TODO: start uwsgi same as on production server, can we sudo here?
