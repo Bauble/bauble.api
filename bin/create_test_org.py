@@ -6,7 +6,7 @@
 import json
 import requests
 
-lif os.environ.get('BAUBLE_ENV', None) == "development" or os.environ.get('TRAVIS', None):
+if os.environ.get('BAUBLE_ENV', None) == "development" or os.environ.get('TRAVIS', None):
     server = "http://localhost:9090"
 else:
     server = 'http://api.bauble.io'
