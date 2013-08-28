@@ -9,8 +9,7 @@ install:
 # command to run tests
 script: py.test
 env:
-  - DATABASE_URL=postgresql://test:test@localhost/bauble
-  - BAUBLE_ENV=development
+  - DATABASE_URL=postgresql://test:test@localhost/bauble BAUBLE_ENV=development
 before_script:
   - psql -c 'create database bauble;' -U postgres
   - psql -c "create role test with login password 'test\';" -U postgres bauble
