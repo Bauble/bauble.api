@@ -5,6 +5,7 @@
 
 import json
 import requests
+import os
 
 if os.environ.get('BAUBLE_ENV', None) == "development" or os.environ.get('TRAVIS', None):
     server = "http://localhost:9090"
