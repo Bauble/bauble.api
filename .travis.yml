@@ -11,9 +11,11 @@ script: py.test
 env:
   - DATABASE_URL=postgresql://test:test@localhost/bauble BAUBLE_ENV=development
 before_script:
+  - sudo adduser -disabled-password bauble
   - psql -c 'create database bauble;' -U postgres
   - psql -c "create role test with login password 'test\';" -U postgres bauble
-  - python run.py &  # TODO: start uwsgi same as on production server, can we sudo here?
+  #- python run.py &  # TODO: start uwsgi same as on production server, can we sudo here?
+  - $VIRTUAL_ENV/bin/uwsgi --ini uwsgi.ini
   - PYTHONPATH=. bin/initdb.py
   - PYTHONPATH=. bin/set_admin_password.py test
   - PYTHONPATH=. bin/create_test_org.py
