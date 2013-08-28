@@ -11,6 +11,8 @@ script: py.test
 env:
   - DATABASE_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
 before_script:
+  # the DATABASE_URL isn't getting picked up in the environment
+  - echo "postgresql://test:test@localhost/bauble" > ~/.bauble.api
   - sudo adduser -disabled-password --gecos "" bauble
   - psql -c 'create database bauble;' -U postgres
   - psql -c "create role test with login password 'test\';" -U postgres bauble
