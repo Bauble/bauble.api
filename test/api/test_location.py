@@ -5,10 +5,10 @@ from bauble.model.location import Location
 
 
 def test_location_json():
-    code = test.get_random_name()
+    code = test.get_random_name()[0:9]
     location = Location(code=code)
 
-    session = db.connect()
+    session = db.connect(test.default_user, test.default_password)
     session.add(location)
     session.commit()
 
@@ -30,11 +30,11 @@ def test_server():
     Test the server properly handle /location resources
     """
     # create a location
-    location = test.create_resource('/location', {'code': test.get_random_name()})
+    location = test.create_resource('/location', {'code': test.get_random_name()[0:9]})
 
     assert 'ref' in location  # created
     location_ref = location['ref']
-    location['code'] = test.get_random_name()
+    location['code'] = test.get_random_name()[0:9]
     location = test.update_resource(location)
     assert location['ref'] == location_ref
 
@@ -48,4 +48,3 @@ def test_server():
 
     # delete the created resources
     test.delete_resource(location)
-
