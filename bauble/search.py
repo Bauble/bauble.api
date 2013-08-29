@@ -6,6 +6,7 @@ from sqlalchemy.orm import *
 from sqlalchemy.orm.properties import ColumnProperty, RelationProperty
 
 import bauble
+import bauble.i18n
 from bauble.error import check, CheckConditionError, BaubleError
 import bauble.db as db
 
@@ -348,7 +349,3 @@ def get_strategy(name):
     for strategy in _search_strategies:
         if strategy.__class__.__name__ == name:
             return strategy
-
-
-
-
