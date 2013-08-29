@@ -14,7 +14,7 @@ def test_taxon_json():
     note = TaxonNote(taxon=taxon, note="this is a test")
     syn = TaxonSynonym(taxon=taxon, synonym=taxon)
 
-    session = db.connect()
+    session = db.connect(test.default_user, test.default_password)
     session.add_all([family, genus, taxon, note, syn])
     session.commit()
 
