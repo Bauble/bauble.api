@@ -4,13 +4,18 @@
 #
 
 import json
-import requests
 import os
+import sys
 
-if os.environ.get('BAUBLE_ENV', None) == "development" or os.environ.get('TRAVIS', None):
-    server = "http://localhost:9090"
-else:
+import requests
+
+if os.environ.get('BAUBLE_ENV', None) == "production":
     server = 'http://api.bauble.io'
+    response = input("Are you sure you want to run this on " + server + "?")
+    if response.lower() != 'y':
+        sys.exit()
+else:
+    server = "http://localhost:9090"
 
 api_root = server + "/api/v1"
 user="admin"
@@ -31,6 +36,8 @@ org_data = {
     "name": 'TestOrg',
     "owners": [user_data]
     }
+
+print("creating", org_data['name'], "at", server)
 
 response = requests.post(api_root + "/organization", data=json.dumps(org_data),
                          headers=headers)
