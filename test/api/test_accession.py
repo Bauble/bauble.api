@@ -21,21 +21,22 @@ def test_accession_json():
     source.source_detail = SourceDetail(name=test.get_random_name(), description="the description")
     source.collection = Collection(locale=test.get_random_name())
     source.propagation = Propagation(prop_type='Seed')
-    source.propagation.seed = PropSeed(nseeds=100, date_sown="1/1/11")
+    source.propagation.seed = PropSeed(nseeds=100, date_sown="2011/1/1")
 
     # TODO: plant propagations require a plant.id
     # source.plant_propagation = PlantPropagation(plant_id=)
     # source.plant_propagation.propagation = PlantPropagation(prop_type='Seed')
     # source.plant_propagation.seed = PropSeed(nseeds=100, date_sown="1/1/11")
 
-    verification = Verification(accession=acc, verifier=test.get_random_name(), date="1/1/11",
-                                level=1, taxon=taxon, prev_taxon=taxon)
-    voucher = Voucher(accession=acc, herbarium=test.get_random_name(), code=test.get_random_name())
-
+    verification = Verification(accession=acc, verifier=test.get_random_name(),
+                                date="2011/1/1", level=1, taxon=taxon,
+                                prev_taxon=taxon)
+    voucher = Voucher(accession=acc, herbarium=test.get_random_name(),
+                      code=test.get_random_name())
 
     note = AccessionNote(accession=acc, note="this is a test")
 
-    session = db.connect()
+    session = db.connect(test.default_user, test.default_password)
     all_objs = [family, genus, taxon, note, acc, source]
     session.add_all(all_objs)
     session.commit()
@@ -65,7 +66,11 @@ def test_accession_json():
     source_json = source.json(depth=1)
     source_json = source.json(depth=2)
 
-    # now switch the source propagation to UnrootedCuttings
+    # now switch the source propagation to UnrootedCuttings....
+
+    # if we don't delete explicity then delete-orphan doesn't happen
+    # on the PropSeed...last tested with SA 0.8.2pp
+    session.delete(source.propagation)
     source.propagation = Propagation(prop_type='UnrootedCutting')
     source.propagation.cutting = PropCutting()
 
