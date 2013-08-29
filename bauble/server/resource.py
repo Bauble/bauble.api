@@ -14,7 +14,7 @@ import bauble.db as db
 import bauble.error as error
 import bauble.i18n
 from bauble.model.family import Family, FamilySynonym, FamilyNote
-from bauble.model.genus import Genus, GenusNote
+from bauble.model.genus import Genus, GenusNote, GenusSynonym
 from bauble.model.taxon import Taxon, TaxonSynonym, TaxonNote, VernacularName
 from bauble.model.accession import Accession, AccessionNote
 from bauble.model.source import Source, SourceDetail, Collection
@@ -533,7 +533,8 @@ class GenusResource(Resource):
     mapped_class = Genus
     relations = {
         'family': 'handle_family',
-        'notes': 'handle_notes'
+        'notes': 'handle_notes',
+        'synonyms': 'handle_synonyms'
     }
 
     def handle_family(self, genus, family, session):
@@ -541,6 +542,23 @@ class GenusResource(Resource):
 
     def handle_notes(self, genus, notes, session):
         self.note_handler(genus, notes, GenusNote, session)
+
+    def handle_synonyms(self, taxon, synonyms, session):
+        # synonyms can be a list of taxon objects or a list of taxon refs
+        for syn in synonyms:
+            if isinstance(syn, str):
+                synonym_id = self.get_ref_id(syn)
+            elif isinstance(syn, dict):
+                synonym_id = self.get_ref_id(syn['ref'])
+            else:
+                raise Exception("Synonym in unsupported format")
+
+            # make sure this synonym doesn't already have this id since
+            # we can't have dupliation ids
+            query = session.query(GenusSynonym).filter_by(synonym_id=synonym_id)
+            if(query.count() < 0):
+                synonym = GenusSynonym(taxon=taxon)
+                synonym.synonym_id = synonym_id
 
     def apply_query(self, query, query_string):
         return query.filter(Genus.genus.ilike(query_string))
