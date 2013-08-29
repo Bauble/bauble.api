@@ -14,7 +14,7 @@ before_script:
   # the DATABASE_URL from the env: section is set when running the test script
   - echo "DATABASE_URL=postgresql://test:test@localhost/bauble" > ~/.bauble.api
   # disable ssl mode on postgresql
-  - sudo sed -i -e 's/ssl = true/#ssl = true' /etc/postgresql/9.1/main/postgresql.conf
+  - sudo sed -i -e 's/ssl = true/#ssl = true/' /etc/postgresql/9.1/main/postgresql.conf
   - sudo service postgresql restart
   - echo "BAUBLE_ENV=travis" >> ~/.bauble.api
   - sudo adduser -disabled-password --gecos "" bauble
