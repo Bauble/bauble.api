@@ -11,7 +11,7 @@ def test_genus_json():
     note = GenusNote(genus=genus, note="this is a test")
     syn = GenusSynonym(genus=genus, synonym=genus)
 
-    session = db.connect()
+    session = db.connect(test.default_user, test.default_password)
     session.add_all([family, genus, note, syn])
     session.commit()
 
@@ -50,15 +50,19 @@ def test_server():
 
     family = test.create_resource('/family', {'family': test.get_random_name()})
 
-    # create a genus genus
+    # create a genus
     first_genus = test.create_resource('/genus',
         {'genus': test.get_random_name(), 'family': family})
 
     # create another genus and use the first as a synonym
-    data = {'genus': test.get_random_name(), 'family': family
-            # 'notes': [{'user': 'me', 'category': 'test', 'date': '1/1/2001', 'note': 'test note'},
-            #           {'user': 'me', 'category': 'test', 'date': '2/2/2001', 'note': 'test note2'}],
-            # 'synonyms': [{'synonym': first_genus}]
+    data = {'genus': test.get_random_name(),
+            'family': family,
+            'notes': [{'user': 'me', 'category': 'test', 'date': '2001-1-1',
+                       'note': 'test note'},
+                      {'user': 'me', 'category': 'test', 'date': '2002-2-2',
+                       'note': 'test note2'}],
+            'synonyms': [first_genus]
+            #'synonyms': [{'synonym': first_genus}]
             }
 
     second_genus = test.create_resource('/genus', data)
