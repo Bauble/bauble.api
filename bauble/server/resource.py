@@ -177,6 +177,7 @@ class Resource:
         for name in relation.split('/'):
             mapper = getattr(mapper.relationships, name).mapper
 
+        session = None
         try:
             session = self.connect()
 
@@ -190,7 +191,8 @@ class Resource:
             count = query.count()
             return str(count)
         finally:
-            session.close()
+            if session:
+                session.close()
 
 
     @accept(JSON_MIMETYPE)
