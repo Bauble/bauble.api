@@ -10,7 +10,7 @@ def test_family_json():
     note = FamilyNote(family=family, note="this is a test")
     syn = FamilySynonym(family=family, synonym=family)
 
-    session = db.connect()
+    session = db.connect(test.default_user, test.default_password)
     session.add_all([family, note, syn])
     session.commit()
 
@@ -69,8 +69,8 @@ def test_server():
 
     # create another family and use the first as a synonym
     data = {'family': test.get_random_name(),
-            'notes': [{'user': 'me', 'category': 'test', 'date': '1/1/2001', 'note': 'test note'},
-                      {'user': 'me', 'category': 'test', 'date': '2/2/2001', 'note': 'test note2'}],
+            'notes': [{'user': 'me', 'category': 'test', 'date': '2001/1/1', 'note': 'test note'},
+                      {'user': 'me', 'category': 'test', 'date': '2002/2/2', 'note': 'test note2'}],
             'synonyms': [first_family]
             }
 
