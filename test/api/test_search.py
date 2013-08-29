@@ -13,6 +13,7 @@ def test_parser():
     family = test.create_resource('/family', {'family': test.get_random_name()})
     parser = search.SearchParser()
     parser.statement.parseString(family['family'])
+    test.delete_resource(family)
 
 
 def get_headers():
@@ -29,7 +30,8 @@ def test_search():
     #         .then(callback);
 
     response = requests.get(test.api_root + "/search", params={'q': family_name},
-                            headers=get_headers())
+                            headers=get_headers(),
+                            auth=(test.default_user,test.default_password))
     assert response.status_code == 200
 
     response_json = json.loads(response.text)
