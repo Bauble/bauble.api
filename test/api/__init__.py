@@ -83,7 +83,8 @@ def update_resource(data, user=default_user, password=default_password):
     # convert data to a json string so it won't get paramaterized
     if not isinstance(data, str):
         data = json.dumps(data)
-    response = requests.put(resource, data=data, headers=headers)
+    response = requests.put(resource, data=data, headers=headers,
+                            auth=(user,password))
     assert response.status_code == 200
     return json.loads(response.text)
 
@@ -106,7 +107,8 @@ def get_resource(ref, depth=1, relations=[], user=default_user,
     return json.loads(response.text)
 
 
-def query_resource(resource, q, depth=1, relations=[], user=default_user, password=default_password):
+def query_resource(resource, q, depth=1, relations=[], user=default_user,
+                   password=default_password):
     """
     """
     if not resource.startswith(api_root):
@@ -114,7 +116,8 @@ def query_resource(resource, q, depth=1, relations=[], user=default_user, passwo
     params = { 'q': q }
     if(relations):
         params['relations'] = str(relations)
-    response = requests.get(resource, params=params, headers=get_headers(depth=depth))
+    response = requests.get(resource, params=params, headers=get_headers(depth=depth),
+                            auth=(user,password))
     assert response.status_code == 200
     return json.loads(response.text)
 
