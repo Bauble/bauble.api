@@ -165,7 +165,7 @@ class Voucher(db.Base):
 
     """
     __tablename__ = 'voucher'
-    herbarium = Column(Unicode(5), nullable=False)
+    herbarium = Column(Unicode, nullable=False)
     code = Column(Unicode(32), nullable=False)
     parent_material = Column(Boolean, default=False)
     accession_id = Column(Integer, ForeignKey('accession.id'), nullable=False)
