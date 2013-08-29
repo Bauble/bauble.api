@@ -15,12 +15,13 @@ def test_plant_json():
     genus = Genus(family=family, genus=genus_name)
     taxon = Taxon(genus=genus, sp=test.get_random_name())
     acc = Accession(taxon=taxon, code=test.get_random_name())
-    location = Location(code=test.get_random_name())
-    plant = Plant(accession=acc, code=test.get_random_name(), quantity=1, location=location)
+    location = Location(code=test.get_random_name()[0:9])
+    plant = Plant(accession=acc, code=test.get_random_name()[0:5],
+                  quantity=1, location=location)
 
     note = PlantNote(plant=plant, note="this is a test")
 
-    session = db.connect()
+    session = db.connect(test.default_user, test.default_password)
     all_objs = [family, genus, taxon, note, acc, plant, location]
     session.add_all(all_objs)
     session.commit()
@@ -59,15 +60,16 @@ def test_server():
     taxon = test.create_resource('/taxon', {'genus': genus, 'sp': test.get_random_name()})
     accession = test.create_resource('/accession',
         {'taxon': taxon, 'code': test.get_random_name()})
-    location = test.create_resource('/location', {'code': test.get_random_name()})
+    location = test.create_resource('/location', {'code': test.get_random_name()[0:9]})
 
     plant = test.create_resource('/plant',
-        {'accession': accession, 'location': location, 'code': test.get_random_name(),
+        {'accession': accession, 'location': location,
+         'code': test.get_random_name()[0:5],
          'quantity': 10})
 
     assert 'ref' in plant  # created
     plant_ref = plant['ref']
-    plant['code'] = test.get_random_name()
+    plant['code'] = test.get_random_name()[0:5]
     plant = test.update_resource(plant)
     assert plant['ref'] == plant_ref
 
@@ -86,4 +88,3 @@ def test_server():
     test.delete_resource(taxon)
     test.delete_resource(genus)
     test.delete_resource(family)
-
