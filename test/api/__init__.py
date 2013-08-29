@@ -40,14 +40,14 @@ def get_headers(depth=1):
     return {'accept': 'application/json;depth=' + str(depth)}
 
 
-def count_resource(resource):
-    response = requests.get(api_root + resource + "/count")
+def count_resource(resource, user=default_user, password=default_password):
+    response = requests.get(api_root + resource + "/count", auth=(user, password))
     assert response.status_code == 200
     return response.text
 
 
-def get_schema(resource):
-    response = requests.get(api_root + resource + "/schema")
+def get_schema(resource, , user=default_user, password=default_password):
+    response = requests.get(api_root + resource + "/schema", auth=(user, password))
     assert response.status_code == 200
     return json.loads(response.text)
 
@@ -99,7 +99,6 @@ def get_resource(ref, depth=1, relations=[], user=default_user,
     params = {}
     if relations:
         params['relations'] = relations
-    print("headers: ", get_headers(depth=depth))
     response = requests.get(ref, headers=get_headers(depth=depth), params=params,
                             auth=(user,password))
     #print('response: ', response.text)
@@ -132,6 +131,6 @@ def delete_resource(ref, user=default_user, password=default_password):
     if(not ref.startswith(api_root)):
         ref = api_root + ref
     print('deleting ', ref)
-    response = requests.delete(ref, auth=auth.HTTPBasicAuth(user, password))
+    response = requests.delete(ref, auth=(user,password)
     assert response.status_code == 200
     return response
