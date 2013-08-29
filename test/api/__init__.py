@@ -46,7 +46,7 @@ def count_resource(resource, user=default_user, password=default_password):
     return response.text
 
 
-def get_schema(resource, , user=default_user, password=default_password):
+def get_schema(resource, user=default_user, password=default_password):
     response = requests.get(api_root + resource + "/schema", auth=(user, password))
     assert response.status_code == 200
     return json.loads(response.text)
@@ -131,6 +131,6 @@ def delete_resource(ref, user=default_user, password=default_password):
     if(not ref.startswith(api_root)):
         ref = api_root + ref
     print('deleting ', ref)
-    response = requests.delete(ref, auth=(user,password)
+    response = requests.delete(ref, auth=(user,password))
     assert response.status_code == 200
     return response
