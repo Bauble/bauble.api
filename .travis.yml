@@ -15,7 +15,7 @@ before_script:
   - echo "DATABASE_URL=postgresql://test:test@localhost/bauble" > ~/.bauble.api
   - echo "BAUBLE_ENV=travis" >> ~/.bauble.api
   - sudo adduser -disabled-password --gecos "" bauble
-  - psql -c "create role test with createrole login password 'test\';" -U postgres bauble
+  - psql -c "create role test with createrole login password 'test\';" -U postgres
   - psql -c 'create database bauble owner test encoding utf8;' -U postgres
   #- python run.py &  # TODO: start uwsgi same as on production server, can we sudo here?
   - sudo $VIRTUAL_ENV/bin/uwsgi --ini uwsgi.ini:travis &
