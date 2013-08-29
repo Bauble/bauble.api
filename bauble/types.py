@@ -141,7 +141,10 @@ class Date(types.TypeDecorator):
             # accept ISO 8601 formatted date strings only
             if '-' in value:
                 value = datetime.strptime(value, "%Y-%m-%d").date()
-            elif len(str) == 8:
+            elif '/' in value:
+                # not technically ISO 8601 but we can be a little flexible
+                value = datetime.strptime(value, "%Y/%m/%d").date()
+            elif len(value) == 8:
                 value = datetime.strptime(value, '%Y%m%d').date()
             else:
                 raise ValueError("Could not parse date string: " + value)
