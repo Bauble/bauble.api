@@ -29,11 +29,7 @@ db_url = os.environ['DATABASE_URL']
 def create_unique_schema():
     session = connect()
     unique_name = "bbl_" + str(uuid.uuid4()).replace("-", "_")
-    user_permissions = "NOSUPERUSER NOCREATEDB NOCREATEROLE NOLOGIN INHERIT"
-    session.execute("CREATE ROLE {name} {perms};".
-                    format(name=unique_name, perms=user_permissions))
-    session.execute("CREATE SCHEMA {name} AUTHORIZATION {name};".
-                    format(name=unique_name))
+    session.execute("CREATE SCHEMA {name};".format(name=unique_name))
     session.commit()
     session.close()
     return unique_name

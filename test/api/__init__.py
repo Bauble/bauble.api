@@ -10,7 +10,7 @@ import bauble
 # WARNING: DO NOT RUN THIS SCRIPT ON THE PRODUCTION SERVER
 server = "http://localhost:9090"
 api_root = server + "/api/v1"
-default_user = "admin"
+default_user = "test"
 default_password = "test"
 
 

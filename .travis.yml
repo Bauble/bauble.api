@@ -1,0 +1,28 @@
+language: python
+python:
+  - "3.3"
+# command to install dependencies
+install:
+  # - "pip install . --use-mirrors"
+  - "pip install pytest --use-mirrors"
+  - "pip install -r requirements.txt --use-mirrors"
+# command to run tests
+script: py.test
+env:
+  - DATABASE_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
+before_script:
+  # the DATABASE_URL from the env: section is set when running the test script
+  - echo "DATABASE_URL=postgresql://test:test@localhost/bauble" > ~/.bauble.api
+  # disable ssl mode on postgresql
+  - sudo sed -i -e 's/ssl = true/#ssl = true/' /etc/postgresql/9.1/main/postgresql.conf
+  - sudo service postgresql restart
+  - echo "BAUBLE_ENV=travis" >> ~/.bauble.api
+  - sudo adduser -disabled-password --gecos "" bauble
+  - psql -c "create role test with createrole login password 'test\';" -U postgres
+  - psql -c "create database bauble owner test encoding 'utf8';" -U postgres
+  #- python run.py &  # TODO: start uwsgi same as on production server, can we sudo here?
+  - sudo $VIRTUAL_ENV/bin/uwsgi --ini uwsgi.ini:travis &
+  - sleep 7
+  - PYTHONPATH=. bin/initdb.py
+  - PYTHONPATH=. bin/set_admin_password.py test
+  - PYTHONPATH=. bin/create_test_org.py
