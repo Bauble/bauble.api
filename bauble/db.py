@@ -62,7 +62,14 @@ def authenticate(user, password, session):
 def connect(user=None, password=None):
     """The user and password and for bauble users not postgresql roles"""
 
-    session = get_session()
+    # create the engine and the Session if this is the first time we're connecting
+    global engine, Session
+    if not engine:
+        engine = sa.create_engine(db_url, pool_size=20, encoding="utf-8")
+    if not Session:
+        Session = orm.sessionmaker(bind=engine)
+
+    session = Session()
     # if no user is passed then don't authenticate against the user table
     if user:
         user = authenticate(user, password, session)
@@ -155,13 +162,7 @@ class MapperBase(DeclarativeMeta):
 
 engine = None
 
-def get_session():
-    global engine
-    if not engine:
-        engine = sa.create_engine(db_url, pool_size=20, encoding="utf-8")
-    return orm.sessionmaker(bind=engine)()
-
-
+Session = None
 """
 
 # TODO: these session docs are from bauble1 and need to be updated
