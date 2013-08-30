@@ -831,16 +831,25 @@ class OrganizationResource(Resource):
             bottle.abort(409)
 
         # create the default tables for the organization
-        session = self.connect()
-        organization = session.query(Organization).get(self.get_ref_id(response))
-        if not organization.pg_schema:
-            bottle.abort(500, "Couldn't create the organization's schema")
+        session = None
+        try:
+            session = self.connect()
+            organization = session.query(Organization).get(self.get_ref_id(response))
+            if not organization.pg_schema:
+                bottle.abort(500, "Couldn't create the organization's schema")
 
-        tables = db.Base.metadata.sorted_tables
+            tables = db.Base.metadata.sorted_tables
+            for table in tables:
+                table.schema = organization.pg_schema
+            db.Base.metadata.create_all(session.get_bind(), tables=tables)
+        finally:
+            if session:
+                session.close()
+
+        # reset the schema on all tables so that future operations use the
+        # search path
         for table in tables:
-            table.schema = organization.pg_schema
-        db.Base.metadata.create_all(session.get_bind(), tables=tables)
-        session.close()
+            table.schema = None
 
         # return the original response
         return response
