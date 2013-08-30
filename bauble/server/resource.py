@@ -156,7 +156,7 @@ class Resource:
     def count(self, resource_id):
         if request.method == "OPTIONS":
             return {}
-
+        session = None
         try:
             session = self.connect()
             count = session.query(self.mapped_class).count()
@@ -214,7 +214,7 @@ class Resource:
         for name in relation.split('/'):
             mapper = getattr(mapper.relationships, name).mapper
 
-
+        session = None
         try:
             session = self.connect()
             # query the mapped class and the end point relation using the
@@ -244,6 +244,7 @@ class Resource:
         if request.method == "OPTIONS":
             return {}
 
+        session = None
         try:
             session = self.connect()
             obj = session.query(self.mapped_class).get(resource_id)
@@ -383,6 +384,7 @@ class Resource:
         """
         Handle DELETE requests on this resource.
         """
+        session = None
         try:
             session = self.connect()
             obj = session.query(self.mapped_class).get(resource_id)
@@ -424,8 +426,9 @@ class Resource:
             if name in data:
                 relation_data[name] = data.pop(name)
 
-        session = self.connect()
+        session = None
         try:
+            session = self.connect()
             # if this is a PUT to a specific ID then get the existing family
             # else we'll create a new one
             if request.method == 'PUT' and resource_id is not None:
@@ -435,6 +438,7 @@ class Resource:
                 response.status = 200
             else:
                 instance = self.mapped_class(**data)
+                session.add(instance)
                 response.status = 201
 
             # TODO: we should check for any fields that aren't defined in
@@ -445,8 +449,6 @@ class Resource:
             for name in relation_data:
                 getattr(self, self.relations[name])(instance, relation_data[name],
                                                     session)
-
-            session.add(instance)
             session.commit()
             return instance.json(depth=depth)
         except sa_exc.IntegrityError as exc:
@@ -749,27 +751,37 @@ class OrganizationResource(Resource):
 
     def approve(self, resource_id):
         username, password = parse_auth_header()
-        session = self.connect()
-        user = session.query(User).filter_by(username=username).one()
-        if not user.is_sysadmin:
-            bottle.abort(403, "Only a sysadmin can approve an organization.")
+        session = None
+        try:
+            session = self.connect()
 
-        org = session.query(Organization).get(resource_id)
-        org.date_approved = datetime.date.today()
-        session.commit()
-        response = org.json()
-        session.close()
+            user = session.query(User).filter_by(username=username).one()
+            if not user.is_sysadmin:
+                bottle.abort(403, "Only a sysadmin can approve an organization.")
+
+            org = session.query(Organization).get(resource_id)
+            org.date_approved = datetime.date.today()
+            session.commit()
+            response = org.json()
+        finally:
+            if session:
+                session.close()
+
         return response
 
 
     def get_admin_data(self, resource_id):
         username, password = parse_auth_header()
-        session = self.connect()
-        user = session.query(User).filter_by(username=username).one()
-        if not user.is_sysadmin:
-            bottle.abort(403, "Only a sysadmin can view the organizations admin data.")
-
-        org = session.query(Organization).get(resource_id)
+        session = None
+        try:
+            session = self.connect()
+            user = session.query(User).filter_by(username=username).one()
+            if not user.is_sysadmin:
+                bottle.abort(403, "Only a sysadmin can view the organizations admin data.")
+            org = session.query(Organization).get(resource_id)
+        finally:
+            if session:
+                session.close()
         return org.admin_json()
 
 
@@ -898,24 +910,29 @@ class UserResource(Resource):
         if JSON_MIMETYPE not in request.headers.get("Content-Type"):
             bottle.abort(415, 'Expected application/json')
 
-        session = self.connect()
-        user = session.query(User).get(resource_id)
+        session = None
+        try:
+            session = self.connect()
+            user = session.query(User).get(resource_id)
 
-        username, password = parse_auth_header()
-        if user.username != username:
-            bottle.abort(403, 'Cannot change another users password')
+            username, password = parse_auth_header()
+            if user.username != username:
+                bottle.abort(403, 'Cannot change another users password')
 
-        # we assume all requests are in utf-8
-        data = json.loads(request.body.read().decode('utf-8'))
-        if data.get('password', "") == "":
-            bottle.abort(400, "Invalid password")
+            # we assume all requests are in utf-8
+            data = json.loads(request.body.read().decode('utf-8'))
+            if data.get('password', "") == "":
+                bottle.abort(400, "Invalid password")
 
-        user.set_password(data['password'])
-        session.commit()
-        session.close()
+            user.set_password(data['password'])
+            session.commit()
+        finally:
+            if session:
+                session.close()
 
 
     def save_or_update(self, resource_id=None, depth=1):
+        session = None
         request_user, password = parse_auth_header()
         # TODO: if this is a new user then we need to make sure a password is sent
         # in the request
@@ -926,12 +943,16 @@ class UserResource(Resource):
 
         # if this is a new user set the password
         if request.method == 'POST' and response:
-            session = self.connect()
-            resource_id = resource_id if resource_id else self.get_ref_id(response['ref'])
-            user = session.query(User).get(resource_id)
-            # we assume all requests are in utf-8
-            data = json.loads(request.body.read().decode('utf-8'))
-            user.set_password(data['password'])
+            try:
+                session = self.connect()
+                resource_id = resource_id if resource_id else self.get_ref_id(response['ref'])
+                user = session.query(User).get(resource_id)
+                # we assume all requests are in utf-8
+                data = json.loads(request.body.read().decode('utf-8'))
+                user.set_password(data['password'])
+            finally:
+                if session:
+                    session.close()
 
         return response
 
@@ -951,6 +972,7 @@ class ReportDefResource(Resource):
     ignore = ['ref', 'str', 'created_by_user_id', 'last_updated_by_user_id']
 
     def save_or_update(self, resource_id=None, depth=1):
+        session = None
         username, password = parse_auth_header()
         # TODO: if this is a new user then we need to make sure a password is sent
         # in the request
@@ -962,11 +984,16 @@ class ReportDefResource(Resource):
         print('response.status', response.status)
         # update the created and last_updated users
         if response and response.status == 200:
-            session = self.connect()
-            resource_id = resource_id if resource_id else self.get_ref_id(response['ref'])
-            report = session.query(ReportDef).get(resource_id)
-            user = session.query(User).filter_by(username=username).one()
-            report.last_updated_by_user = user
-            report.created_by_user = report.created_by if report.created_by else user
-            session.commit()
+            try:
+                session = self.connect()
+                resource_id = resource_id if resource_id else self.get_ref_id(response['ref'])
+                report = session.query(ReportDef).get(resource_id)
+                user = session.query(User).filter_by(username=username).one()
+                report.last_updated_by_user = user
+                report.created_by_user = report.created_by if report.created_by else user
+                session.commit()
+            finally:
+                if session:
+                    session.close()
+
         return response
