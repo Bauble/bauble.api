@@ -191,6 +191,7 @@ def init():
     import bauble.server.admin
     import bauble.server.resource as resource
     import bauble.server.search
+    import bauble.server.contact
 
     # first make sure we can connect to the database
     session = None
