@@ -25,8 +25,8 @@ def post_contact():
     try:
         data = json.loads(request.body.read().decode('utf-8'))
         msg = MIMEText(data['message'])
-        msg["Subject"] = data["subject"]
-        msg["From"] = "{name} <{frum}>".format(name=data["name"], frum=data["from"])
+        msg["Subject"] = data["subject"] if "subject" in data else "Contact Form"
+        msg["From"] = "{name} <{email}>".format(name=data["name"], email=data["email"])
         msg["To"] = "contact@bauble.io"
         server = smtplib.SMTP_SSL(os.environ.get('SMTP_SERVER', ''),
                                   os.environ.get('SMTP_PORT', 465))
