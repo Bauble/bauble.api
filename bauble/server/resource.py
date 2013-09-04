@@ -409,8 +409,7 @@ class Resource:
         """
         # make sure the content is JSON
         if JSON_MIMETYPE not in request.headers.get("Content-Type"):
-            raise bottle.HTTPError('415 Unsupported Media Type',
-                                   'Expected application/json')
+            raise bottle.abort(415, 'Expected application/json')
 
         response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
 
@@ -467,8 +466,7 @@ class Resource:
 
 
     def apply_query(self, query, query_string):
-        raise bottle.HTTPError("404 Not Found", "Query on " + self.resource +
-                               " not supported")
+        raise bottle.abort(404, "Query on " + self.resource +" not supported")
 
 
     @classmethod

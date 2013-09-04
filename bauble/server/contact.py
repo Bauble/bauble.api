@@ -36,5 +36,4 @@ def post_contact():
         server.quit()
     except Exception as exc:
         print(traceback.format_exc())
-        #print(exc)  # for logging
         bottle.abort(400, "Email could not be sent")
