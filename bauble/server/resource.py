@@ -65,6 +65,12 @@ class Resource:
                         "DELETE": self.delete
                         })
 
+        self.add_route(API_ROOT + self.resource + "/<resource_id>/lock>",
+                       {"OPTIONS": self.options_response,
+                        "POST": self.lock,
+                        "DELETE": self.delete_lock,
+                        })
+
         self.add_route(API_ROOT + self.resource + '/count',
                        {"GET": self.count,
                         "OPTIONS": self.options_response,
@@ -80,15 +86,18 @@ class Resource:
                        {"OPTIONS": self.options_response,
                         "GET": self.get_schema
                         })
+
         self.add_route(API_ROOT + self.resource + "/<relation:path>/schema",
                        {"OPTIONS": self.options_response,
                         'GET': self.get_schema
                         })
+
         self.add_route(API_ROOT +
                        self.resource + "/<resource_id>/<relation:path>",
                        {"OPTIONS": self.options_response,
                         "GET": self.get_relation
                         })
+
 
     session_events = []
 
@@ -455,6 +464,18 @@ class Resource:
         finally:
             if session:
                 session.close()
+
+
+    def lock(resource_id):
+        """
+        """
+        # 1. Return 423 is resource is already locked
+
+
+    def delete_lock(resource_id):
+        """
+        """
+        # delete the lock
 
 
     @staticmethod
