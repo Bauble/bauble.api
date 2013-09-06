@@ -41,7 +41,7 @@ def default_error_handler(error):
     elif error.exception:
         return str(error.exception)
 
-common_errors = [400, 403, 403, 406, 409, 415, 500]
+common_errors = [400, 403, 404, 406, 409, 415, 500]
 for code in common_errors:
     app.error(code)(default_error_handler)
 
