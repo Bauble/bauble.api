@@ -728,7 +728,7 @@ class OrganizationResource(Resource):
 
     resource = '/organization'
     mapped_class = Organization
-    ignore = ['ref', 'str', 'date_created', 'date_approved', 'data_suspended']
+    ignore = ['ref', 'str', 'date_created', 'date_approved', 'date_suspended']
     relations = {
         'owners': 'handle_owners',
         'users': 'handle_users'
