@@ -204,11 +204,6 @@ class Resource:
         from the relation end point.  e.g. /family/1/genera/taxa would return
         all the taxa related to the family with id=1.
         """
-        if request.method == "OPTIONS":
-            return {}
-
-
-
         # get the mapper for the last item in the list of relations
         mapper = orm.class_mapper(self.mapped_class)
         for name in relation.split('/'):
@@ -241,9 +236,6 @@ class Resource:
         where the queried objects are returned in the json object in
         the collection_name array.
         """
-        if request.method == "OPTIONS":
-            return {}
-
         session = None
         try:
             session = self.connect()
