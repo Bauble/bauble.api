@@ -24,6 +24,7 @@ from bauble.model.location import Location
 from bauble.model.organization import Organization
 from bauble.model.user import User
 from bauble.model.reportdef import ReportDef
+from bauble.model.lock import Lock
 from bauble.server import app, API_ROOT, parse_accept_header, JSON_MIMETYPE, \
     TEXT_MIMETYPE, parse_auth_header, accept
 import bauble.types as types
@@ -65,7 +66,7 @@ class Resource:
                         "DELETE": self.delete
                         })
 
-        self.add_route(API_ROOT + self.resource + "/<resource_id>/lock>",
+        self.add_route(API_ROOT + self.resource + "/<resource_id>/lock",
                        {"OPTIONS": self.options_response,
                         "POST": self.lock,
                         "DELETE": self.delete_lock,
@@ -466,10 +467,33 @@ class Resource:
                 session.close()
 
 
-    def lock(resource_id):
+    def lock(self, resource_id):
         """
         """
-        # 1. Return 423 is resource is already locked
+        try:
+            session = self.connect()
+            username, password = parse_auth_header()
+            user = session.query(User).filter_by(username=username).one()
+
+            # check if a lock already exists for this resource
+            resource = request.path[len(API_ROOT):-len("/lock")]
+            print("search_path: ", session.bind.execute("SHOW search_path").scalar())
+            is_locked = session.query(Lock).\
+                filter(Lock.resource==resource, Lock.user_id==user.id,
+                       Lock.date_released is not None).count() > 0
+            if is_locked:
+                bottle.abort(423, 'Resource is already locked')
+
+
+
+            # lock the resource
+            lock = Lock(resource=resource, user_id=user.id)
+            session.add(lock)
+            session.commit()
+            return lock.json(depth=1)
+        finally:
+            if session:
+                session.close()
 
 
     def delete_lock(resource_id):
