@@ -470,6 +470,7 @@ class Resource:
     def lock(self, resource_id):
         """
         """
+        session = None
         try:
             session = self.connect()
             username, password = parse_auth_header()
@@ -484,22 +485,39 @@ class Resource:
             if is_locked:
                 bottle.abort(423, 'Resource is already locked')
 
-
-
             # lock the resource
             lock = Lock(resource=resource, user_id=user.id)
             session.add(lock)
             session.commit()
+            response.status = 201
             return lock.json(depth=1)
         finally:
             if session:
                 session.close()
 
 
-    def delete_lock(resource_id):
+    def delete_lock(self, resource_id):
         """
         """
-        # delete the lock
+        session = None
+        try:
+            session = self.connect()
+            username, password = parse_auth_header()
+            user = session.query(User).filter_by(username=username).one()
+
+            # check if this user has a lock on the resource
+            resource = request.path[len(API_ROOT):-len("/lock")]
+            locks = session.query(Lock).filter_by(user_id=user.id, resource=resource)
+            if locks.count() < 1:
+                bottle.abort(410, "Resource not locked by user")
+
+            # delete all the locks the user has on this resource
+            map(session.delete, locks.all())
+            session.commit()
+        finally:
+            if session:
+                session.close()
+
 
 
     @staticmethod

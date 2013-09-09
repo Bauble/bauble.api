@@ -1,4 +1,6 @@
 
+import json
+
 import requests
 
 import test.api as test
@@ -12,12 +14,12 @@ def test_lock():
     response = requests.post(url, auth=(test.default_user, test.default_password))
     assert response.status_code == 201
 
-    lock = json.loads(response.text)
+    # # get the lock description
+    # response = requests.get(url, auth=(test.default_user, test.default_password))
+    # assert response.status_code == 200
 
-    # get the lock description
-    response = requests.get(url, auth=(test.default_user, test.default_password))
+    # delete the lock
+    response = requests.delete(url, auth=(test.default_user, test.default_password))
     assert response.status_code == 200
 
-    # don't allow other users to delete the lock
-    response = requests.delete(url, auth=('test2', 'test2'))
-    assert response.status_code == 200
+    # TODO: test that other users can't delete lock
