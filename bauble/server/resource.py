@@ -24,7 +24,7 @@ from bauble.model.location import Location
 from bauble.model.organization import Organization
 from bauble.model.user import User
 from bauble.model.reportdef import ReportDef
-from bauble.model.lock import Lock
+from bauble.model.lock import Lock, get_lock
 from bauble.server import app, API_ROOT, parse_accept_header, JSON_MIMETYPE, \
     TEXT_MIMETYPE, parse_auth_header, accept
 import bauble.types as types
@@ -441,6 +441,14 @@ class Resource:
             # if this is a PUT to a specific ID then get the existing family
             # else we'll create a new one
             if request.method == 'PUT' and resource_id is not None:
+                # first check if the resource is locked
+                resource = request.path[len(API_ROOT):]
+                lock = get_lock(resource)
+                if lock:
+                    response.status_code = 423 # locked
+                    return lock.json(depth=1)
+
+                # create the new instance
                 instance = session.query(self.mapped_class).get(resource_id)
                 for key in data.keys():
                     setattr(instance, key, data[key])
@@ -478,7 +486,6 @@ class Resource:
 
             # check if a lock already exists for this resource
             resource = request.path[len(API_ROOT):-len("/lock")]
-            print("search_path: ", session.bind.execute("SHOW search_path").scalar())
             is_locked = session.query(Lock).\
                 filter(Lock.resource==resource, Lock.user_id==user.id,
                        Lock.date_released is not None).count() > 0

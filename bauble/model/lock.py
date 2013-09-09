@@ -15,6 +15,12 @@ import bauble.search as search
 def default_expiration():
     return datetime.utcnow() + timedelta(days=90)
 
+
+def get_lock(resource, session):
+    lock = session.query(Lock).filter_by(resource).first()
+    return lock if lock else None
+
+
 class Lock(db.Base):
     __tablename__ = 'lock'
 
