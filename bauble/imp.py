@@ -7,7 +7,7 @@ import bauble
 import bauble.db as db
 import bauble.model as model
 
-def from_csv(filemap, schema=None):
+def from_csv(filemap, schema):
     """
     Import a list of files files to tables where <filemap> is a dict of
     tablenames to file names.
@@ -21,6 +21,7 @@ def from_csv(filemap, schema=None):
     # 3. need to setup a test organization so we can get the schema from it
 
     session = db.connect()
+    db.set_session_schema(session, schema)
     transaction = session.connection().begin()
 
     try:
@@ -33,11 +34,12 @@ def from_csv(filemap, schema=None):
             print('table.name: ', table.name)
             import_file = open(filemap[table.name], newline='')
             csvfile = csv.reader(import_file)
-            columns = csvfile.next()
+            columns = csvfile.readline()
 
-            print("columns: ", columns)
             for line in csvfile:
                 connection.execute(table.insert(), list(csvfile))
-            transaction.commit()
+
+        transaction.commit()
     except:
         transaction.rollback()
+        raise
