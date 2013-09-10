@@ -59,6 +59,16 @@ def authenticate(user, password, session):
     return False
 
 
+def set_session_schema(session, schema):
+    def set_schema(session, transaction=None, connection=None):
+        session.execute("SET search_path TO {schema},public;".\
+                            format(schema=schema))
+    # set the schema now and after any new transactions have begun since
+    # they will be started in a new isolated state
+    sa.event.listen(session, "after_begin", set_schema)
+    set_schema(session)
+
+
 def connect(user=None, password=None):
     """The user and password and for bauble users not postgresql roles"""
 
@@ -77,14 +87,7 @@ def connect(user=None, password=None):
             session.close()
             raise error.AuthenticationError()
         if user.organization and user.organization.pg_schema:
-            schema = user.organization.pg_schema
-            def set_schema(session, transaction=None, connection=None):
-                session.execute("SET search_path TO {schema},public;".\
-                                    format(schema=schema))
-            # set the schema now and after any new transactions have begun since
-            # they will be started in a new isolated state
-            sa.event.listen(session, "after_begin", set_schema)
-            set_schema(session)
+            set_session_schema(session, user.organization.pg_schema)
 
     return session
 
