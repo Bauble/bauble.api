@@ -4,9 +4,6 @@ import sqlalchemy.event as event
 
 import bauble
 import bauble.db as db
-#import bauble.utils as utils
-#from bauble.utils.log import debug
-#import bauble.utils.web as web
 import bauble.types as types
 
 class Organization(db.SystemBase):
