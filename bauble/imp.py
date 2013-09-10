@@ -22,24 +22,23 @@ def from_csv(filemap, schema):
 
     session = db.connect()
     db.set_session_schema(session, schema)
-    transaction = session.connection().begin()
+    connection = session.connection()
+    transaction = connection.begin()
 
     try:
         # import the files in order of their dependency
         for table in db.metadata.sorted_tables:
-            print('table.name: ', table.name)
             if not table.name in filemap:
                 continue
 
-            print('table.name: ', table.name)
-            import_file = open(filemap[table.name], newline='')
-            csvfile = csv.reader(import_file)
-            columns = csvfile.readline()
+            if isinstance(filemap[table.name], str):
+                import_file = open(filemap[table.name], newline='')
+            else:
+                import_file = filemap[table.name]
 
-            for line in csvfile:
-                connection.execute(table.insert(), list(csvfile))
-
-        transaction.commit()
+            reader = csv.DictReader(import_file)
+            session.execute(table.insert(), reader)
+        session.commit()
     except:
-        transaction.rollback()
+        session.rollback()
         raise

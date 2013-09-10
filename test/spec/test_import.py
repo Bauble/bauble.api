@@ -10,13 +10,12 @@ def test_import(org):
     fields = ["family"]
     family_data = [('SomeFamily',), ('AnotherFamily',)]
     file_handle, filename = mkstemp()
-    print('filename: ', filename)
-    csv_writer = csv.writer(os.fdopen(file_handle, "w"), fields)
+    export_file = os.fdopen(file_handle, "w")
+    csv_writer = csv.writer(export_file, fields)
     csv_writer.writerow(fields)
     for row in family_data:
-        print('row: ', row)
         csv_writer.writerow(row)
-    print("schema: ", org.pg_schema)
+    export_file.close()
     from_csv({'family': filename}, org.pg_schema)
 
     session = db.connect()
