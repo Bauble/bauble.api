@@ -2,6 +2,8 @@ import csv
 import os
 from tempfile import mkstemp
 
+import bauble.db as db
+from bauble.model import Family
 from bauble.imp import from_csv
 import test.fixtures as fixtures
 from test.fixtures import org
@@ -19,9 +21,8 @@ def test_import(org):
     from_csv({'family': filename}, org.pg_schema)
 
     session = db.connect()
-    db.set_session_schema(org.pg_schema)
+    db.set_session_schema(session, org.pg_schema)
     families = session.query(Family)
-    assert famililies.count() == 2
+    assert families.count() == 2
     family1 = families.filter_by(family=family_data[0][0]).one()
     assert family1.family == family_data[0][0]
-    assert False

@@ -20,18 +20,21 @@ def org(request):
     session.add_all([org, owner])
     session.commit()
 
-    #session.begin()
     tables = db.Base.metadata.sorted_tables
-    map(lambda t: t.schema=org.pg_schema, tables)
+    for table in tables:
+        table.schema = org.pg_schema
     db.Base.metadata.create_all(session.get_bind(), tables=tables)
-    map(lambda t: t.schema=None, tables)
+    for table in tables:
+        table.schema = None
     session.commit()
 
     def cleanup():
-        print("with_org.cleanup()")
+        db.Base.metadata.drop_all(session.get_bind(), tables=tables)
         session.delete(org)
         session.delete(owner)
-        session.execute("drop schema {};".format(org.pg_schema))
+        session.commit()
+        #session.expunge_all()  # prevent drop schema from hanging
+        session.execute("drop schema {} cascade;".format(org.pg_schema))
         session.commit()
         session.close()
     request.addfinalizer(cleanup)

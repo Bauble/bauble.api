@@ -37,7 +37,7 @@ def from_csv(filemap, schema):
                 import_file = filemap[table.name]
 
             reader = csv.DictReader(import_file)
-            session.execute(table.insert(), reader)
+            session.execute(table.insert(), list(reader))
         session.commit()
     except:
         session.rollback()
