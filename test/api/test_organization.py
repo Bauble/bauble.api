@@ -1,6 +1,6 @@
-
+import json
+import requests
 import test.api as test
-
 
 def test_organization():
 
@@ -38,6 +38,13 @@ def test_organization():
     user2_data['username'] = test.get_random_name()
     user2_data['organization'] = org
     user2 = test.create_resource("/user", user2_data)
+
+    # approve the organization
+    response = requests.post(test.api_root + org['ref'] + "/approve",
+                            auth=('admin', 'test'))
+    assert response.status_code == 200
+    org = json.loads(response.text)
+    assert org['date_approved'] is not None or org['date_approved'] is not ""
 
     # delete the organization (should also delete the users)
     test.delete_resource(org['ref'])

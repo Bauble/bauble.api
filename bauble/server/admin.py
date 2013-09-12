@@ -53,10 +53,10 @@ def initdb():
 
 
 @app.post(ADMIN_ROOT + "/import")
-def import():
+def import_data():
     pass
 
 
 @app.post(ADMIN_ROOT + "/export/<format>")
-def export(format="csv"):
+def export_data(format="csv"):
     pass

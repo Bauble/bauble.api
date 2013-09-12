@@ -46,6 +46,7 @@ class Organization(db.SystemBase):
         if depth > 0:
             d['name'] = self.name
             d['short_name'] = self.short_name
+            d['date_approved'] = str(self.date_approved)
 
         if depth > 1:
             d['users'] = [user.json(depth=depth-1) for user in self.users]
