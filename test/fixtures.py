@@ -9,7 +9,6 @@ from test import utils
 
 @pytest.fixture()
 def org(request):
-    print("with_org()")
     session = db.connect()
     org = Organization()
     org.name = utils.random_str()

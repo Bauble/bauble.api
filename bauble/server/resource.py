@@ -757,6 +757,7 @@ class OrganizationResource(Resource):
 
             # import the default data
             base_path = os.path.join(os.path.join(*bauble.__path__), 'data')
+            session.commit()
 
             # TODO: we should probably do the imports in the background
             # and since we can be reasonably sure they will succeeed then
@@ -768,8 +769,11 @@ class OrganizationResource(Resource):
                 'geography': os.path.join(base_path, 'geography.txt'),
                 'habit': os.path.join(base_path, 'habit.txt')
                 }
-            imp.from_csv(datamap, org.pg_schema)
-            session.commit()
+            from multiprocessing import Process
+            process = Process(target=imp.from_csv, args=(datamap,org.pg_schema))
+            process.start()
+            # imp.from_csv(datamap, org.pg_schema)
+            # session.commit()
             response = org.json()
         finally:
             if session:
