@@ -4,9 +4,6 @@ import sqlalchemy.event as event
 
 import bauble
 import bauble.db as db
-#import bauble.utils as utils
-#from bauble.utils.log import debug
-#import bauble.utils.web as web
 import bauble.types as types
 
 class Organization(db.SystemBase):
@@ -49,6 +46,7 @@ class Organization(db.SystemBase):
         if depth > 0:
             d['name'] = self.name
             d['short_name'] = self.short_name
+            d['date_approved'] = str(self.date_approved)
 
         if depth > 1:
             d['users'] = [user.json(depth=depth-1) for user in self.users]

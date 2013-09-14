@@ -3,6 +3,7 @@ from collections import OrderedDict
 import datetime
 import inspect
 import json
+import os
 
 import bottle
 from bottle import request, response
@@ -13,6 +14,7 @@ import sqlalchemy.exc as sa_exc
 import bauble.db as db
 import bauble.error as error
 import bauble.i18n
+import bauble.imp as imp
 from bauble.model.family import Family, FamilySynonym, FamilyNote
 from bauble.model.genus import Genus, GenusNote, GenusSynonym
 from bauble.model.taxon import Taxon, TaxonSynonym, TaxonNote, VernacularName
@@ -739,6 +741,7 @@ class OrganizationResource(Resource):
                         })
         super().__init__()
 
+
     def approve(self, resource_id):
         username, password = parse_auth_header()
         session = None
@@ -751,7 +754,26 @@ class OrganizationResource(Resource):
 
             org = session.query(Organization).get(resource_id)
             org.date_approved = datetime.date.today()
+
+            # import the default data
+            base_path = os.path.join(os.path.join(*bauble.__path__), 'data')
             session.commit()
+
+            # TODO: we should probably do the imports in the background
+            # and since we can be reasonably sure they will succeeed then
+            # go ahead an return a 200 response
+            datamap = {
+                'family': os.path.join(base_path, "family.txt"),
+                'genus': os.path.join(base_path, 'genus.txt'),
+                'genus_synonym': os.path.join(base_path, 'genus_synonym.txt'),
+                'geography': os.path.join(base_path, 'geography.txt'),
+                'habit': os.path.join(base_path, 'habit.txt')
+                }
+            from multiprocessing import Process
+            process = Process(target=imp.from_csv, args=(datamap,org.pg_schema))
+            process.start()
+            # imp.from_csv(datamap, org.pg_schema)
+            # session.commit()
             response = org.json()
         finally:
             if session:

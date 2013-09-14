@@ -50,3 +50,13 @@ def initdb():
     finally:
         if session:
             session.close()
+
+
+@app.post(ADMIN_ROOT + "/import")
+def import_data():
+    pass
+
+
+@app.post(ADMIN_ROOT + "/export/<format>")
+def export_data(format="csv"):
+    pass
