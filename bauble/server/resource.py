@@ -763,10 +763,12 @@ class OrganizationResource(Resource):
             # go ahead an return a 200 response
             datamap = {
                 'family': os.path.join(base_path, "family.txt"),
-                'genus': os.path.join(base_path, 'genus.txt')
+                'genus': os.path.join(base_path, 'genus.txt'),
+                'genus_synonym': os.path.join(base_path, 'genus_synonym.txt'),
+                'geography': os.path.join(base_path, 'geography.txt'),
+                'habit': os.path.join(base_path, 'habit.txt')
                 }
             imp.from_csv(datamap, org.pg_schema)
-
             session.commit()
             response = org.json()
         finally:

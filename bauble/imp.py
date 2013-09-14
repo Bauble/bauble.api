@@ -7,6 +7,9 @@ import bauble
 import bauble.db as db
 import bauble.model as model
 
+QUOTE_STYLE = csv.QUOTE_MINIMAL
+QUOTE_CHAR = '"'
+
 def from_csv(filemap, schema):
     """
     Import a list of files files to tables where <filemap> is a dict of
@@ -36,8 +39,13 @@ def from_csv(filemap, schema):
             else:
                 import_file = filemap[table.name]
 
-            reader = csv.DictReader(import_file)
-            session.execute(table.insert(), list(reader))
+            reader = csv.DictReader(import_file, quotechar=QUOTE_CHAR,
+                                    quoting=QUOTE_STYLE)
+            rows = []
+            for row in reader:
+                rows.append({key: value if value != "" else None \
+                                 for key, value in row.items()})
+            connection.execute(table.insert(), rows)
         session.commit()
     except:
         session.rollback()
