@@ -18,11 +18,19 @@ def test_import(org):
     for row in family_data:
         csv_writer.writerow(row)
     export_file.close()
-    from_csv({'family': filename}, org.pg_schema)
 
     session = db.connect()
+    session.add(org)
+
+    from_csv({'family': filename}, org.pg_schema)
+
     db.set_session_schema(session, org.pg_schema)
     families = session.query(Family)
     assert families.count() == 2
     family1 = families.filter_by(family=family_data[0][0]).one()
     assert family1.family == family_data[0][0]
+
+    for obj in session:
+        session.delete(obj)
+    session.commit()
+    session.close()
