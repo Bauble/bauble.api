@@ -1,4 +1,4 @@
-import test.api as test
+import test.api as api
 import bauble.db as db
 from bauble.model.family import Family
 from bauble.model.genus import Genus
@@ -10,18 +10,18 @@ from bauble.model.location import Location
 
 
 def test_plant_json():
-    family = Family(family=test.get_random_name())
-    genus_name = test.get_random_name()
+    family = Family(family=api.get_random_name())
+    genus_name = api.get_random_name()
     genus = Genus(family=family, genus=genus_name)
-    taxon = Taxon(genus=genus, sp=test.get_random_name())
-    acc = Accession(taxon=taxon, code=test.get_random_name())
-    location = Location(code=test.get_random_name()[0:9])
-    plant = Plant(accession=acc, code=test.get_random_name()[0:5],
+    taxon = Taxon(genus=genus, sp=api.get_random_name())
+    acc = Accession(taxon=taxon, code=api.get_random_name())
+    location = Location(code=api.get_random_name()[0:9])
+    plant = Plant(accession=acc, code=api.get_random_name()[0:5],
                   quantity=1, location=location)
 
     note = PlantNote(plant=plant, note="this is a test")
 
-    session = db.connect(test.default_user, test.default_password)
+    session = db.connect(api.default_user, api.default_password)
     all_objs = [family, genus, taxon, note, acc, plant, location]
     session.add_all(all_objs)
     session.commit()
@@ -54,37 +54,37 @@ def test_server():
     Test the server properly handle /taxon resources
     """
 
-    family = test.create_resource('/family', {'family': test.get_random_name()})
-    genus = test.create_resource('/genus', {'genus': test.get_random_name(),
+    family = api.create_resource('/family', {'family': api.get_random_name()})
+    genus = api.create_resource('/genus', {'genus': api.get_random_name(),
         'family': family})
-    taxon = test.create_resource('/taxon', {'genus': genus, 'sp': test.get_random_name()})
-    accession = test.create_resource('/accession',
-        {'taxon': taxon, 'code': test.get_random_name()})
-    location = test.create_resource('/location', {'code': test.get_random_name()[0:9]})
+    taxon = api.create_resource('/taxon', {'genus': genus, 'sp': api.get_random_name()})
+    accession = api.create_resource('/accession',
+        {'taxon': taxon, 'code': api.get_random_name()})
+    location = api.create_resource('/location', {'code': api.get_random_name()[0:9]})
 
-    plant = test.create_resource('/plant',
+    plant = api.create_resource('/plant',
         {'accession': accession, 'location': location,
-         'code': test.get_random_name()[0:5],
+         'code': api.get_random_name()[0:5],
          'quantity': 10})
 
     assert 'ref' in plant  # created
     plant_ref = plant['ref']
-    plant['code'] = test.get_random_name()[0:5]
-    plant = test.update_resource(plant)
+    plant['code'] = api.get_random_name()[0:5]
+    plant = api.update_resource(plant)
     assert plant['ref'] == plant_ref
 
     # get the plant
-    plant = test.get_resource(plant['ref'])
+    plant = api.get_resource(plant['ref'])
 
     # query for plants
-    response_json = test.query_resource('/plant', q=plant['code'])
+    response_json = api.query_resource('/plant', q=plant['code'])
     plant = response_json['results'][0]  # we're assuming there's only one
     assert plant['ref'] == plant_ref
 
     # delete the created resources
-    test.delete_resource(plant)
-    test.delete_resource(location)
-    test.delete_resource(accession)
-    test.delete_resource(taxon)
-    test.delete_resource(genus)
-    test.delete_resource(family)
+    api.delete_resource(plant)
+    api.delete_resource(location)
+    api.delete_resource(accession)
+    api.delete_resource(taxon)
+    api.delete_resource(genus)
+    api.delete_resource(family)
