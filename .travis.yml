@@ -2,7 +2,7 @@ language: python
 python:
   - "3.3"
 before_install:
-  - apt-get install fop libxml2-dev libxslt-dev
+  - sudo apt-get install fop libxml2-dev libxslt-dev
 # command to install dependencies
 install:
   # - "pip install . --use-mirrors"
