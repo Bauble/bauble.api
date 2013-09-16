@@ -68,6 +68,9 @@ class ReportDef(db.Base):
     xsl_stylesheet = Column(String)
     xsl_stylesheet_filename = Column(String)
 
+    template = Column(String)
+    template_filename = Column(String)
+
     # TODO: fix the created and lastupdate user relationships..for some reason there's
     # an error when calling /admin/initdb that has to do with User not being defined,
     # this is probably some weird issues with the two mappers having different metadata
@@ -91,7 +94,13 @@ class ReportDef(db.Base):
             d['visible_columns'] = self.visibile_columns
             d['column_widths'] = self.column_widths
             d['column_headers'] = self.column_headers
-            d['xsl_stylesheet_filename'] = self.xsl_stylesheet_filename
+            if self.xsl_stylesheet_filename:
+                d['xsl_stylesheet_filename'] = self.xsl_stylesheet_filename
+            elif self.template_filename:
+                d['template_filename'] = self.template_filename
 
         if depth > 1:
-            d['xsl_stylesheet_filename'] = self.xsl_stylesheet_filename
+            if self.xsl_stylesheet_filename:
+                d['xsl_stylesheet'] = self.xsl_stylesheet
+            elif self.template_filename:
+                d['template'] = self.template

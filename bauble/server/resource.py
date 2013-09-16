@@ -26,6 +26,7 @@ from bauble.model.location import Location
 from bauble.model.organization import Organization
 from bauble.model.user import User
 from bauble.model.reportdef import ReportDef
+from bauble.report import create_pdf_from_reportdef
 from bauble.server import app, API_ROOT, parse_accept_header, JSON_MIMETYPE, \
     TEXT_MIMETYPE, parse_auth_header, accept
 import bauble.types as types
@@ -982,6 +983,56 @@ class ReportDefResource(Resource):
     resource = '/report'
     mapped_class = ReportDef
     ignore = ['ref', 'str', 'created_by_user_id', 'last_updated_by_user_id']
+
+    def __init__(self):
+
+        # TODO: could also support just getting the resource with the
+        # Accept header indicating we want a PDF response....but /pdf
+        # is easier to bookmark
+
+        # create a pdf report of a save report
+        self.add_route(API_ROOT + self.resource + "/<resource_id>/pdf",
+                       {'GET': self.pdf,
+                        'OPTIONS': self.options_response
+                        })
+
+        self.add_route(API_ROOT + self.resource + "/pdf",
+                       {'POST': self.pdf,
+                        'OPTIONS': self.options_response
+                        })
+
+
+        self.add_route(API_ROOT + self.resource + "/<resource_id>/csv",
+                       {'POST': self.csv,
+                        'OPTIONS': self.options_response
+                        })
+        super().__init__()
+
+
+    def pdf(self, resource_id):
+        session = None
+        try:
+            username, password = parse_auth_header()
+            session = db.connect(user, password)
+            reportdef = session.query(ReportDef).get(resource_id)
+            report = create_pdf_from_reportdef(reportdef)
+            # TODO: determine the response mimetype from the reportdef
+            response.content_type = "application/pdf"
+
+            # TODO: we need a way to return the output of the fop command in
+            # case of error or a way to test out a stylesheet
+
+            return report
+
+
+        finally:
+            if session:
+                session.close()
+
+
+    def csv(self, resource_id):
+        pass
+
 
     def save_or_update(self, resource_id=None, depth=1):
         session = None
