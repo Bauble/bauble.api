@@ -20,7 +20,7 @@ class Organization(db.SystemBase):
     # TODO: do we need this????
     #pg_user = Column(String, unique=True)
 
-    owners = relationship('User', primaryjoin="and_("\
+    owners = relationship('User', cascade="all, delete-orphan", primaryjoin="and_("\
                               "Organization.id==User.organization_id,"\
                               "User.is_org_owner==True)")
     admins = relationship('User', primaryjoin="and_("\
