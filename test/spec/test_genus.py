@@ -1,17 +1,17 @@
-import test.api as test
+import test.api as api
 import bauble.db as db
 from bauble.model.family import Family
 from bauble.model.genus import Genus, GenusSynonym, GenusNote
 
 
 def test_genus_json():
-    family = Family(family=test.get_random_name())
-    genus_name = test.get_random_name()
+    family = Family(family=api.get_random_name())
+    genus_name = api.get_random_name()
     genus = Genus(family=family, genus=genus_name)
     note = GenusNote(genus=genus, note="this is a test")
     syn = GenusSynonym(genus=genus, synonym=genus)
 
-    session = db.connect(test.default_user, test.default_password)
+    session = db.connect(api.default_user, api.default_password)
     session.add_all([family, genus, note, syn])
     session.commit()
 
@@ -48,14 +48,14 @@ def test_server():
     Test the server properly handle /genus resources
     """
 
-    family = test.create_resource('/family', {'family': test.get_random_name()})
+    family = api.create_resource('/family', {'family': api.get_random_name()})
 
     # create a genus
-    first_genus = test.create_resource('/genus',
-        {'genus': test.get_random_name(), 'family': family})
+    first_genus = api.create_resource('/genus',
+        {'genus': api.get_random_name(), 'family': family})
 
     # create another genus and use the first as a synonym
-    data = {'genus': test.get_random_name(),
+    data = {'genus': api.get_random_name(),
             'family': family,
             'notes': [{'user': 'me', 'category': 'test', 'date': '2001-1-1',
                        'note': 'test note'},
@@ -65,30 +65,30 @@ def test_server():
             #'synonyms': [{'synonym': first_genus}]
             }
 
-    second_genus = test.create_resource('/genus', data)
+    second_genus = api.create_resource('/genus', data)
     assert 'ref' in second_genus  # created
 
     # update the genus
-    second_genus['genus'] = test.get_random_name()
+    second_genus['genus'] = api.get_random_name()
     second_ref = second_genus['ref']
-    second_genus = test.update_resource(second_genus)
+    second_genus = api.update_resource(second_genus)
     assert second_genus['ref'] == second_ref  # make sure they have the same ref after the update
 
     # get the genus
-    first_genus = test.get_resource(first_genus['ref'])
+    first_genus = api.get_resource(first_genus['ref'])
 
     # query for genera
-    response_json = test.query_resource('/genus', q=second_genus['genus'])
+    response_json = api.query_resource('/genus', q=second_genus['genus'])
     second_genus = response_json['results'][0]  # we're assuming there's only one
     assert second_genus['ref'] == second_ref
 
     # test getting the genus relative to its family
-    response_json = test.get_resource(family['ref'] + "/genera")
+    response_json = api.get_resource(family['ref'] + "/genera")
     genera = response_json['results']
     assert first_genus['ref'] in [genus['ref'] for genus in genera]
 
     # test getting a family with its genera relations
-    response_json = test.query_resource('/family', q=family['family'], depth=2,
+    response_json = api.query_resource('/family', q=family['family'], depth=2,
         relations="genera,notes")
     families = response_json['results']
     print(families[0])
@@ -96,10 +96,10 @@ def test_server():
     assert first_genus['ref'] in [genus['ref'] for genus in families[0]['genera']]
 
     # count the number of genera on a family
-    count = test.count_resource(family['ref'] + "/genera")
+    count = api.count_resource(family['ref'] + "/genera")
     assert count == "2"
 
     # delete the created resources
-    test.delete_resource(first_genus['ref'])
-    test.delete_resource(second_genus['ref'])
-    test.delete_resource(family)
+    api.delete_resource(first_genus['ref'])
+    api.delete_resource(second_genus['ref'])
+    api.delete_resource(family)

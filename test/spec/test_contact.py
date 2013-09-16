@@ -3,10 +3,10 @@ import json
 import requests
 import requests.auth as auth
 
-import test.api as test
+import test.api as api
 
 def test_contact():
-    contact_url = test.api_root + "/contact"
+    contact_url = api.api_root + "/contact"
     headers = { 'content-type': 'application/json' }
     data = {
         'subject': 'test subject',

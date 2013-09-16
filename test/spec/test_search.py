@@ -3,17 +3,17 @@ import json
 import requests
 
 import bauble.search as search
-import test.api as test
+import test.api as api
 
 
 def test_parser():
     """
     Test the bauble.search.SearchParser
     """
-    family = test.create_resource('/family', {'family': test.get_random_name()})
+    family = api.create_resource('/family', {'family': api.get_random_name()})
     parser = search.SearchParser()
     parser.statement.parseString(family['family'])
-    test.delete_resource(family)
+    api.delete_resource(family)
 
 
 def get_headers():
@@ -21,17 +21,17 @@ def get_headers():
 
 
 def test_search():
-    family_name = test.get_random_name()
-    family = test.create_resource('/family', {'family': family_name})
+    family_name = api.get_random_name()
+    family = api.create_resource('/family', {'family': family_name})
 
-    family2 = test.create_resource('/family', {'family': test.get_random_name()})
+    family2 = api.create_resource('/family', {'family': api.get_random_name()})
 
     # return $http({method: 'GET', url: globals.apiRoot + '/search', params: {'q': value}})
     #         .then(callback);
 
-    response = requests.get(test.api_root + "/search", params={'q': family_name},
+    response = requests.get(api.api_root + "/search", params={'q': family_name},
                             headers=get_headers(),
-                            auth=(test.default_user,test.default_password))
+                            auth=(api.default_user,api.default_password))
     assert response.status_code == 200
 
     response_json = json.loads(response.text)
@@ -41,5 +41,5 @@ def test_search():
 
     assert results[0]['ref'] == family['ref']
 
-    test.delete_resource(family['ref'])
-    test.delete_resource(family2['ref'])
+    api.delete_resource(family['ref'])
+    api.delete_resource(family2['ref'])

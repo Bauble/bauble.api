@@ -1,14 +1,14 @@
 
-import test.api as test
+import test.api as api
 import bauble.db as db
 from bauble.model.location import Location
 
 
 def test_location_json():
-    code = test.get_random_name()[0:9]
+    code = api.get_random_name()[0:9]
     location = Location(code=code)
 
-    session = db.connect(test.default_user, test.default_password)
+    session = db.connect(api.default_user, api.default_password)
     session.add(location)
     session.commit()
 
@@ -30,21 +30,21 @@ def test_server():
     Test the server properly handle /location resources
     """
     # create a location
-    location = test.create_resource('/location', {'code': test.get_random_name()[0:9]})
+    location = api.create_resource('/location', {'code': api.get_random_name()[0:9]})
 
     assert 'ref' in location  # created
     location_ref = location['ref']
-    location['code'] = test.get_random_name()[0:9]
-    location = test.update_resource(location)
+    location['code'] = api.get_random_name()[0:9]
+    location = api.update_resource(location)
     assert location['ref'] == location_ref
 
     # get the location
-    location = test.get_resource(location['ref'])
+    location = api.get_resource(location['ref'])
 
     # query for locations
-    response_json = test.query_resource('/location', q=location['code'])
+    response_json = api.query_resource('/location', q=location['code'])
     location = response_json['results'][0]  # we're assuming there's only one
     assert location['ref'] == location_ref
 
     # delete the created resources
-    test.delete_resource(location)
+    api.delete_resource(location)
