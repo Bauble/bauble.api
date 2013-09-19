@@ -17,6 +17,25 @@ from bauble.error import check, CheckConditionError
 import bauble.paths as paths
 #from bauble.utils.log import debug, warning
 
+def json_to_xml(json_data):
+    import json
+    if isinstance(json_data, str):
+        json_data = json.loads(json_data)
+
+    xml_parts = []
+    for key, value in json_data.items():
+        if isinstance(value, str):
+            xml_parts.append("<{key}>{value}</{key}>".format(key=key, value=value))
+        elif isinstance(value, str):
+            xml_parts.append("<{key}>{value}</{key}>".format(key=key, value=value))
+        elif isinstance(value, dict):
+            return json_to_xml(value)
+        else:
+            raise ValueError("unknown type " + str(type(value)))
+
+    return ''.join(xml_parts)
+
+
 
 def find_dependent_tables(table, metadata=None):
     '''

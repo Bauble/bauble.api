@@ -65,11 +65,10 @@ class ReportDef(db.Base):
     column_widths = Column(String)  # a json object that maps column names to widths
     column_headers = Column(String) # a json object that maps column names to headers
 
-    xsl_stylesheet = Column(String)
-    xsl_stylesheet_filename = Column(String)
-
+    # template can either me a Mako template or an XSL stylesheet
     template = Column(String)
     template_filename = Column(String)
+    template_mimetype = Column(String)
 
     # TODO: fix the created and lastupdate user relationships..for some reason there's
     # an error when calling /admin/initdb that has to do with User not being defined,
@@ -94,13 +93,8 @@ class ReportDef(db.Base):
             d['visible_columns'] = self.visibile_columns
             d['column_widths'] = self.column_widths
             d['column_headers'] = self.column_headers
-            if self.xsl_stylesheet_filename:
-                d['xsl_stylesheet_filename'] = self.xsl_stylesheet_filename
-            elif self.template_filename:
-                d['template_filename'] = self.template_filename
+            d['template_filename'] = self.template_filename
+            d['template_mimetype'] = self.template_mimetype
 
         if depth > 1:
-            if self.xsl_stylesheet_filename:
-                d['xsl_stylesheet'] = self.xsl_stylesheet
-            elif self.template_filename:
-                d['template'] = self.template
+            d['template'] = self.template
