@@ -25,9 +25,9 @@ def json_to_xml(json_data):
     xml_parts = []
     for key, value in json_data.items():
         if isinstance(value, str):
-            xml_parts.append("<{key}>{value}</{key}>".format(key=key, value=value))
-        elif isinstance(value, str):
-            xml_parts.append("<{key}>{value}</{key}>".format(key=key, value=value))
+            xml_parts.append('<field name="{key}">{value}</field>'.format(key=key, value=value))
+        elif isinstance(value, int):
+            xml_parts.append('<field name="{key}">{value}</field>'.format(key=key, value=value))
         elif isinstance(value, dict):
             return json_to_xml(value)
         else:

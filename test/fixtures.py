@@ -1,29 +1,32 @@
 import datetime
 
 import pytest
+import sqlalchemy as sa
+import sqlalchemy.orm as orm
 
 import bauble.db as db
 from bauble.model.organization import Organization
 from bauble.model import Family, Genus, Taxon, User
-from test import utils
+import test.utils as utils
 import test
 
-@pytest.fixture
-def user_session(org):
-    session = db.connect(test.default_user, test_default_password)
-    def cleanup():
-        session.close()
-    request.addfinalizer(cleanup)
-    return session
+# @pytest.fixture
+# def user_session(org):
+#     session = db.connect(test.default_user, test_default_password)
+#     def cleanup():
+#         session.close()
+#     request.addfinalizer(cleanup)
+#     return session
 
 
 @pytest.fixture
-def session():
+def session(request):
     """
     Fixture that provides a session that is not associated with a user
     """
     session = db.connect()
     def cleanup():
+        print("cleanup session")
         session.close()
     request.addfinalizer(cleanup)
     return session
@@ -62,39 +65,46 @@ def org(request):
     for table in tables:
         table.schema = None
 
+    session.expunge_all()
     session.commit()
     session.close()
 
     def cleanup():
-        session = db.connect()
-        session.delete(org)
-        session.commit()
-        session.close()
+        session = orm.object_session(org)
+        if session:
+            session.delete(org)
+            session.commit()
         connection = db.engine.connect()
         db.Base.metadata.drop_all(connection, tables=tables)
-
         connection.execute("drop schema {} cascade;".format(pg_schema))
     request.addfinalizer(cleanup)
     return org
 
 
 
-@pytest.fixture
-def user_session(request, org):
-    session = db.connect()
-    session.add(org)
-    db.set_session_schema(session, org.pg_schema)
-    def cleanup():
-        session.close()
-    request.addfinalizer(cleanup)
-    return session
+# @pytest.fixture
+# def user_session(request, org):
+#     session = db.connect()
+#     session.add(org)
+#     db.set_session_schema(session, org.pg_schema)
+#     def cleanup():
+#         session.close()
+#     request.addfinalizer(cleanup)
+#     return session
 
 @pytest.fixture
-def family(user_session):
+def family(request, session, org):
+    session = utils.org_session(session, org)
     family = Family(family=utils.random_str())
-    user_session.add(family)
-    user_session.commit()
-    user_session.close()
+    session.add(family)
+    session.commit()
+    session.close()
+    def cleanup():
+        session = orm.object_session(family)
+        if session:
+            session.delete(family)
+            session.commit()
+    request.addfinalizer(cleanup)
     return family
 
 

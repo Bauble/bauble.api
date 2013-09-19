@@ -9,9 +9,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 
 import bauble
 import bauble.db as db
-#import bauble.utils as utils
-#from bauble.utils.log import debug
-#import bauble.utils.web as web
+import bauble.utils as utils
 import bauble.types as types
 import bauble.search as search
 
@@ -115,6 +113,13 @@ class Family(db.Base):
             d['notes'] = [note.json(depth=depth - 1) for note in self.notes]
 
         return d
+
+
+    def xml(self, depth=1):
+        json_data = self.json()
+        xml_data = utils.json_to_xml(json_data)
+        return ''.join(["<family>", xml_data, "</family>"])
+
 
 
 class FamilyNote(db.Base):

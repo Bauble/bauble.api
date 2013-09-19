@@ -27,8 +27,9 @@ def test_xsl_pdf(org):
         session.add(family)
         session.commit()
 
-        f = open(os.path.join(os.path.dirname(__file__), "test.xsl"))
+        f = open(os.path.join(os.path.dirname(__file__), "test.xsl"), "r")
         stylesheet = f.read()
+        #print("stylesheet: ", stylesheet)
         f.close()
         query = session.query(Family).all()
         pdf = report.create_pdf_from_xsl(query, stylesheet)

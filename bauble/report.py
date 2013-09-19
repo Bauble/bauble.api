@@ -31,16 +31,17 @@ def create_pdf_from_xsl(query, stylesheet):
         # TODO: we need to adapt the results based on the search domain or
         # query mapper, for now we just assume everything is a plany
         #source = [FamilyABCDAdapter(plant) for plant in results]
-        xml = ''.join([utils.json_to_xml(obj.json()) for obj in results])
-        #abcd_data = create_abcd(source)
+        xml_data = ''.join([obj.xml() for obj in results])
+        print("xml: ", xml_data)
 
-        # transform the ABCD data into an XSL-FO file
+
+        # transform the xml data into an XSL-FO file
         fo_handle, fo_filename = tempfile.mkstemp()
-        style_etree = etree.parse(stylesheet)
-        transform = etree.XSLT(style_etree)
-        fo_data = transform(abcd_data)
+        stylesheet_etree = etree.XML(stylesheet)
+        transform = etree.XSLT(stylesheet_etree)
+        fo_data = transform(etree.XML(xml_data))
         fo_outfile = os.fdopen(fo_handle, 'w')
-        fo_outfile.write(str(result))
+        fo_outfile.write(str(fo_data))
         fo_outfile.flush()
 
         out_handle, out_filename = tempfile.mkstemp()
