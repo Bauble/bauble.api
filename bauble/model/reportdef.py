@@ -38,11 +38,17 @@ class ReportDef(db.Base):
         *column_headers
             Column_headers
 
-        *xsl_stylesheet
-            The XSL stylesheet text
+        *template
+            The template to use
 
-        *xsl_stylesheet_filename
-            The original filename of the XSL stylesheet.
+        *template_type
+            The type of the template
+
+        *template_filename
+            The original filename of the template
+
+        * output_type
+            A hint to convert the output
 
 
     :Properties:
@@ -54,8 +60,6 @@ class ReportDef(db.Base):
         The family table has a unique constraint on family/qualifier.
     """
     __tablename__ = 'report_def'
-    #__table_args__ = (UniqueConstraint('family', 'qualifier'),)
-    #__mapper_args__ = {'order_by': ['Family.family', 'Family.qualifier']}
 
     # columns
     name = Column(String, unique=True, nullable=False, index=True)
@@ -68,7 +72,10 @@ class ReportDef(db.Base):
     # template can either me a Mako template or an XSL stylesheet
     template = Column(String)
     template_filename = Column(String)
-    template_mimetype = Column(String)
+    template_type = Column(String)
+
+    # more of a hint, used for xsl formatter to generate PDF
+    output_type = Column(String)
 
     # TODO: fix the created and lastupdate user relationships..for some reason there's
     # an error when calling /admin/initdb that has to do with User not being defined,

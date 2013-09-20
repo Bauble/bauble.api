@@ -3,7 +3,7 @@
 		xmlns:fo="http://www.w3.org/1999/XSL/Format"
 		version="1.0">
 
-  <xsl:template>
+  <xsl:template match="/">
 
     <fo:root xmlns:fo="http://www.w3.org/1999/XSL/Format">
       <fo:layout-master-set>
@@ -19,13 +19,19 @@
       </fo:layout-master-set>
 
       <fo:page-sequence master-reference="letter">
+        <xsl:for-each select=".//family">
 	<fo:flow flow-name="xsl-region-body">
-	  <xsl:for-each select="family">
+          
+	  
+            <fo:block-container>
             <fo:block>
 	      <xsl:value-of select=".//field[@name='family']" />
 	    </fo:block>
-	  </xsl:for-each>
+            </fo:block-container>
+	  
+          
 	</fo:flow>
+        </xsl:for-each>
       </fo:page-sequence>
     </fo:root>
 

@@ -32,7 +32,7 @@ def test_xsl_pdf(org):
         #print("stylesheet: ", stylesheet)
         f.close()
         query = session.query(Family).all()
-        pdf = report.create_pdf_from_xsl(query, stylesheet)
+        pdf = report.create_xsl_report(query, stylesheet)
         assert pdf is not None
 
     finally:
