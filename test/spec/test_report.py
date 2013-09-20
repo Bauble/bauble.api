@@ -14,7 +14,6 @@ def test_saving_reports():
 def test_gen_from_saved_report():
     pass
 
-#@with_default_families
 
 def test_xsl_pdf(org):
     session = None
@@ -38,3 +37,10 @@ def test_xsl_pdf(org):
     finally:
         if session:
             session.close()
+
+
+def test_report_resource():
+    pass
+
+def test_saved_report():
+    pass

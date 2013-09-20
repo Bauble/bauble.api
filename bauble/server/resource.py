@@ -978,9 +978,20 @@ class UserResource(Resource):
         user.organization_id = self.get_ref_id(organization)
 
 
-class ReportDefResource(Resource):
+class ReportResource(Resource):
+    """
+    The /report resource is used to generate reports.  It only supports the
+    POST which excepts a ReportDef JSON representation
+    """
+    resource = "/report"
 
-    resource = '/report'
+
+class ReportDefResource(Resource):
+    """
+    The /report/saved us used for managing saved report definitions.
+    """
+
+    resource = '/report/saved'
     mapped_class = ReportDef
     ignore = ['ref', 'str', 'created_by_user_id', 'last_updated_by_user_id']
 
@@ -1007,6 +1018,10 @@ class ReportDefResource(Resource):
                         'OPTIONS': self.options_response
                         })
         super().__init__()
+
+
+    def delete(self, resource_id):
+        bottle.abort(405) # method not allowed
 
 
     def pdf(self, resource_id):
@@ -1037,8 +1052,8 @@ class ReportDefResource(Resource):
     def save_or_update(self, resource_id=None, depth=1):
         session = None
         username, password = parse_auth_header()
-        # TODO: if this is a new user then we need to make sure a password is sent
-        # in the request
+        # TODO: if this is a new user then we need to make sure a password
+        # is sent in the request
 
         # TODO: make sure the user making this request is an admin of the
         # organization that this user is a part of
