@@ -116,6 +116,7 @@ class SourceDetail(db.Base):
             d['name'] = self.name
             d['description'] = self.description
             d['source_type'] = self.source_type
+            d['str'] = str(self)
         return d
 
 
