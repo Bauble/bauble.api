@@ -105,7 +105,7 @@ class SourceDetail(db.Base):
                          default=None)
 
     def __str__(self):
-        return utils.utf8(self.name)
+        return self.name if self.name else ""
 
     def json(self, depth=1):
         """
