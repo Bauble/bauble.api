@@ -18,7 +18,7 @@ if [ $? == 1 ] ; then exit ; fi
 $SUDO $PSQL -c 'drop role if exists test;'
 if [ $? == 1 ] ; then exit ; fi
 
-$SUDO $PSQL -c 'create role test with createdb createrole login;'
+$SUDO $PSQL -c "create role test with createdb createrole login password 'test';"
 if [ $? == 1 ] ; then exit ; fi
 
 $SUDO $PSQL -c 'create database bauble with owner=test;'
