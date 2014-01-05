@@ -25,6 +25,7 @@ def initdb():
     from bauble.model import User, Organization
 
     session = None
+    transaction = None;
     try:
         session = db.connect()
         connection = session.connection()
