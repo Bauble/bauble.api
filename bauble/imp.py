@@ -50,3 +50,9 @@ def from_csv(filemap, schema):
     except:
         session.rollback()
         raise
+
+
+    # reset the sequence
+    import bauble.utils as utils
+    for col in table.c:
+        utils.reset_sequence(col)
