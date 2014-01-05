@@ -68,15 +68,14 @@ def test_server():
     data = {'sp': api.get_random_name(), 'genus': genus,
             # 'notes': [{'user': 'me', 'category': 'test', 'date': '1/1/2001', 'note': 'test note'},
             #           {'user': 'me', 'category': 'test', 'date': '2/2/2001', 'note': 'test note2'}],
-            'synonyms': [first_taxon]
+            #'synonyms': [first_taxon]
             }
 
-    print('data: ' + str(data))
     second_taxon = api.create_resource('/taxon', data)
     assert 'ref' in second_taxon  # created
 
     # update the taxon
-    second_taxon['taxon'] = api.get_random_name()
+    second_taxon['sp'] = api.get_random_name()
     second_ref = second_taxon['ref']
     second_taxon = api.update_resource(second_taxon)
     assert second_taxon['ref'] == second_ref  # make sure they have the same ref after the update
