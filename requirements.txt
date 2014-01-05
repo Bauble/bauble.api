@@ -1,6 +1,6 @@
 SQLAlchemy==0.8.2
 bottle==0.11.6
-distribute==0.6.34
+#distribute==0.6.34
 psycopg2==2.5.1
 pyparsing==2.0.1
 python-dateutil==2.1
