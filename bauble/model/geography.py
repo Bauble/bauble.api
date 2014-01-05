@@ -79,11 +79,14 @@ class Geography(db.Base):
         d = dict(ref="/geography/" + str(self.id))
         if depth > 0:
             d['name'] = self.name
-            d['parent'] = self.parent.json(depth=depth - 1)
+            d['parent'] = self.parent.json(depth=depth - 1) if self.parent else ''
+            d['str'] = str(self)
 
         if depth > 1:
             d['tdwg_code'] = self.tdwg_code
             d['iso_code'] = self.iso_code
+
+        return d
 
 
 
