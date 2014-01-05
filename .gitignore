@@ -32,3 +32,6 @@ nosetests.xml
 # Emacs backups
 *~
 
+# Python Virtualenvs
+.venv
+venv
