@@ -1,4 +1,4 @@
-SQLAlchemy==0.8.2
+SQLAlchemy==0.8.4
 bottle==0.11.6
 #distribute==0.6.34
 psycopg2==2.5.1
