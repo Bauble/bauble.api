@@ -189,7 +189,7 @@ def init():
     Start the Bauble server.
     """
     import bauble.server.admin
-    import bauble.server.resource as resource
+    from . import resource
     import bauble.server.search
     import bauble.server.contact
 

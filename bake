@@ -1,6 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import os
+import sys
 import subprocess
 
 import bauble
@@ -12,20 +13,21 @@ except Exception as e:
     print("baker not installed. pip install 'baker>=1.3,<2.0a0'")
     raise
 
-
-def run(args):
-    os.environ['PYTHONPATH'] = os.getcwd()
-    process = subprocess.Popen(args, env=os.environ)
-    process.wait()
-
+os.environ['PYTHONPATH'] = os.getcwd()
 
 @baker.command
-def test(*pytest_args):
+def test(*args):
     """
     Deploy to the production environment.
     """
-    args = ["test/spec"] if len(pytest_args) is 0 else pytest_args
-    run(['py.test'] + list(pytest_args))
+    pytest_args = ['py.test', 'test/spec'] if len(args) is 0 else ['py.test'] + args
+    os.execvpe('py.test', pytest_args, os.environ)
+
+
+@baker.command
+def virtualenv():
+    # TODO: create the virtualenv and install the dependencies
+    pass
 
 
 @baker.command
@@ -37,24 +39,12 @@ def deploy():
     pass
 
 
-@baker.command
-def server():
+@baker.command(default=True)
+def server(environment="dev"):
     """
     Start the server
     """
-    if os.environ.get('BAUBLE_ENV') == ("development")  or \
-       (len(sys.argv) > 1 and sys.argv[1].lower().startswith("dev")):
-        host = '0.0.0.0'
-        port = 9090
-    else:
-        host='api.bauble.io'
-        port=80
-
-    debug=False
-
-    import bauble.server as server
-    application = server.init()
-    application.run(host=host, port=port, reloader=True, debug=debug)
+    os.execlp("uwsgi", "uwsgi", "--ini", "uwsgi.ini:{}".format(environment))
 
 
 baker.run()
