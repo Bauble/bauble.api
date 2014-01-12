@@ -2,7 +2,7 @@ import json
 import requests
 import test.api as api
 
-def test_organization():
+def xtest_organization():
 
     user_data = {
         "username": api.get_random_name(),
