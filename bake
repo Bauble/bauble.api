@@ -15,13 +15,38 @@ except Exception as e:
 
 os.environ['PYTHONPATH'] = os.getcwd()
 
+# these environments can be updated into os.environ
+environ = {
+    "all": {
+
+    },
+    "dev": {
+        #'DEBUG': "true",
+        'BAUBLE_ENV': "test"
+    },
+    "test": {
+        #'DEBUG': "true",
+        'BAUBLE_ENV': "development"
+    },
+    "production": {
+        'BAUBLE_ENV': "production"
+    }
+}
+
+# all the environment variables common to all tasks
+os.environ.update(environ['all']);
+
+def shell(cmd):
+    return subprocess.call(cmd, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, shell=True)
+
+
 @baker.command
 def test(*args):
     """
     Deploy to the production environment.
     """
-    pytest_args = ['py.test', 'test/spec'] if len(args) is 0 else ['py.test'] + args
-    os.execvpe('py.test', pytest_args, os.environ)
+    pytest_args = ['py.test', 'test/spec'] if len(args) is 0 else ['py.test'] + list(args)
+    shell(" ".join(pytest_args))
 
 
 @baker.command
@@ -44,7 +69,9 @@ def server(environment="dev"):
     """
     Start the server
     """
-    os.execlp("uwsgi", "uwsgi", "--ini", "uwsgi.ini:{}".format(environment))
+    os.environ.update(environ.get(environment, {}))
+    process = shell("uwsgi --ini uwsgi.ini:{}".format(environment))
+
 
 
 baker.run()
