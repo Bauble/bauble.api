@@ -8,9 +8,12 @@ from bauble.model import Family, Genus, Taxon, User
 from test import utils
 import test
 
+
 @pytest.fixture
-def user_session(org):
-    session = db.connect(test.default_user, test_default_password)
+def user_session(request, org):
+    session = db.connect()
+    session.add(org)
+    db.set_session_schema(session, org.pg_schema)
     def cleanup():
         session.close()
     request.addfinalizer(cleanup)
@@ -41,23 +44,46 @@ def admin_session():
     return session
 
 
-@pytest.fixture
-def org(request):
-    session = db.connect()
+@pytest.fixture#(scope="function")
+def user(request):
+    session = db.Session()
+    user = session.query(User).filter_by(username=test.default_user).first()
+    if user:
+        session.delete(user)
+        session.commit()
+
+    user = User(username=test.default_user)
+    user.set_password(test.default_password)
+    session.add(user)
+    session.commit()
+    session.close()
+
+    def cleanup():
+        session = db.Session()
+        session.delete(user)
+        session.commit()
+        session.close()
+    request.addfinalizer(cleanup)
+
+    return user
+
+@pytest.fixture#(scope="function")
+def organization(request, user):
+    session = db.Session()
+    user = session.merge(user)
+
     org = Organization()
     org.name = utils.random_str()
-    owner = User()
-    owner.username = utils.random_str()
-    owner.password = utils.random_str()
     org.date_approved = datetime.date.today()
-    org.owners = [owner];
-    session.add_all([org, owner])
+    org.owners = [user];
+    session.add(org)
     session.commit()
     pg_schema = org.pg_schema
 
     tables = db.Base.metadata.sorted_tables
     for table in tables:
         table.schema = pg_schema
+
     db.Base.metadata.create_all(session.get_bind(), tables=tables)
     for table in tables:
         table.schema = None
@@ -66,28 +92,18 @@ def org(request):
     session.close()
 
     def cleanup():
-        session = db.connect()
+        session = db.Session()
         session.delete(org)
         session.commit()
         session.close()
         connection = db.engine.connect()
         db.Base.metadata.drop_all(connection, tables=tables)
+        connection.close()
 
-        connection.execute("drop schema {} cascade;".format(pg_schema))
     request.addfinalizer(cleanup)
     return org
 
 
-
-@pytest.fixture
-def user_session(request, org):
-    session = db.connect()
-    session.add(org)
-    db.set_session_schema(session, org.pg_schema)
-    def cleanup():
-        session.close()
-    request.addfinalizer(cleanup)
-    return session
 
 @pytest.fixture
 def family(user_session):
