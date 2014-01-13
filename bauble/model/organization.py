@@ -82,5 +82,4 @@ def after_insert(mapper, connection, organization):
 
 @event.listens_for(Organization, 'after_delete')
 def after_delete(mapper, connection, organization):
-    # TODO: delete the schema associated with the organization
-    pass
+    connection.execute("drop schema {} cascade;".format(organization.pg_schema))
