@@ -2,6 +2,10 @@
 # all bauble exceptions and errors
 #
 
+from bauble import app
+
+
+
 class BaubleError(Exception):
     def __init__(self, msg=None):
         self.msg = msg
@@ -68,3 +72,16 @@ def check(condition, msg=None):
     """
     if not condition:
         raise CheckConditionError(msg)
+
+
+@app.error(500)
+def default_error_handler(error):
+    # TODO: only print the error when the debug flag is set
+    # make sure the error is printed in the log
+    enable_cors()
+    if isinstance(error, str):
+        return error
+    elif error.body:
+        return str(error.body)
+    elif error.exception:
+        return str(error.exception)
