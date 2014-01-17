@@ -35,14 +35,14 @@ def index_family():
     return json.dumps([family.json() for family in families])
 
 
-@app.get(API_ROOT + "/family/:family_id")
+@app.get(API_ROOT + "/family/<family_id:int>")
 @basic_auth
 @resolve_family
 def get_family(family_id):
     return request.family.json(1)
 
 
-@app.route(API_ROOT + "/family/:family_id", method='PATCH')
+@app.route(API_ROOT + "/family/<family_id:int>", method='PATCH')
 @basic_auth
 @resolve_family
 def patch_family(family_id):
@@ -75,15 +75,9 @@ def post_family():
     return family.json()
 
 
-@app.delete(API_ROOT + "/family/:family_id")
+@app.delete(API_ROOT + "/family/<family_id:int>")
 @basic_auth
 @resolve_family
 def delete_family(family_id):
     request.session.delete(request.family)
     request.session.commit()
-
-
-@app.route(API_ROOT + "/family/schema", method='GET')
-@basic_auth
-def get_family_schema():
-    pass
