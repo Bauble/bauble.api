@@ -64,6 +64,20 @@ class Organization(db.SystemBase):
         return d
 
 
+    def get_session(self):
+        """
+        Return a session with this organization's PostgreSQL schema in the db search path.
+        """
+        session = db.Session();
+        org = session.merge(self)
+        if not org.pg_schema:
+            session.close()
+            return None
+        db.set_session_schema(session, org.pg_schema)
+        return session
+
+
+
 @event.listens_for(Organization, 'before_insert')
 def before_insert(mapper, connection, organization):
     # new organiations require at least one owner

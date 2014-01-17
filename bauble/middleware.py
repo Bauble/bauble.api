@@ -26,7 +26,7 @@ def basic_auth(next):
         if not auth_header:
             bottle.abort(401, "No Authorization header.")
 
-        username, password = bottle.parse_auth(auth_header)
+        username, password = bottle.request.auth
         request.session = db.Session()
         request.user = request.session.query(User).filter_by(username=username).first()
         if not request.user:
@@ -83,7 +83,7 @@ def accept(mimetype):
     def _decorator(next):
         def _wrapped(*args, **kwargs):
             accepted = parse_accept_header()
-            if mimetype not in accepted:
+            if mimetype not in accepted and '*/*' not in accepted:
                 bottle.abort(406, 'Expected application/json')
             request.accept = accepted
             return next(*args, **kwargs)

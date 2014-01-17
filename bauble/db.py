@@ -23,40 +23,20 @@ admin_username = "admin"
 # 4. need to set the password on the organization's pg role and
 # store it in the organization table...this will at least prevent logging in and if they can login with the admin we're screwed anyways
 
+debug = True if os.environ.get('DEBUG', 'false') == "true" else False
 db_url = os.environ['DATABASE_URL']
+engine = sa.create_engine(db_url, pool_size=20, encoding="utf-8", echo=debug)
+Session = Session = orm.sessionmaker(bind=engine)
 
 
 def create_unique_schema():
-    session = connect()
+    session = Session()
     unique_name = "bbl_" + str(uuid.uuid4()).replace("-", "_")
     session.execute("CREATE SCHEMA {name};".format(name=unique_name))
     session.commit()
     session.close()
     return unique_name
 
-
-
-def authenticate(user, password, session):
-    """Authenticate a user and password against the user table.
-
-    Return a user instance if the user instance on success else returns False
-    """
-    from bauble.model import User
-    if isinstance(user, str):
-        user = session.query(User).filter_by(username=user).first()
-
-    encode = lambda s: s.encode("utf-8") if s else "".encode("utf-8")
-    if user and (user.password and password) and bcrypt.hashpw(encode(password), encode(user.password)) == encode(user.password):
-        try:
-            tmp_session = connect()
-            tmp_user = tmp_session.query(User).get(user.id)
-            tmp_user.last_accesseed = datetime.datetime.now()
-            tmp_session.commit()
-        finally:
-            tmp_session.close()
-
-        return user
-    return False
 
 
 def set_session_schema(session, schema):
@@ -67,29 +47,6 @@ def set_session_schema(session, schema):
     # they will be started in a new isolated state
     sa.event.listen(session, "after_begin", set_schema)
     set_schema(session)
-
-
-def connect(user=None, password=None):
-    """The user and password and for bauble users not postgresql roles"""
-
-    # create the engine and the Session if this is the first time we're connecting
-    global engine, Session
-    if not engine:
-        engine = sa.create_engine(db_url, pool_size=20, encoding="utf-8")
-    if not Session:
-        Session = orm.sessionmaker(bind=engine)
-
-    session = Session()
-    # if no user is passed then don't authenticate against the user table
-    if user:
-        user = authenticate(user, password, session)
-        if not user:
-            session.close()
-            raise error.AuthenticationError()
-        if user.organization and user.organization.pg_schema:
-            set_session_schema(session, user.organization.pg_schema)
-
-    return session
 
 
 class HistoryExtension(orm.MapperExtension):
@@ -163,9 +120,7 @@ class MapperBase(DeclarativeMeta):
         super(MapperBase, cls).__init__(classname, bases, dict_)
 
 
-engine = None
 
-Session = None
 """
 
 # TODO: these session docs are from bauble1 and need to be updated
