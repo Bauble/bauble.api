@@ -404,3 +404,10 @@ def get_urls(text):
         #print match.groups()
         matches.append(match.groups())
     return matches
+
+
+def get_ref_id(ref):
+    # assume that if ref is not a str then it is a resource JSON object
+    if not isinstance(ref, str):
+        ref = ref['ref']
+    return ref.split('/')[-1]

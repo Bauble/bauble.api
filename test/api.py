@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import string
 
 import requests
 import requests.auth as auth
@@ -27,11 +28,14 @@ def teardown_module(module):
     pass
 
 
-def get_random_name():
+def get_random_name(nchars=12):
     """
     Return a random string for creating resources that require unique names.
     """
-    return str(random.random())
+    #return str(random.random())
+
+    # TODO: change everything to user test.utils.random_str
+    return ''.join(random.choice(string.ascii_lowercase) for x in range(nchars))
 
 
 def get_headers(depth=1):
@@ -84,7 +88,7 @@ def update_resource(data, user=default_user, password=default_password):
     # convert data to a json string so it won't get paramaterized
     if not isinstance(data, str):
         data = json.dumps(data)
-    response = requests.put(resource, data=data, headers=headers,
+    response = requests.patch(resource, data=data, headers=headers,
                             auth=(user,password))
     assert response.status_code == 200
     return json.loads(response.text)
@@ -131,7 +135,6 @@ def delete_resource(ref, user=default_user, password=default_password):
         ref = ref['ref']
     if(not ref.startswith(api_root)):
         ref = api_root + ref
-    print('deleting ', ref)
     response = requests.delete(ref, auth=(user,password))
     assert response.status_code == 200
     return response

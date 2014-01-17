@@ -1,16 +1,24 @@
+import pytest
+import sys
 
+from test.fixtures import organization, user
 import test.api as api
 import bauble.db as db
 from bauble.model.family import Family, FamilySynonym, FamilyNote
 
+# def setup_function(function):
+#     pass
 
-def test_family_json():
+# def teardown_function(function):
+#     pass
+
+def test_family_json(organization):
     family_name = api.get_random_name()
     family = Family(family=family_name)
     note = FamilyNote(family=family, note="this is a test")
     syn = FamilySynonym(family=family, synonym=family)
 
-    session = db.connect(api.default_user, api.default_password)
+    session = organization.get_session()
     session.add_all([family, note, syn])
     session.commit()
 
@@ -42,7 +50,7 @@ def test_family_json():
     session.close()
 
 
-def test_get_schema():
+def test_get_schema(organization):
     schema = api.get_resource("/family/schema")
     assert 'genera' in schema['relations']
     assert 'notes' in schema['relations']
@@ -60,7 +68,8 @@ def test_get_schema():
     assert 'sp' in schema['columns']
     assert 'accessions' in schema['relations']
 
-def test_server():
+
+def test_server(organization):
     """
     Test the server properly /family resources
     """
@@ -88,9 +97,8 @@ def test_server():
 
     # query for families
     response_json = api.query_resource('/family', q=second_family['family'])
-    second_family = response_json['results'][0]  # we're assuming there's only one
+    second_family = response_json[0]  # we're assuming there's only one
     assert second_family['ref'] == second_ref
-
     # delete the created resources
     api.delete_resource(first_family['ref'])
     api.delete_resource(second_family['ref'])
