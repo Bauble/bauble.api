@@ -36,8 +36,8 @@ environ = {
 # all the environment variables common to all tasks
 os.environ.update(environ['all']);
 
-def shell(cmd):
-    return subprocess.call(cmd, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, shell=True)
+def shell(cmd, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr):
+    return subprocess.call(cmd, stdin=stdin, stdout=stdout, stderr=stderr, shell=True)
 
 
 @baker.command
@@ -64,6 +64,13 @@ def deploy():
     pass
 
 
+@baker.command
+def clean():
+    remove = lambda pattern: "find . -name {0} -type file | xargs -I rm {{}}".format(pattern)
+    remove("\*~")
+    remove("\*.pyc")
+
+
 @baker.command(default=True)
 def server(environment="dev"):
     """
@@ -71,7 +78,6 @@ def server(environment="dev"):
     """
     os.environ.update(environ.get(environment, {}))
     process = shell("uwsgi --ini uwsgi.ini:{}".format(environment))
-
 
 
 baker.run()
