@@ -34,7 +34,6 @@ def index_family():
     response.content_type = '; '.join((mimetype.json, "charset=utf8"))
     return json.dumps([family.json() for family in families])
 
-
 @app.get(API_ROOT + "/family/<family_id:int>")
 @basic_auth
 @resolve_family
@@ -81,3 +80,20 @@ def post_family():
 def delete_family(family_id):
     request.session.delete(request.family)
     request.session.commit()
+
+
+@app.get(API_ROOT + "/family/<family_id:int>/<relations:path>")
+@basic_auth
+@resolve_family
+def get_family_relation(family_id, relations):
+
+    mapper = orm.class_mapper(Family)
+    for name in relations.split('/'):
+        mapper = getattr(mapper.relationships, name).mapper
+
+    query = request.session.query(Family, mapper.class_).\
+            filter(getattr(Family, 'id') == family_id).\
+            join(*relations.split('/'))
+
+    response.content_type = '; '.join((mimetype.json, "charset=utf8"))
+    return json.dumps([obj.json(1) for parent, obj in query])

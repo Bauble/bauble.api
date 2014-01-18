@@ -1,5 +1,7 @@
+from . import schema
 from . import genus
 from . import family
+
 
 from bauble import app
 from bottle import request, response
