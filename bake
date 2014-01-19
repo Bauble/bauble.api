@@ -16,22 +16,22 @@ except Exception as e:
 os.environ['PYTHONPATH'] = os.getcwd()
 
 # these environments can be updated into os.environ
-environ = {
-    "all": {
+environ = {}
+environ['all'] = {
 
-    },
-    "dev": {
-        #'DEBUG': "true",
-        'BAUBLE_ENV': "test"
-    },
-    "test": {
-        #'DEBUG': "true",
-        'BAUBLE_ENV': "development"
-    },
-    "production": {
-        'BAUBLE_ENV': "production"
-    }
 }
+environ['dev'] = dict(environ['all'], **{
+    'BAUBLE_ENV': "development"
+})
+
+environ['test'] = dict(environ['dev'], **{
+    'TEST': 'true'
+})
+
+
+environ['production'] = dict(environ['all'], **{
+    'BAUBLE_ENV': "development"
+})
 
 # all the environment variables common to all tasks
 os.environ.update(environ['all']);
@@ -45,6 +45,7 @@ def test(*args):
     """
     Deploy to the production environment.
     """
+    os.environ.update(environ['test'])
     pytest_args = ['py.test', 'test/spec'] if len(args) is 0 else ['py.test'] + list(args)
     shell(" ".join(pytest_args))
 
