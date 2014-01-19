@@ -8,6 +8,7 @@ from bottle import request, response
 import bauble.db as db
 from bauble.model import User
 from bauble.server import parse_accept_header
+import bauble.utils as utils
 
 # TODO: maybe we should just close the session in each middleware function
 # and if the
@@ -22,11 +23,12 @@ def basic_auth(next):
     """
 
     def _wrapped(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
+        auth = bottle.request.auth
+        if not auth:
             bottle.abort(401, "No Authorization header.")
 
-        username, password = bottle.request.auth
+        username, password = auth
+
         request.session = db.Session()
         request.user = request.session.query(User).filter_by(username=username).first()
         if not request.user:
@@ -34,10 +36,10 @@ def basic_auth(next):
 
         encode = lambda s: s.encode("utf-8") if s else "".encode("utf-8")
         if request.user and (request.user.password and password) and bcrypt.hashpw(encode(password), encode(request.user.password)) == encode(request.user.password):
+            tmp_session = db.Session();
             try:
                 # update the last accessed column in a separate session so we
                 # don't dirty our request session
-                tmp_session = db.Session();
                 tmp_user = tmp_session.query(User).get(request.user.id)
                 tmp_user.last_accesseed = datetime.datetime.now()
                 tmp_session.commit()
@@ -50,7 +52,13 @@ def basic_auth(next):
         else:
             bottle.abort(401)
 
-        db.set_session_schema(request.session, request.user.organization.pg_schema)
+        if not request.user.is_sysadmin and not request.user.organization:
+            bottle.abort(401, "User does not belong to an organization")
+
+        # should only get here if the user either has an organization or the user is a
+        # sysadmin
+        if request.user.organization:
+            db.set_session_schema(request.session, request.user.organization.pg_schema)
 
         # make sure the session is always closed before we return
         try:

@@ -1,7 +1,7 @@
 import os
-import sys
 
 import bottle
+from bottle import request
 
 #
 # TODO: check the permissions on this file and only read it if it's only readable
@@ -10,8 +10,9 @@ import bottle
 
 API_ROOT = "/api/v1"
 
-bauble_rcfile=os.path.join(os.environ['HOME'], ".bauble.api")
+bauble_rcfile = os.path.join(os.environ['HOME'], ".bauble.api")
 
+#bottle.debug(True)
 application = app = bottle.Bottle()
 
 # read environment variables from the bauble rcfile
@@ -31,8 +32,11 @@ if 'DATABASE_URL' not in os.environ:
 
 
 class ArgsPlugin(object):
+    """
+    Plugin to add an args property to every request that contains the url_args for the route.
+    """
     name = 'args'
-    api  = 2
+    api = 2
 
     def apply(self, callback, route):
         def wrapper(*args, **kwargs):
@@ -42,5 +46,6 @@ class ArgsPlugin(object):
 
 app.install(ArgsPlugin())
 
-from bauble.routes import *
+# importing bauble.routes should setup all the endpoints
+import bauble.routes
 import bauble.error

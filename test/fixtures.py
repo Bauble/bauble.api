@@ -21,14 +21,12 @@ def user_session(request, org):
 
 
 @pytest.fixture
-def session():
+def session(request):
     """
     Fixture that provides a session that is not associated with a user
     """
-    session = db.connect()
-    def cleanup():
-        session.close()
-    request.addfinalizer(cleanup)
+    session = db.Session()
+    request.addfinalizer(session.close)
     return session
 
 
@@ -75,9 +73,14 @@ def organization(request, user):
     org = Organization()
     org.name = utils.random_str()
     org.date_approved = datetime.date.today()
-    org.owners = [user];
+
+    # TODO: adding an owner should be easier than this
+    org.owners.append(user);
+    user.is_org_owner = True;
+    user.organization = org
     session.add(org)
     session.commit()
+
     pg_schema = org.pg_schema
 
     tables = db.Base.metadata.sorted_tables

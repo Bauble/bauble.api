@@ -1,26 +1,24 @@
-#pytest_plugins="test.server"
-
 import os
+import pytest
 import subprocess
-import sys
 
-process=None
+process = None
 
 os.environ['PATH'] = os.environ['PATH'] + os.pathsep + os.getcwd()
 
-def pytest_configure():
-    os.environ['PATH'] = os.environ['PATH'] + os.pathsep + os.getcwd()
-    global process
-    process = subprocess.Popen(["bake", "server", "test"], #stdout=sys.stdout,
-                               #stderr=sys.stderr,
-                               env=os.environ)
-    print(process.pid)
+@pytest.fixture(scope="session", autouse=True)
+def start_server(request):
+    def kill():
+        f = open('/tmp/bauble.uwsgi.fifo', 'w')
+        f.write('Q')
+        f.close()
+        if process:
+            process.kill()
 
-def pytest_unconfigure():
-    # send the quit command created by the named pipe defined in uwsgi.ini
-    f = open('/tmp/bauble.uwsgi.fifo', 'w')
-    f.write('Q')
-    f.close()
-    global process
-    if process:
-        process.kill()
+    process = subprocess.Popen(["bake", "server", "test"], env=os.environ)
+    request.addfinalizer(kill)
+
+
+def pytest_exception_interact(node, call, report):
+    import bauble.db
+    bauble.db.engine.dispose()

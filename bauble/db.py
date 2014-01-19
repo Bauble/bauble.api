@@ -8,7 +8,6 @@ import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 import sqlalchemy.orm as orm
 
-import bauble.error as error
 import bauble.types as types
 
 """

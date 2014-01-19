@@ -70,7 +70,6 @@ def create_resource(resource, data, user=default_user, password=default_password
 
     response = requests.post(api_root + resource, data=data, headers=headers,
                              auth=(user, password))
-
     assert response.status_code == 201
     return json.loads(response.text)
 
