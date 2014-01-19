@@ -1,4 +1,5 @@
 import csv
+import sys
 
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
@@ -23,11 +24,10 @@ def from_csv(filemap, schema):
     # 2. should we support imports to system level tables
     # 3. need to setup a test organization so we can get the schema from it
 
-    session = db.connect()
+    session = db.Session()
     db.set_session_schema(session, schema)
     connection = session.connection()
     transaction = connection.begin()
-
     try:
         # import the files in order of their dependency
         for table in db.metadata.sorted_tables:
@@ -43,14 +43,15 @@ def from_csv(filemap, schema):
                                     quoting=QUOTE_STYLE)
             rows = []
             for row in reader:
-                rows.append({key: value if value != "" else None \
-                                 for key, value in row.items()})
+                rows.append({key: value if value != "" else None
+                             for key, value in row.items()})
             connection.execute(table.insert(), rows)
         session.commit()
     except:
         session.rollback()
         raise
-
+    finally:
+        session.close()
 
     # reset the sequence
     import bauble.utils as utils

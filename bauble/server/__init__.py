@@ -191,7 +191,6 @@ def init():
     raise Exception("This method is obsolete")
 
 
-
     import bauble.server.admin
     from . import resource
     import bauble.server.search

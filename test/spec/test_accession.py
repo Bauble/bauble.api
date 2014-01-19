@@ -1,8 +1,6 @@
 import test.api as test
 
-import bauble
 import bauble.db as db
-import bauble.i18n
 from bauble.model.family import Family
 from bauble.model.genus import Genus
 from bauble.model.taxon import Taxon
@@ -10,8 +8,10 @@ from bauble.model.accession import Accession, AccessionNote, Verification, Vouch
 from bauble.model.source import Source, SourceDetail, Collection
 from bauble.model.propagation import Propagation, PlantPropagation, PropSeed, PropCutting
 
+from test.fixtures import organization, user, session
 
-def test_accession_json():
+
+def test_accession_json(organization, session):
     family = Family(family=test.get_random_name())
     genus_name = test.get_random_name()
     genus = Genus(family=family, genus=genus_name)
@@ -36,7 +36,9 @@ def test_accession_json():
 
     note = AccessionNote(accession=acc, note="this is a test")
 
-    session = db.connect(test.default_user, test.default_password)
+    #session = organization.get_session()
+    db.set_session_schema(session, session.merge(organization).pg_schema)
+
     all_objs = [family, genus, taxon, note, acc, source]
     session.add_all(all_objs)
     session.commit()
@@ -94,7 +96,7 @@ def test_accession_json():
     session.close()
 
 
-def test_server():
+def test_server(organization):
     """
     Test the server properly handle /taxon resources
     """
@@ -112,7 +114,7 @@ def test_server():
     # create a accession accession
     first_accession = test.create_resource('/accession', {
         'taxon': taxon,
-        'code': test.get_random_name()#,
+        'code': test.get_random_name()
 
         # 'source': {
         #     'sources_id': test.get_random_name(),
@@ -150,11 +152,8 @@ def test_server():
     first_accession = test.get_resource(first_accession['ref'])
 
     # query for taxa
-    print('second_accession', second_accession)
-    response_json = test.query_resource('/accession', q=second_accession['code'])
-    print(response_json)
-    second_accession = response_json['results'][0]  # we're assuming there's only one
-    assert second_accession['ref'] == second_ref
+    accessions = test.query_resource('/accession', q=second_accession['code'])
+    assert second_accession['ref'] in [accession['ref'] for accession in accessions]
 
     # delete the created resources
     test.delete_resource(first_accession['ref'])

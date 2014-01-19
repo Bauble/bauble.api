@@ -6,8 +6,9 @@ from bauble.model.taxon import Taxon, TaxonSynonym, TaxonNote
 
 import test.api as api
 import test.utils as utils
+from test.fixtures import organization, user
 
-def test_taxon_json():
+def test_taxon_json(organization):
     family = Family(family=api.get_random_name())
     genus_name = api.get_random_name()
     genus = Genus(family=family, genus=genus_name)
@@ -16,7 +17,7 @@ def test_taxon_json():
     note = TaxonNote(taxon=taxon, note="this is a test")
     syn = TaxonSynonym(taxon=taxon, synonym=taxon)
 
-    session = db.connect(api.default_user, api.default_password)
+    session = organization.get_session()
     session.add_all([family, genus, taxon, note, syn])
     session.commit()
 
@@ -51,7 +52,7 @@ def test_taxon_json():
     session.close()
 
 
-def test_server():
+def test_server(organization):
     """
     Test the server properly handle /taxon resources
     """
@@ -92,8 +93,7 @@ def test_server():
     # assert second_taxon['ref'] == second_ref
 
     # test getting the taxon relative to its family
-    response_json = api.get_resource(family['ref'] + "/genera/taxa")
-    taxa = response_json['results']
+    taxa = api.get_resource(family['ref'] + "/genera/taxa")
     assert first_taxon['ref'] in [taxon['ref'] for taxon in taxa]
 
     # delete the created resources

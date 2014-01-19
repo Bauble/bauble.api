@@ -54,12 +54,17 @@ def user(request):
     user.set_password(test.default_password)
     session.add(user)
     session.commit()
+
+    user_id = user.id
     session.close()
 
     def cleanup():
         session = db.Session()
-        session.delete(user)
-        session.commit()
+        session.close()
+        user = session.query(User).get(user_id)
+        if user:
+            session.delete(user)
+            session.commit()
         session.close()
     request.addfinalizer(cleanup)
 

@@ -100,6 +100,28 @@ def accept(mimetype):
     return _decorator
 
 
+def resolve_relation(column, relation, required=True):
+    """
+    Resolve a relationship for column.
+    """
+    def _decorator(next):
+        def _wrapped(*args, **kwargs):
+            # if there isn't a column_id value look it up in the relation field
+            if not column in request.json:
+                if isinstance(request.json[relation], dict):
+                    request.json[column] = utils.get_ref_id(request.json[relation]['ref'])
+                else:
+                    request.json[column] = utils.get_ref_id(request.json[relation])
+
+            if required and not column in request.json and not request.json[column]:
+                bottle.abort(401, "Could not resovle relation {0} for column {1}".format(relation, column))
+            return next(*args, **kwargs)
+        return _wrapped
+    return _decorator
+
+
+
+
 class accept2:
     """Decorator class to handle parsing the HTTP Accept header.
     """

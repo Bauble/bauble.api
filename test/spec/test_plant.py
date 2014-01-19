@@ -1,4 +1,4 @@
-import test.api as api
+
 import bauble.db as db
 from bauble.model.family import Family
 from bauble.model.genus import Genus
@@ -7,9 +7,11 @@ from bauble.model.accession import Accession
 from bauble.model.plant import Plant, PlantNote
 from bauble.model.location import Location
 
+import test.api as api
+from test.fixtures import organization, user
 
 
-def test_plant_json():
+def test_plant_json(organization):
     family = Family(family=api.get_random_name())
     genus_name = api.get_random_name()
     genus = Genus(family=family, genus=genus_name)
@@ -21,7 +23,7 @@ def test_plant_json():
 
     note = PlantNote(plant=plant, note="this is a test")
 
-    session = db.connect(api.default_user, api.default_password)
+    session = organization.get_session()
     all_objs = [family, genus, taxon, note, acc, plant, location]
     session.add_all(all_objs)
     session.commit()
@@ -49,7 +51,7 @@ def test_plant_json():
     session.close()
 
 
-def test_server():
+def test_server(organization):
     """
     Test the server properly handle /taxon resources
     """
@@ -77,9 +79,8 @@ def test_server():
     plant = api.get_resource(plant['ref'])
 
     # query for plants
-    response_json = api.query_resource('/plant', q=plant['code'])
-    plant = response_json['results'][0]  # we're assuming there's only one
-    assert plant['ref'] == plant_ref
+    plants = api.query_resource('/plant', q=plant['code'])
+    assert plant['ref'] in [plant['ref'] for plant in plants]
 
     # delete the created resources
     api.delete_resource(plant)

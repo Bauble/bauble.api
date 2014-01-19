@@ -2,16 +2,19 @@ import json
 
 import requests
 
-import bauble.search as search
+import bauble
+import bauble.search# as search
 import test.api as api
+from test.fixtures import organization, user
 
 
-def test_parser():
+def test_parser(organization):
     """
     Test the bauble.search.SearchParser
     """
+    import bauble.search as search
     family = api.create_resource('/family', {'family': api.get_random_name()})
-    parser = search.SearchParser()
+    parser = bauble.search.SearchParser()
     parser.statement.parseString(family['family'])
     api.delete_resource(family)
 
@@ -20,7 +23,7 @@ def get_headers():
     return {'accept': 'application/json'}
 
 
-def test_search():
+def test_search(organization):
     family_name = api.get_random_name()
     family = api.create_resource('/family', {'family': family_name})
 
@@ -31,7 +34,7 @@ def test_search():
 
     response = requests.get(api.api_root + "/search", params={'q': family_name},
                             headers=get_headers(),
-                            auth=(api.default_user,api.default_password))
+                            auth=(api.default_user, api.default_password))
     assert response.status_code == 200
 
     response_json = json.loads(response.text)

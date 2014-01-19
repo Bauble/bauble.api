@@ -1,7 +1,7 @@
 import pytest
 import sys
 
-from test.fixtures import organization, user
+from test.fixtures import organization, user, session
 import test.api as api
 import bauble.db as db
 from bauble.model.family import Family, FamilySynonym, FamilyNote
@@ -12,13 +12,14 @@ from bauble.model.family import Family, FamilySynonym, FamilyNote
 # def teardown_function(function):
 #     pass
 
-def test_family_json(organization):
+def test_family_json(organization, session):
     family_name = api.get_random_name()
     family = Family(family=family_name)
     note = FamilyNote(family=family, note="this is a test")
     syn = FamilySynonym(family=family, synonym=family)
 
-    session = organization.get_session()
+    #session = organization.get_session()
+    db.set_session_schema(session, session.merge(organization).pg_schema)
     session.add_all([family, note, syn])
     session.commit()
 
@@ -69,10 +70,15 @@ def test_get_schema(organization):
     assert 'accessions' in schema['relations']
 
 
-def test_server(organization):
+def test_server(organization, session):
     """
     Test the server properly /family resources
     """
+
+    #session = organization.get_session()
+    db.set_session_schema(session, session.merge(organization).pg_schema)
+    families = session.query(Family)
+
     # create a family family
     first_family = api.create_resource('/family', {'family': api.get_random_name()})
 

@@ -20,7 +20,7 @@ class Organization(db.SystemBase):
     # TODO: do we need this????
     #pg_user = Column(String, unique=True)
 
-    owners = relationship('User', cascade=None, primaryjoin="and_("\
+    owners = relationship('User', cascade='all, delete-orphan', primaryjoin="and_("\
                               "Organization.id==User.organization_id,"\
                               "User.is_org_owner==True)")
     admins = relationship('User', cascade=None, primaryjoin="and_("\
@@ -87,6 +87,10 @@ def before_insert(mapper, connection, organization):
 
 @event.listens_for(Organization, 'after_insert')
 def after_insert(mapper, connection, organization):
+    """
+    Create a unique PostgreSQL schema for organization and set it's name on the
+    organizations pg_schema field.
+    """
     org_table = object_mapper(organization).local_table
     schema_name = db.create_unique_schema()
     stmt = org_table.update().where(org_table.c.id==organization.id)\
@@ -96,4 +100,7 @@ def after_insert(mapper, connection, organization):
 
 @event.listens_for(Organization, 'after_delete')
 def after_delete(mapper, connection, organization):
+    """
+    Drop the organization's database schema when the organization is deleted.
+    """
     connection.execute("drop schema {} cascade;".format(organization.pg_schema))

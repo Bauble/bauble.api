@@ -91,7 +91,7 @@ def test_server(organization):
     response_json = api.query_resource('/family', q=family['family'], depth=2,
         relations="genera,notes")
     families = response_json
-    print(families[0])
+
     # TODO: *** i don't know if we still support returning relations like this...do
     # we need to
     # print(families[0]['genera'])
