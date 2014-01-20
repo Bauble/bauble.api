@@ -22,9 +22,12 @@ before_script:
   - sudo adduser -disabled-password --gecos "" bauble
   - psql -c "create role test with createrole login password 'test\';" -U postgres
   - psql -c "create database bauble owner test encoding 'utf8';" -U postgres
-  - ./bake server test # start the server just for setting up the db
+  # start the server for setting up the database
+  - ./bake server 
   - sleep 7
   - PYTHONPATH=. bin/initdb.py
   - PYTHONPATH=. bin/set_admin_password.py test
   - PYTHONPATH=. bin/create_test_org.py
-  - ./bake test
+  # kill the server so we can run the tests
+  - echo "Q" > /tmp/bauble.uwsgi.fifo
+  
