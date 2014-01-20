@@ -81,14 +81,13 @@ def post_organization():
     response.status = 201
 
     # create the default tables for the organization
-    organization = request.session.query(Organization).get(self.get_ref_id(response))
     if not organization.pg_schema:
         bottle.abort(500, "Couldn't create the organization's schema")
 
     tables = db.Base.metadata.sorted_tables
     for table in tables:
         table.schema = organization.pg_schema
-    db.Base.metadata.create_all(session.get_bind(), tables=tables)
+    db.Base.metadata.create_all(request.session.get_bind(), tables=tables)
 
     for table in tables:
         table.schema = None

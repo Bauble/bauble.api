@@ -27,7 +27,7 @@ before_script:
   - sleep 7
   - PYTHONPATH=. bin/initdb.py
   - PYTHONPATH=. bin/set_admin_password.py test
-  - PYTHONPATH=. bin/create_test_org.py
+  # - PYTHONPATH=. bin/create_test_org.py
   # kill the server so we can run the tests
   - echo "Q" > /tmp/bauble.uwsgi.fifo
   
