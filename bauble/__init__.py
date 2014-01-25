@@ -9,11 +9,7 @@ from bottle import request
 #
 
 API_ROOT = "/api/v1"
-
 bauble_rcfile = os.path.join(os.environ['HOME'], ".bauble.api")
-
-#bottle.debug(True)
-application = app = bottle.Bottle()
 
 # read environment variables from the bauble rcfile
 if os.path.exists(bauble_rcfile) and os.path.isfile(bauble_rcfile):
@@ -31,21 +27,16 @@ if 'DATABASE_URL' not in os.environ:
     raise Exception("DATABASE_URL not in environment")
 
 
-class ArgsPlugin(object):
-    """
-    Plugin to add an args property to every request that contains the url_args for the route.
-    """
-    name = 'args'
-    api = 2
+app = None
+application = None
 
-    def apply(self, callback, route):
-        def wrapper(*args, **kwargs):
-            request.args = request.environ['route.url_args']
-            return callback(*args, **kwargs)
-        return wrapper
+application = app = bottle.Bottle()
+import bauble.plugins as plugins
 
-app.install(ArgsPlugin())
-
-# importing bauble.routes should setup all the endpoints
+# setup the routes, error handlers and plugins
 import bauble.routes
 import bauble.error
+
+app.install(plugins.OptionsPlugin())
+app.install(plugins.ArgsPlugin())
+app.install(plugins.CORSPlugin())

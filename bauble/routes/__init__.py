@@ -15,32 +15,27 @@ from . import search
 from . import schema
 from . import user
 
-from bauble import app
+from bauble import app, API_ROOT
+
 
 
 @app.hook('after_request')
 def after_request_hook(*args):
-    #print('dir(request): ', dir(response));
-    #print('response.body: ', response.body);
-    #print('request.content: ', request.content);
+    # this can be used for debugging but any other request hooks should be setup in bauble.plugins
     pass
 
 @app.hook('before_request')
 def before_request_hook():
-    # print(request.method + " " + request.path)
-    #print('dir(request): ', dir(response));
-    #print('response.body: ', response.body);
-    #print('request.content: ', request.content);
+    # this can be used for debugging but any other request hooks should be setup in bauble.plugins
     pass
 
 
-@app.hook('before_request')
-def enable_cors():
+
+def set_cors_headers():
     """
     You need to add some headers to each request.
     Don't use the wildcard '*' for Access-Control-Allow-Origin in production.
     """
-    #response.set_header('Access-Control-Allow-Origin', '*')
     response.set_header('Access-Control-Allow-Origin',
                         request.headers.get("Origin"))
     response.set_header('Access-Control-Allow-Methods',

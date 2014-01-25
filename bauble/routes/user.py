@@ -67,9 +67,7 @@ def post_user():
     mutable = []
 
     # create a copy of the request data with only the columns
-    data = { col: request.json[col] for col in request.json.keys() if col in column_names }
-
-    print('data: ', data);
+    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
 
     # make a copy of the data for only those fields that are columns
     user = User(**data)

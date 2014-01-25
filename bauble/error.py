@@ -11,6 +11,7 @@ from bauble import app
 class BaubleError(Exception):
     def __init__(self, msg=None):
         self.msg = msg
+
     def __str__(self):
         if self.msg is None:
             return str(type(self).__name__)
@@ -21,8 +22,8 @@ class BaubleError(Exception):
 class CommitException(Exception):
 
     def __init__(self, exc, row):
-        self.row = row # the model we were trying to commit
-        self.exc = exc # the exception thrown while committing
+        self.row = row  # the model we were trying to commit
+        self.exc = exc  # the exception thrown while committing
 
     def __str__(self):
         return str(self.exc)
@@ -96,8 +97,9 @@ for code in common_errors:
 
 @app.error(401)
 def error_handler_401(error):
-    from bauble.routes import enable_cors
-    enable_cors()
+    # set the cors headers explicity since the error handler use a fresh request
+    from bauble.routes import set_cors_headers
+    set_cors_headers()
     header = request.headers.get('Authorization', None)
     if header:
         user, password = bottle.parse_auth(header)
