@@ -50,8 +50,7 @@ def user(request):
         session.delete(user)
         session.commit()
 
-    user = User(username=test.default_user)
-    user.set_password(test.default_password)
+    user = User(username=test.default_user, password=test.default_password)
     session.add(user)
     session.commit()
 

@@ -23,20 +23,18 @@ def basic_auth(next):
     """
 
     def _wrapped(*args, **kwargs):
-        auth = bottle.request.auth
+        auth = request.auth
         if not auth:
             bottle.abort(401, "No Authorization header.")
 
         username, password = auth
-
         request.session = db.Session()
         request.user = request.session.query(User).filter_by(username=username).first()
-        if not request.user:
-            bottle.abort(401) # not authorized
+        if not request.user or not password:
+            bottle.abort(401)  # not authorized
 
-        encode = lambda s: s.encode("utf-8") if s else "".encode("utf-8")
-        if request.user and (request.user.password and password) and bcrypt.hashpw(encode(password), encode(request.user.password)) == encode(request.user.password):
-            tmp_session = db.Session();
+        if request.user.password == password:
+            tmp_session = db.Session()
             try:
                 # update the last accessed column in a separate session so we
                 # don't dirty our request session

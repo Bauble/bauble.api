@@ -1,6 +1,7 @@
 
 import bcrypt
-from sqlalchemy import *
+from sqlalchemy import Column, String, Boolean, Integer, ForeignKey
+from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from sqlalchemy.orm import *
 
 import bauble
@@ -9,16 +10,46 @@ import bauble.db as db
 #from bauble.utils.log import debug
 #import bauble.utils.web as web
 import bauble.types as types
-import bauble.search as search
+
+
+class EncryptedPassword(Comparator):
+    """
+    Comparator to handle encrypted passwords.
+    """
+
+    def __init__(self, password):
+        self._password = password
+
+
+    def operate(self, op, other):
+        if not isinstance(other, EncryptedPassword):
+            encode = lambda s: s.encode("utf-8") if s else "".encode("utf-8")
+            other = bcrypt.hashpw(encode(other), encode(self._password)).decode('utf-8')
+        return op(self._password, other)
+
+
+    def __clause_element__(self):
+        return self._password
+
+
+    def __str__(self):
+        return self._password
+
+
 
 class User(db.SystemBase):
+
+    def __init__(self, *args, password=None, **kwargs):
+        self.password = password
+        return super().__init__(*args, **kwargs)
+
     __tablename__ = 'user'
 
     username = Column(String, nullable=False, unique=True)
     fullname = Column(String)
     title = Column(String)
     email = Column(String)
-    password = Column(String)
+    _password = Column('password', String, nullable=False)
 
     # system permissions
     is_sysadmin = Column(Boolean)
@@ -32,14 +63,17 @@ class User(db.SystemBase):
     # organization object
     organization_id = Column(Integer, ForeignKey('organization.id'))
 
-    # TODO: This should probably be made into a property so that
-    # passwords are always hashed
+
+    @hybrid_property
+    def password(self):
+        return EncryptedPassword(self._password)
+
+
+    @password.setter
     def set_password(self, password):
         """Encrypt and set the password.
         """
-        import bcrypt
-        hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
-        self.password = hashed.decode("utf-8")
+        self._password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode('utf-8')
 
 
     def get_ref(self):
