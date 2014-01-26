@@ -81,8 +81,8 @@ def check(condition, msg=None):
 def default_error_handler(error):
     # TODO: only print the error when the debug flag is set
     # make sure the error is printed in the log
-    from bauble.routes import enable_cors
-    enable_cors()
+    from bauble.routes import set_cors_headers
+    set_cors_headers()
     if isinstance(error, str):
         return error
     elif error.body:
@@ -100,9 +100,8 @@ def error_handler_401(error):
     # set the cors headers explicity since the error handler use a fresh request
     from bauble.routes import set_cors_headers
     set_cors_headers()
-    header = request.headers.get('Authorization', None)
-    if header:
-        user, password = bottle.parse_auth(header)
+    if request.auth:
+        user, password = request.auth
         return "Could not authorize user: {user}".format(user=user)
     else:
         return "No Authorization header."
