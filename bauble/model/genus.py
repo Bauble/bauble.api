@@ -16,6 +16,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 
 import bauble
 import bauble.db as db
+from bauble.model import Model
 #import bauble.utils as utils
 #import bauble.utils.desktop as desktop
 import bauble.types as types
@@ -48,7 +49,7 @@ def genus_markup_func(genus):
 
 
 
-class Genus(db.Base):
+class Genus(Model):
     """
     :Table name: genus
 
@@ -149,7 +150,7 @@ class Genus(db.Base):
         return d
 
 
-class GenusNote(db.Base):
+class GenusNote(Model):
     """
     Notes for the genus table
     """
@@ -178,7 +179,7 @@ class GenusNote(db.Base):
 
 
 
-class GenusSynonym(db.Base):
+class GenusSynonym(Model):
     """
     :Table name: genus_synonym
     """

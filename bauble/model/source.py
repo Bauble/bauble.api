@@ -7,6 +7,7 @@ from sqlalchemy.orm import *
 import bauble
 import bauble.i18n
 import bauble.db as db
+from bauble.model import Model
 from bauble.model.geography import Geography
 #import bauble.utils as utils
 import bauble.types as types
@@ -20,7 +21,7 @@ def coll_markup_func(coll):
         (safe(acc), safe(acc.taxon_str())), safe(coll)
 
 
-class Source(db.Base):
+class Source(Model):
     """
     """
     __tablename__ = 'source'
@@ -94,7 +95,7 @@ source_type_values = {'Expedition': _('Expedition'),
                       None: ''}
 
 
-class SourceDetail(db.Base):
+class SourceDetail(Model):
     __tablename__ = 'source_detail'
     __mapper_args__ = {'order_by': 'name'}
 
@@ -128,7 +129,7 @@ class SourceDetail(db.Base):
 
 # TODO: create a DMS column type to hold latitude and longitude,
 # should probably store the DMS data as a string in decimal degrees
-class Collection(db.Base):
+class Collection(Model):
     """
     :Table name: collection
 

@@ -5,6 +5,7 @@ from sqlalchemy import *
 from sqlalchemy.orm import *
 
 import bauble.db as db
+from bauble.model import Model
 import bauble.search as search
 
 
@@ -16,7 +17,7 @@ def loc_markup_func(location):
         return utils.xml_safe(str(location))
 
 
-class Location(db.Base):
+class Location(Model):
     """
     :Table name: location
 

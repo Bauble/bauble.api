@@ -1,4 +1,9 @@
-from bottle import request
+import json
+
+from bottle import request, response
+
+import bauble.db as db
+from bauble.model import Model
 
 class ArgsPlugin(object):
     """
@@ -58,4 +63,24 @@ class CORSPlugin(object):
         def wrapper(*args, **kwargs):
             set_cors_headers()
             return callback(*args, **kwargs)
+        return wrapper
+
+
+
+class JSONPlugin(object):
+
+    name = 'json'
+    api = 2
+
+    def apply(self, callback, route):
+
+        def wrapper(*args, **kwargs):
+            response_data = callback(*args, **kwargs)
+            if isinstance(response_data, (Model, db.SystemBase)):
+                response.content_type = 'application/json'
+                return json.dumps(response_data.json())
+            elif isinstance(response_data, (list, tuple, dict)):
+                response.content_type = 'application/json'
+                return json.dumps(response_data)
+            return response_data
         return wrapper

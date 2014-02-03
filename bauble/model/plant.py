@@ -20,6 +20,7 @@ import bauble.db as db
 from bauble.error import check, CheckConditionError
 
 import bauble.paths as pathsn
+from bauble.model import Model
 from bauble.model import meta
 from bauble.model.location import Location
 from bauble.model.propagation import PlantPropagation
@@ -104,7 +105,7 @@ def is_code_unique(plant, code):
 # TODO: what would happend if the PlantRemove.plant_id and
 # PlantNote.plant_id were out of sink....how could we avoid these sort
 # of cycles
-class PlantNote(db.Base):
+class PlantNote(Model):
     __tablename__ = 'plant_note'
     __mapper_args__ = {'order_by': 'plant_note.date'}
 
@@ -154,7 +155,7 @@ change_reasons = {
 }
 
 
-class PlantChange(db.Base):
+class PlantChange(Model):
     """
     """
     __tablename__ = 'plant_change'
@@ -255,7 +256,7 @@ sex_values = {
     'Male': _('Male'),
     'Both': ''}
 
-# class Container(db.Base):
+# class Container(Model):
 #     __tablename__ = 'container'
 #     __mapper_args__ = {'order_by': 'name'}
 #     code = Column(Unicode)
@@ -265,7 +266,7 @@ sex_values = {
 # TODO: PlantStatus was never used integrated into Bauble 1.x....???
 #
 
-class PlantStatus(db.Base):
+class PlantStatus(Model):
     """
     date: date checked
     status: status of plant
@@ -326,7 +327,7 @@ acc_type_values = {'Plant': _('Plant'),
                    None: ''}
 
 
-class Plant(db.Base):
+class Plant(Model):
     """
     :Table name: plant
 

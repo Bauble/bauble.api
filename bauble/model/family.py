@@ -12,6 +12,7 @@ import bauble.db as db
 #import bauble.utils as utils
 #from bauble.utils.log import debug
 #import bauble.utils.web as web
+from bauble.model import Model
 import bauble.types as types
 import bauble.search as search
 
@@ -27,7 +28,7 @@ def family_markup_func(family):
 #
 # Family
 #
-class Family(db.Base):
+class Family(Model):
     """
     :Table name: family
 

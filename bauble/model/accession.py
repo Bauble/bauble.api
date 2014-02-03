@@ -6,6 +6,7 @@ from sqlalchemy.orm.session import object_session
 
 import bauble.db as db
 import bauble.types as types
+from bauble.model import Model
 from bauble.model.taxon import Taxon
 from bauble.model.genus import Genus
 import bauble.search as search
@@ -59,7 +60,7 @@ recvd_type_values = {
     }
 
 
-class Verification(db.Base):
+class Verification(Model):
     """
     :Table name: verification
 
@@ -146,7 +147,7 @@ class Verification(db.Base):
 # least display them in the Voucher tab and Infobox
 herbarium_codes = {}
 
-class Voucher(db.Base):
+class Voucher(Model):
     """
     :Table name: voucher
 
@@ -185,7 +186,7 @@ class Voucher(db.Base):
 
 
 
-class AccessionNote(db.Base):
+class AccessionNote(Model):
     """
     Notes for the accession table
     """
@@ -222,7 +223,7 @@ class AccessionMapperExtension(MapperExtension):
         return EXT_CONTINUE
 
 
-class Accession(db.Base):
+class Accession(Model):
     """
     :Table name: accession
 

@@ -14,6 +14,7 @@ from sqlalchemy.orm.collections import collection
 
 import bauble
 import bauble.db as db
+from bauble.model import Model
 #import bauble.utils as utils
 #from bauble.utils.log import debug
 import bauble.types as types
@@ -58,7 +59,7 @@ infrasp_rank_values = {'subsp.': _('subsp.'),
 # make sure that at least one of the specific epithet, cultivar name
 # or cultivar group is specificed
 
-class Taxon(db.Base):
+class Taxon(Model):
     """
     :Table name: taxon
 
@@ -415,7 +416,7 @@ class Taxon(db.Base):
 
 
 
-class TaxonNote(db.Base):
+class TaxonNote(Model):
     """
     Notes for the taxon table
     """
@@ -445,7 +446,7 @@ class TaxonNote(db.Base):
 
 
 
-class TaxonSynonym(db.Base):
+class TaxonSynonym(Model):
     """
     :Table name: taxon_synonym
     """
@@ -483,7 +484,7 @@ class TaxonSynonym(db.Base):
 
 
 
-class VernacularName(db.Base):
+class VernacularName(Model):
     """
     :Table name: vernacular_name
 
@@ -539,7 +540,7 @@ class VernacularName(db.Base):
 
 
 
-class DefaultVernacularName(db.Base):
+class DefaultVernacularName(Model):
     """
     :Table name: default_vernacular_name
 
@@ -578,7 +579,7 @@ class DefaultVernacularName(db.Base):
 
 
 
-class TaxonDistribution(db.Base):
+class TaxonDistribution(Model):
     """
     :Table name: taxon_distribution
 
@@ -618,7 +619,7 @@ TaxonDistribution.geography = relation('Geography',
                 primaryjoin='TaxonDistribution.geography_id==Geography.id',
                                          uselist=False)
 
-class Habit(db.Base):
+class Habit(Model):
     __tablename__ = 'habit'
 
     name = Column(Unicode(64))
@@ -647,7 +648,7 @@ class Habit(db.Base):
 
 
 
-class Color(db.Base):
+class Color(Model):
     __tablename__ = 'color'
 
     name = Column(Unicode(32))

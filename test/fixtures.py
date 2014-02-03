@@ -4,7 +4,7 @@ import pytest
 
 import bauble.db as db
 from bauble.model.organization import Organization
-from bauble.model import Family, Genus, Taxon, User
+from bauble.model import Model, Family, Genus, Taxon, User
 from test import utils
 import test
 
@@ -87,11 +87,11 @@ def organization(request, user):
 
     pg_schema = org.pg_schema
 
-    tables = db.Base.metadata.sorted_tables
+    tables = Model.metadata.sorted_tables
     for table in tables:
         table.schema = pg_schema
 
-    db.Base.metadata.create_all(session.get_bind(), tables=tables)
+    Model.metadata.create_all(session.get_bind(), tables=tables)
     for table in tables:
         table.schema = None
 
@@ -104,7 +104,7 @@ def organization(request, user):
         session.commit()
         session.close()
         connection = db.engine.connect()
-        db.Base.metadata.drop_all(connection, tables=tables)
+        Model.metadata.drop_all(connection, tables=tables)
         connection.close()
 
     request.addfinalizer(cleanup)

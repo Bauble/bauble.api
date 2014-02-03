@@ -38,7 +38,7 @@ def index_family():
 @basic_auth
 @resolve_family
 def get_family(family_id):
-    return request.family.json(1)
+    return request.family.json()
 
 
 @app.route(API_ROOT + "/family/<family_id:int>", method='PATCH')
@@ -96,4 +96,4 @@ def get_family_relation(family_id, relations):
             join(*relations.split('/'))
 
     response.content_type = '; '.join((mimetype.json, "charset=utf8"))
-    return json.dumps([obj.json(1) for parent, obj in query])
+    return json.dumps([obj.json() for parent, obj in query])
