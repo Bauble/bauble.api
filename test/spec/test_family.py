@@ -1,86 +1,94 @@
 import pytest
-import sys
 
-from test.fixtures import organization, user, session
-import test.api as api
 import bauble.db as db
 from bauble.model.family import Family, FamilySynonym, FamilyNote
+from test.fixtures import organization, user, session
+import test.api as api
 
-# def setup_function(function):
-#     pass
+@pytest.fixture
+def setup(organization, session):
+    setup.organization = session.merge(organization)
+    setup.user = setup.organization.owners[0]
+    setup.session = session
+    db.set_session_schema(session, setup.organization.pg_schema)
+    return setup
 
-# def teardown_function(function):
-#     pass
 
-def test_family_json(organization, session):
+def test_family_json(setup):
+    session = setup.session
+
     family_name = api.get_random_name()
     family = Family(family=family_name)
     note = FamilyNote(family=family, note="this is a test")
     syn = FamilySynonym(family=family, synonym=family)
 
     #session = organization.get_session()
-    db.set_session_schema(session, session.merge(organization).pg_schema)
+    #db.set_session_schema(session, session.merge(organization).pg_schema)
     session.add_all([family, note, syn])
     session.commit()
 
-    family_json = family.json(depth=0)
-    assert 'ref' in family_json
-    assert family_json['ref'] == '/family/' + str(family.id)
+    family_json = family.json()
+    assert 'id' in family_json
+    assert family_json['id'] == family.id
 
-    family_json = family.json(depth=1)
+    family_json = family.json()
     assert 'family' in family_json
     assert 'str' in family_json
     assert 'qualifier' in family_json
 
-    note_json = note.json(depth=0)
-    assert 'ref' in note_json
+    note_json = note.json()
+    assert 'id' in note_json
+    assert note_json['note'] == note.note
+    assert 'family_id' in note_json
+    assert note_json['family_id'] == family.id
 
-    note_json = note.json(depth=1)
-    assert 'family' in note_json
-    assert note_json['family'] == family.json(depth=0)
-
-    syn_json = syn.json(depth=0)
-    assert 'ref' in syn_json
-
-    syn_json = syn.json(depth=1)
-    assert syn_json['family'] == family.json(depth=0)
-    assert syn_json['synonym'] == family.json(depth=0)
+    syn_json = syn.json()
+    assert syn_json['family_id'] == family.id
+    assert syn_json['synonym_id'] == family.id
 
     session.delete(family)
     session.commit()
     session.close()
 
 
-def test_get_schema(organization):
-    schema = api.get_resource("/family/schema")
+def test_get_schema(setup):
+
+    organization = setup.organization
+    session = setup.session
+    user = setup.user
+
+    schema = api.get_resource("/family/schema", user=user)
     assert 'genera' in schema['relations']
     assert 'notes' in schema['relations']
     #assert 'synonyms' in schema['relations']
 
-    schema = api.get_resource("/family/genera/schema")
+    schema = api.get_resource("/family/genera/schema", user=user)
     assert 'genus' in schema['columns']
     assert 'taxa' in schema['relations']
 
-    schema = api.get_resource("/family/notes/schema")
+    schema = api.get_resource("/family/notes/schema", user=user)
     assert 'note' in schema['columns']
     #assert 'taxon' in schema['relations']
 
-    schema = api.get_resource("/family/genera/taxa/schema")
+    schema = api.get_resource("/family/genera/taxa/schema", user=user)
     assert 'sp' in schema['columns']
     assert 'accessions' in schema['relations']
 
 
-def test_server(organization, session):
+def test_server(setup):
     """
     Test the server properly /family resources
     """
 
     #session = organization.get_session()
-    db.set_session_schema(session, session.merge(organization).pg_schema)
+    #db.set_session_schema(session, session.merge(organization).pg_schema)
+    session = setup.session
+    user = setup.user
+
     families = session.query(Family)
 
     # create a family family
-    first_family = api.create_resource('/family', {'family': api.get_random_name()})
+    first_family = api.create_resource('/family', {'family': api.get_random_name()}, user)
 
     # create another family and use the first as a synonym
     data = {'family': api.get_random_name(),
@@ -89,22 +97,23 @@ def test_server(organization, session):
             'synonyms': [first_family]
             }
 
-    second_family = api.create_resource('/family', data)
-    assert 'ref' in second_family  # created
+    second_family = api.create_resource('/family', data, user)
+    assert 'id' in second_family  # created
 
     # update the family
     second_family['family'] = api.get_random_name()
-    second_ref = second_family['ref']
-    second_family = api.update_resource(second_family)
-    assert second_family['ref'] == second_ref  # make sure they have the same ref after the update
+    second_id = second_family['id']
+    second_family = api.update_resource('/family/{}'.format(second_id), second_family, user)
+    assert second_family['id'] == second_id  # make sure they have the same ref after the update
 
     # get the family
-    first_family = api.get_resource(first_family['ref'])
+    first_family = api.get_resource('/family/{}'.format(first_family['id']), user=user)
 
     # query for families
-    response_json = api.query_resource('/family', q=second_family['family'])
+    response_json = api.query_resource('/family', q=second_family['family'], user=user)
+
     second_family = response_json[0]  # we're assuming there's only one
-    assert second_family['ref'] == second_ref
+    assert second_family['id'] == second_id
     # delete the created resources
-    api.delete_resource(first_family['ref'])
-    api.delete_resource(second_family['ref'])
+    api.delete_resource('/family/{}'.format(first_family['id']), user)
+    api.delete_resource('/family/{}'.format(second_family['id']), user)

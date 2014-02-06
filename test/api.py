@@ -4,7 +4,6 @@ import random
 import string
 
 import requests
-import requests.auth as auth
 
 import bauble
 import test
@@ -12,9 +11,6 @@ import test
 # WARNING: DO NOT RUN THIS SCRIPT ON THE PRODUCTION SERVER
 server = "http://localhost:9099"
 api_root = server + "/api/v1"
-default_user = test.default_user
-default_password = test.default_password
-
 
 if "api.bauble.io" in server or os.environ.get('BAUBLE_ENV') != 'development':
     print("NOT IN PRODUCTION YOU FOOL!")
@@ -45,87 +41,89 @@ def get_headers(depth=1):
     return {'accept': 'application/json;depth=' + str(depth)}
 
 
-def count_resource(resource, user=default_user, password=default_password):
-    response = requests.get(api_root + resource + "/count", auth=(user, password))
+def count_resource(resource, user=None):
+    auth = (user.email, user.access_token) if user else None
+    response = requests.get(api_root + resource + "/count", auth=auth)
     assert response.status_code == 200
     return response.text
 
 
-def get_schema(resource, user=default_user, password=default_password):
-    response = requests.get(api_root + resource + "/schema", auth=(user, password))
+def get_schema(resource, user=None):
+    auth = (user.email, user.access_token) if user else None
+    response = requests.get(api_root + resource + "/schema", auth=auth)
     assert response.status_code == 200
     return json.loads(response.text)
 
 
-def create_resource(resource, data, user=default_user, password=default_password):
+def create_resource(resource, data, user=None):
     """
     Create a server based resource with fields in kwargs with a POST
     """
-    headers = get_headers()
-    headers['content-type'] = 'application/json'
-
     # convert data to a json string so it won't get paramaterized
     if not isinstance(data, str):
         data = json.dumps(data)
 
-    response = requests.post(api_root + resource, data=data, headers=headers,
-                             auth=(user, password))
+    auth = (user.email, user.access_token) if user else None
+    headers = {'content-type': 'application/json'}
+    response = requests.post(api_root + resource, data=data, auth=auth, headers=headers)
+
     assert response.status_code == 201
     return json.loads(response.text)
 
 
-def update_resource(data, user=default_user, password=default_password):
+def update_resource(resource, data, user=None):
     """
     Create or update a server based resource using a http PUT
     """
-    headers = get_headers()
-    headers['content-type'] = 'application/json'
-    resource = data['ref']
+    #resource = data['ref']
     if not resource.startswith(api_root):
         resource = api_root + resource
 
     # convert data to a json string so it won't get paramaterized
     if not isinstance(data, str):
         data = json.dumps(data)
-    response = requests.patch(resource, data=data, headers=headers,
-                            auth=(user,password))
+
+    auth = (user.email, user.access_token) if user else None
+    headers = {'content-type': 'application/json'}
+    response = requests.patch(resource, data=data, headers=headers, auth=auth)
     assert response.status_code == 200
     return json.loads(response.text)
 
 
-def get_resource(ref, depth=1, relations=[], user=default_user,
-                 password=default_password):
+def get_resource(resource, params=None, user=None):
     """
     Get a server based resource with id=id
     """
-    if(not ref.startswith(api_root)):
-        ref = api_root + ref
-    params = {}
-    if relations:
-        params['relations'] = relations
-    response = requests.get(ref, headers=get_headers(depth=depth), params=params,
-                            auth=(user,password))
+    if(not resource.startswith(api_root)):
+        resource = api_root + resource
+
+    # params = {}
+    # if relations:
+    #     params['relations'] = relations
+    auth = (user.email, user.access_token) if user else None
+    response = requests.get(resource, params=params, auth=auth)
     #print('response: ', response.text)
     assert response.status_code == 200
-    return json.loads(response.text)
+    assert "application/json" in response.headers['content-type']
+    return response.json()
 
 
-def query_resource(resource, q, depth=1, relations=[], user=default_user,
-                   password=default_password):
+def query_resource(resource, q, relations=[], user=None):
     """
     """
     if not resource.startswith(api_root):
         resource = api_root + resource
-    params = { 'q': q }
+    params = {'q': q}
     if(relations):
         params['relations'] = str(relations)
-    response = requests.get(resource, params=params, headers=get_headers(depth=depth),
-                            auth=(user,password))
+
+    auth = (user.email, user.access_token) if user else None
+    response = requests.get(resource, params=params, auth=auth)
     assert response.status_code == 200
     return json.loads(response.text)
 
 
-def delete_resource(ref, user=default_user, password=default_password):
+def delete_resource(ref, user=None):
     """
     Delete a server based resource with id=id
     """
@@ -134,6 +132,8 @@ def delete_resource(ref, user=default_user, password=default_password):
         ref = ref['ref']
     if(not ref.startswith(api_root)):
         ref = api_root + ref
-    response = requests.delete(ref, auth=(user,password))
+
+    auth = (user.email, user.access_token) if user else None
+    response = requests.delete(ref, auth=auth)
     assert response.status_code == 200
     return response

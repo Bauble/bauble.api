@@ -27,17 +27,23 @@ def basic_auth(next):
         if not auth:
             bottle.abort(401, "No Authorization header.")
 
-        username, password = auth
+        email, password = auth
         request.session = db.Session()
-        request.user = request.session.query(User).filter_by(username=username).first()
+        request.user = request.session.query(User).filter_by(email=email).first()
         if not request.user or not password:
             bottle.abort(401)  # not authorized
 
-        if request.user.password == password:
+        # *************
+        # TODO: make sure we have passed the access_token_expiration
+        # *************
+
+        # basic_auth authorizes agains the users access token rather than the password
+        # only /login uses the password
+        if request.user.access_token == password:
             tmp_session = db.Session()
             try:
                 # update the last accessed column in a separate session so we
-                # don't dirty our request session
+                # don't dirty our request session and inadvertantly commit something
                 tmp_user = tmp_session.query(User).get(request.user.id)
                 tmp_user.last_accesseed = datetime.datetime.now()
                 tmp_session.commit()
@@ -50,8 +56,8 @@ def basic_auth(next):
         else:
             bottle.abort(401)
 
-        if not request.user.is_sysadmin and not request.user.organization:
-            bottle.abort(401, "User does not belong to an organization")
+        # if not request.user.is_sysadmin and not request.user.organization:
+        #     bottle.abort(401, "User does not belong to an organization")
 
         # should only get here if the user either has an organization or the user is a
         # sysadmin

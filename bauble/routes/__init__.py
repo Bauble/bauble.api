@@ -1,6 +1,8 @@
 
 from bottle import request, response
 
+from . import auth
+
 from . import family
 from . import genus
 from . import taxon

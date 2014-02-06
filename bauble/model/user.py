@@ -40,16 +40,26 @@ class EncryptedPassword(Comparator):
 class User(db.SystemBase):
 
     def __init__(self, *args, password=None, **kwargs):
-        self.password = password
-        return super().__init__(*args, **kwargs)
+        self.password = password if password else ""
+        super().__init__(*args, **kwargs)
+
+        self.username = self.email if not self.username else self.username
+
 
     __tablename__ = 'user'
 
     username = Column(String, nullable=False, unique=True)
     fullname = Column(String)
     title = Column(String)
-    email = Column(String)
-    _password = Column('password', String, nullable=False)
+    email = Column(String, nullable=False, unique=True)
+    _password = Column('password', String, nullable=False)  # hybrid property, see below
+
+    # All requests after /login will use the access token for authentication
+    # rather than the password.  An access token as an expiration date.
+    access_token = Column(String, unique=True)
+
+    # The date and time when the access_token expires.
+    access_token_expiration = Column(types.DateTime)
 
     # system permissions
     is_sysadmin = Column(Boolean)

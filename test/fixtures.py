@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, date, timedelta
 
 import pytest
 
@@ -14,6 +14,7 @@ def user_session(request, org):
     session = db.connect()
     session.add(org)
     db.set_session_schema(session, org.pg_schema)
+
     def cleanup():
         session.close()
     request.addfinalizer(cleanup)
@@ -36,13 +37,14 @@ def admin_session():
     Fixture that provides a session that is not associated with a user
     """
     session = db.connect(admin, 'test')
+
     def cleanup():
         session.close()
     request.addfinalizer(cleanup)
     return session
 
 
-@pytest.fixture#(scope="function")
+@pytest.fixture
 def user(request):
     session = db.Session()
     user = session.query(User).filter_by(username=test.default_user).first()
@@ -50,7 +52,11 @@ def user(request):
         session.delete(user)
         session.commit()
 
-    user = User(username=test.default_user, password=test.default_password)
+
+    user = User(email=test.default_user,
+                password=test.default_password,
+                access_token='1234',
+                access_token_expiration=datetime.now() + timedelta(weeks=2))
     session.add(user)
     session.commit()
 
@@ -69,18 +75,19 @@ def user(request):
 
     return user
 
-@pytest.fixture#(scope="function")
+
+@pytest.fixture
 def organization(request, user):
     session = db.Session()
     user = session.merge(user)
 
     org = Organization()
     org.name = utils.random_str()
-    org.date_approved = datetime.date.today()
+    org.date_approved = date.today()
 
     # TODO: adding an owner should be easier than this
-    org.owners.append(user);
-    user.is_org_owner = True;
+    org.owners.append(user)
+    user.is_org_owner = True
     user.organization = org
     session.add(org)
     session.commit()
