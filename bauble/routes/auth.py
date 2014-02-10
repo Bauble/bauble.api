@@ -20,7 +20,7 @@ def login():
     username, password = auth
     session = db.Session()
     try:
-        user = session.query(User).filter_by(username=username).first()
+        user = session.query(User).filter_by(email=username).first()
         if not user or not user.password == password:
             bottle.abort(401)  # not authorized
 

@@ -2,7 +2,7 @@
 #import sys
 
 from test.fixtures import organization, user, session
-#import test.api as api
+import test.api as api
 #import bauble.db as db
 from bauble.model.user import User
 
@@ -52,21 +52,13 @@ def xtest_resource(session):
 
 
 def test_password(session):
-    username = 'test_set_password'
-    password = username
+    username = api.get_random_name()
+    email = username + '@bauble.io'
+    password = api.get_random_name()
 
-    print('query user')
-    users = session.query(User).filter_by(username=username)
-    for user in users:
-        session.delete(user)
-    session.commit()
-
-    print('create user')
-    user = User(username=username, password=password)
+    user = User(email=email, username=username, password=password)
     session.add(user)
     session.commit()
-
-    print('user.password: ', user._password)
 
     # test the password isn't stored in plain text
     assert user._password != password
@@ -76,4 +68,3 @@ def test_password(session):
 
     session.delete(user)
     session.commit()
-    session.close()

@@ -7,13 +7,20 @@ import requests.auth as auth
 import bauble.db as db
 from bauble.model.user import User
 from test.fixtures import user, session
-from test.api import api_root
+from test.api import api_root, get_random_name
 import test
 
 
 def test_auth(user, session):
+
+    # set the password explicity so we know what it is
+    password = get_random_name()
+    user.password = password
+    session.add(user)
+    session.commit()
+
     # test /login
-    response = requests.get(api_root + "/login", auth=(test.default_user, test.default_password))
+    response = requests.get(api_root + "/login", auth=(user.email, password))
     assert response.status_code == 200
     assert "application/json" in response.headers['content-type']
     user_json = response.json()
