@@ -9,6 +9,7 @@ import sqlalchemy.orm as orm
 
 import bauble
 import bauble.imp as imp
+from bauble.model import Model
 from bauble import app, API_ROOT
 import bauble.mimetype as mimetype
 from bauble.middleware import *
@@ -44,8 +45,7 @@ def index_organization():
 @accept(mimetype.json)
 @resolve_organization
 def get_organization(organization_id):
-    depth = request.accept[mimetype.json]['depth']
-    return request.organization.json(int(depth))
+    return request.organization.json()
 
 
 @app.route(API_ROOT + "/organization/<organization_id:int>", method='PATCH')
@@ -65,7 +65,7 @@ def patch_organization(organization_id):
 
 
 @app.post(API_ROOT + "/organization")
-@basic_auth
+#@basic_auth
 def post_organization():
 
     # TODO create a subset of the columns that we consider mutable
@@ -74,25 +74,31 @@ def post_organization():
     # create a copy of the request data with only the columns
     data = {col: request.json[col] for col in request.json.keys() if col in mutable}
 
-    # make a copy of the data for only those fields that are columns
-    organization = Organization(**data)
-    request.session.add(organization)
-    request.session.commit()
-    response.status = 201
+    session = db.Session()
+    try:
+        # make a copy of the data for only those fields that are columns
+        organization = Organization(**data)
+        session.add(organization)
+        session.commit()
+        response.status = 201
 
-    # create the default tables for the organization
-    if not organization.pg_schema:
-        bottle.abort(500, "Couldn't create the organization's schema")
+        # create the default tables for the organization
+        if not organization.pg_schema:
+            bottle.abort(500, "Couldn't create the organization's schema")
 
-    tables = db.Base.metadata.sorted_tables
-    for table in tables:
-        table.schema = organization.pg_schema
-    db.Base.metadata.create_all(request.session.get_bind(), tables=tables)
+        #tables = db.Base.metadata.sorted_tables
+        metadata = Model.metadata
+        tables = metadata.sorted_tables
+        for table in tables:
+            table.schema = organization.pg_schema
+        metadata.create_all(session.get_bind(), tables=tables)
 
-    for table in tables:
-        table.schema = None
+        for table in tables:
+            table.schema = None
 
-    return organization.json()
+        return organization.json()
+    finally:
+        session.close()
 
 
 @app.delete(API_ROOT + "/organization/<organization_id:int>")
@@ -154,4 +160,40 @@ def get_organization_relation(organization_id, relations):
         join(*relations.split('/'))
 
     response.content_type = '; '.join((mimetype.json, "charset=utf8"))
-    return json.dumps([obj.json(1) for parent, obj in query])
+    return json.dumps([obj.json() for parent, obj in query])
+
+
+
+@basic_auth
+def approve(self, resource_id):
+
+
+    user = request.session.query(User).filter_by(username=username).one()
+    if not user.is_sysadmin:
+        bottle.abort(403, "Only a sysadmin can approve an organization.")
+
+    org = request.session.query(Organization).get(resource_id)
+    org.date_approved = datetime.date.today()
+
+    # import the default data
+    base_path = os.path.join(os.path.join(*bauble.__path__), 'data')
+    session.commit()
+
+    # TODO: we should probably do the imports in the background
+    # and since we can be reasonably sure they will succeeed then
+    # go ahead an return a 200 response
+    datamap = {
+        'family': os.path.join(base_path, "family.txt"),
+        'genus': os.path.join(base_path, 'genus.txt'),
+        'genus_synonym': os.path.join(base_path, 'genus_synonym.txt'),
+        'geography': os.path.join(base_path, 'geography.txt'),
+        'habit': os.path.join(base_path, 'habit.txt')
+    }
+    from multiprocessing import Process
+    process = Process(target=imp.from_csv, args=(datamap, org.pg_schema))
+    process.start()
+    # imp.from_csv(datamap, org.pg_schema)
+    # session.commit()
+    response = org.json()
+
+    return response

@@ -1,3 +1,4 @@
+from datetime import datetime, date
 import json
 import os
 import random
@@ -22,6 +23,12 @@ def setup_module(module):
 
 def teardown_module(module):
     pass
+
+
+def json_encoder(obj):
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    raise TypeError
 
 
 def get_random_name(nchars=12):
@@ -61,7 +68,7 @@ def create_resource(resource, data, user=None):
     """
     # convert data to a json string so it won't get paramaterized
     if not isinstance(data, str):
-        data = json.dumps(data)
+        data = json.dumps(data, default=json_encoder)
 
     auth = (user.email, user.access_token) if user else None
     headers = {'content-type': 'application/json'}

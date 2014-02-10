@@ -113,8 +113,10 @@ def resolve_relation(column, relation, required=True):
             # if there isn't a column_id value look it up in the relation field
             if not column in request.json:
                 if isinstance(request.json[relation], dict):
-                    request.json[column] = utils.get_ref_id(request.json[relation]['ref'])
+                    # resolve from json dict
+                    request.json[column] = request.json[relation]['id']
                 else:
+                    # resolve from the route, e.g. /taxon/1234
                     request.json[column] = utils.get_ref_id(request.json[relation])
 
             if required and not column in request.json and not request.json[column]:

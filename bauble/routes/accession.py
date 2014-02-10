@@ -40,7 +40,7 @@ def index_accession():
 @basic_auth
 @resolve_accession
 def get_accession(accession_id):
-    return request.accession.json(1)
+    return request.accession.json()
 
 
 @app.route(API_ROOT + "/accession/<accession_id:int>", method='PATCH')

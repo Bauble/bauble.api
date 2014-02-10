@@ -3,9 +3,6 @@
 # Genera table module
 #
 
-import os
-import traceback
-import weakref
 import xml
 
 from sqlalchemy import *
@@ -125,29 +122,12 @@ class Genus(Model):
         if genus.genus is None:
             return repr(genus)
         elif not author or genus.author is None:
-            return ' '.join([s for s in [genus.genus, genus.qualifier] \
-                                 if s not in ('', None)])
+            return ' '.join([s for s in [genus.genus, genus.qualifier] if s not in ('', None)])
         else:
             return ' '.join(
                 [s for s in [genus.genus, genus.qualifier,
-                             xml.sax.saxutils.escape(genus.author)] \
-                     if s not in ('', None)])
+                             xml.sax.saxutils.escape(genus.author)] if s not in ('', None)])
 
-    def json(self, depth=1):
-        """Return a JSON respresentation of this Genus.
-        """
-        d = dict(ref="/genus/{}".format(self.id))
-        if depth > 0:
-            d['genus'] = self.genus
-            d['str'] = str(self)
-            d['qualifier'] = self.qualifier
-            d['author'] = self.author
-            d['family'] = self.family.json(depth=depth - 1)
-
-        if(depth > 1):
-            d['synonyms'] = [syn.json(depth=depth - 1) for syn in self.synonyms]
-            d['notes'] = [note.json(depth=depth - 1) for note in self.notes]
-        return d
 
 
 class GenusNote(Model):
@@ -164,18 +144,6 @@ class GenusNote(Model):
     genus_id = Column(Integer, ForeignKey('genus.id'), nullable=False)
     genus = relation('Genus', uselist=False,
                      backref=backref('notes', cascade='all, delete-orphan'))
-
-    def json(self, depth=1):
-        """Return a JSON representation of this GenusNote
-        """
-        d = dict(ref="/genus/" + str(self.genus_id) + "/note/" + str(self.id))
-        if(depth > 0):
-            d['date'] = str(self.date)
-            d['user'] = self.user
-            d['category'] = self.category
-            d['note'] = self.note
-            d['genus'] = self.genus.json(depth=depth - 1)
-        return d
 
 
 
@@ -207,15 +175,6 @@ class GenusSynonym(Model):
     def __str__(self):
         return str(self.synonym)
 
-
-    def json(self, depth=1):
-        """Return a JSON representation of this GenusSynonym
-        """
-        d = dict(ref="/genus/" + str(self.genus_id) + "/synonym/" + str(self.id))
-        if(depth > 0):
-            d['genus'] = self.genus.json(depth=depth - 1)
-            d['synonym'] = self.synonym.json(depth=depth - 1)
-        return d
 
 
 # TODO: could probably incorporate this into the class since if we can

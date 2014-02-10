@@ -8,7 +8,7 @@ import sqlalchemy.orm as orm
 from bauble import app, API_ROOT
 import bauble.mimetype as mimetype
 from bauble.middleware import *
-from bauble.model import Genus, Taxon# TaxonNote, TaxonSynonym
+from bauble.model import Genus, Taxon  # TaxonNote, TaxonSynonym
 import bauble.utils as utils
 
 column_names = [col.name for col in sa.inspect(Taxon).columns]
@@ -40,7 +40,7 @@ def index_taxon():
 @basic_auth
 @resolve_taxon
 def get_taxon(taxon_id):
-    return request.taxon.json(1)
+    return request.taxon.json()
 
 
 @app.route(API_ROOT + "/taxon/<taxon_id:int>", method='PATCH')
@@ -63,14 +63,11 @@ def post_taxon():
     mutable = []
 
     # create a copy of the request data with only the columns
-    data = { col: request.json[col] for col in request.json.keys() if col in column_names }
+    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
 
     # if there isn't a genus_id look for a genus relation on the request data
-    if not 'genus_id' in data:
-        if isinstance(request.json['genus'], dict):
-            data['genus_id'] = utils.get_ref_id(request.json['genus']['ref'])
-        else:
-            data['genus_id'] = utils.get_ref_id(request.json['genus'])
+    if not 'genus_id' in data and 'genus' in request.json and isinstance(request.json['genus'], dict) and 'id' in request.json['genus']:
+        data['genus_id'] = request.json['genus']['id']
 
     # make a copy of the data for only those fields that are columns
     taxon = Taxon(**data)

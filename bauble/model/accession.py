@@ -124,23 +124,6 @@ class Verification(Model):
     notes = Column(UnicodeText)
 
 
-    def json(self, depth=1):
-        """
-        """
-        d = dict(ref="/accession/" + str(self.accession_id) + "/verification/" + str(self.id))
-        if depth > 0:
-            d['verifier'] = self.verifier
-            d['date'] = str(self.date)
-            d['reference'] = self.reference
-            d['accession'] = self.accession.json(depth=depth - 1)
-            d['taxon'] = self.taxon.json(depth=depth - 1)
-            d['prev_taxon'] = self.prev_taxon.json(depth=depth - 1)
-            d['level'] = self.level
-            d['notes'] = None
-            if self.notes:
-                d['notes'] = self.notes.json(depth=depth - 1)
-        return d
-
 
 # TODO: auto add parent voucher if accession is a propagule of an
 # existing accession and that parent accession has vouchers...or at
@@ -175,16 +158,6 @@ class Voucher(Model):
     #                       backref=backref('vouchers',
     #                                       cascade='all, delete-orphan'))
 
-    def json(self, depth=1):
-        d = dict(ref="/accession/" + str(self.accession_id) + "/voucher/" + str(self.id))
-        if depth > 0:
-            d['herbarium'] = self.herbarium
-            d['code'] = self.code
-            d['parent_material'] = self.parent_material
-            d['accession'] = self.accession.json(depth=depth - 1)
-        return d
-
-
 
 class AccessionNote(Model):
     """
@@ -202,17 +175,6 @@ class AccessionNote(Model):
                          backref=backref('notes', cascade='all, delete-orphan'))
 
 
-    def json(self, depth=1):
-        """Return a JSON representation of this AccessionNote
-        """
-        d = dict(ref="/accession/" + str(self.accession_id) + "/note/" + str(self.id))
-        if(depth > 0):
-            d['date'] = str(self.date)
-            d['user'] = self.user
-            d['category'] = self.category
-            d['note'] = self.note
-            d['accession'] = self.accession.json(depth=depth - 1)
-        return d
 
 
 # invalidate an accessions string cache after it has been updated
@@ -454,36 +416,6 @@ class Accession(Model):
     def markup(self):
         return '%s (%s)' % (self.code, self.taxon.markup())
 
-
-    def json(self, depth=1, markup=False):
-        d = dict(ref="/accession/" + str(self.id))
-        if(depth > 0):
-            d['code'] = self.code
-            d['taxon'] = self.taxon.json(depth=depth-1)
-            d['str'] = str(self)
-
-        if(depth > 1):
-            d['taxon_str'] = self.taxon_str(markup=markup)
-            d['id_qual'] = self.id_qual
-            d['id_qual_rank'] = self.id_qual_rank
-            d['prov_type'] = self.prov_type
-            d['wild_prov_status'] = self.wild_prov_status
-            d['date_accd'] = str(self.date_accd)
-            d['date_recvd'] = str(self.date_recvd)
-            d['quantity_recvd'] = self.quantity_recvd
-            d['recvd_type'] = self.recvd_type
-            d['private'] = self.private
-            d['intended_location'] = None
-            d['intended2_location'] = None
-            d['source'] = None
-            if self.source:
-                d['source'] = self.source.json(depth=depth-1)
-            if self.intended_location:
-                d['intended_location'] = self.intended_location.json(depth=depth - 1)
-            if self.intended2_location:
-                d['intended2_location'] = self.intended2_location.json(depth=depth - 1)
-
-        return d
 
 # setup the search matcher
 mapper_search = search.get_strategy('MapperSearch')

@@ -6,7 +6,7 @@ import sqlalchemy.orm as orm
 
 import bauble
 import bauble.db as db
-import bauble.model as model
+from bauble.model import Model
 
 QUOTE_STYLE = csv.QUOTE_MINIMAL
 QUOTE_CHAR = '"'
@@ -30,7 +30,7 @@ def from_csv(filemap, schema):
     transaction = connection.begin()
     try:
         # import the files in order of their dependency
-        for table in db.metadata.sorted_tables:
+        for table in Model.metadata.sorted_tables:
             if not table.name in filemap:
                 continue
 

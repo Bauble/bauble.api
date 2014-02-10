@@ -34,6 +34,7 @@ def index_family():
     response.content_type = '; '.join((mimetype.json, "charset=utf8"))
     return json.dumps([family.json() for family in families])
 
+
 @app.get(API_ROOT + "/family/<family_id:int>")
 @basic_auth
 @resolve_family
@@ -64,7 +65,7 @@ def post_family():
     mutable = []
 
     # create a copy of the request data with only the columns
-    data = { col: request.json[col] for col in request.json.keys() if col in column_names }
+    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
 
     # make a copy of the data for only those fields that are columns
     family = Family(**data)

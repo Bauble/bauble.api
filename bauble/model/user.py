@@ -6,6 +6,7 @@ from sqlalchemy.orm import *
 
 import bauble
 import bauble.db as db
+from bauble.model import SystemModel
 #import bauble.utils as utils
 #from bauble.utils.log import debug
 #import bauble.utils.web as web
@@ -37,7 +38,8 @@ class EncryptedPassword(Comparator):
 
 
 
-class User(db.SystemBase):
+#class User(db.SystemBase):
+class User(SystemModel):
 
     def __init__(self, *args, password=None, **kwargs):
         self.password = password if password else ""
@@ -57,6 +59,8 @@ class User(db.SystemBase):
     # All requests after /login will use the access token for authentication
     # rather than the password.  An access token as an expiration date.
     access_token = Column(String, unique=True)
+
+    # TODO: we need to encrypt our access_token
 
     # The date and time when the access_token expires.
     access_token_expiration = Column(types.DateTime)
@@ -84,30 +88,3 @@ class User(db.SystemBase):
         """Encrypt and set the password.
         """
         self._password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode('utf-8')
-
-
-    def get_ref(self):
-        return "/user/" + str(self.id) if self.id is not None else None;
-
-
-    def json(self, depth=1):
-        """Return a dict/JSON representation of this User.
-        """
-        d = dict()
-        if self.id:
-            d['ref'] = self.get_ref()
-
-        if depth > 0:
-            d['username'] = self.username
-            d['fullname'] = self.fullname
-            d['title'] = self.title
-            d['email'] = self.email
-            d['is_sysadmin'] = self.is_sysadmin
-            d['is_org_owner'] = self.is_org_owner
-            d['is_org_admin'] = self.is_org_admin
-
-        if depth > 1:
-            d['organization'] = self.organization.json(depth-1) \
-                if self.organization else {}
-
-        return d

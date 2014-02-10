@@ -8,20 +8,7 @@ from bauble.model import Model, Family, Genus, Taxon, User
 from test import utils
 import test
 
-
-@pytest.fixture
-def user_session(request, org):
-    session = db.connect()
-    session.add(org)
-    db.set_session_schema(session, org.pg_schema)
-
-    def cleanup():
-        session.close()
-    request.addfinalizer(cleanup)
-    return session
-
-
-@pytest.fixture
+@pytest.fixture()
 def session(request):
     """
     Fixture that provides a session that is not associated with a user
@@ -31,32 +18,42 @@ def session(request):
     return session
 
 
-@pytest.fixture
-def admin_session():
-    """
-    Fixture that provides a session that is not associated with a user
-    """
-    session = db.connect(admin, 'test')
-
-    def cleanup():
-        session.close()
-    request.addfinalizer(cleanup)
-    return session
-
-
-@pytest.fixture
+@pytest.fixture()
 def user(request):
     session = db.Session()
-    user = session.query(User).filter_by(username=test.default_user).first()
-    if user:
-        session.delete(user)
-        session.commit()
 
-
-    user = User(email=test.default_user,
-                password=test.default_password,
-                access_token='1234',
+    user = User(email=utils.random_str() + "@bauble.io",
+                username=utils.random_str(),
+                password=utils.random_str(),
+                access_token=utils.random_str(32),
                 access_token_expiration=datetime.now() + timedelta(weeks=2))
+    session.add(user)
+    session.commit()
+    user_id = user.id
+    session.close()
+
+    def cleanup():
+        session = db.Session()
+        session.close()
+        user = session.query(User).get(user_id)
+        if user:
+            session.delete(user)
+            session.commit()
+        session.close()
+    request.addfinalizer(cleanup)
+
+    return user
+
+
+@pytest.fixture()
+def admin_user(request):
+    session = db.Session()
+    user = User(email=utils.random_str() + "@bauble.io",
+                username=utils.random_str(),
+                password=utils.random_str(),
+                access_token=utils.random_str(32),
+                access_token_expiration=datetime.now() + timedelta(weeks=2),
+                is_sysadmin=True)
     session.add(user)
     session.commit()
 
@@ -76,7 +73,19 @@ def user(request):
     return user
 
 
-@pytest.fixture
+# @pytest.fixture()
+# def admin_user(user):
+#     session = db.Session()
+#     user2 = session.merge(user)
+#     user2.is_sysadmin = True
+#     print("admin user: ", user2.email)
+#     session.commit()
+#     session.close()
+#     return user2
+
+
+#@pytest.fixture()
+@pytest.fixture()
 def organization(request, user):
     session = db.Session()
     user = session.merge(user)
@@ -88,9 +97,13 @@ def organization(request, user):
     # TODO: adding an owner should be easier than this
     org.owners.append(user)
     user.is_org_owner = True
-    user.organization = org
+
     session.add(org)
     session.commit()
+
+    user.organization_id = org.id
+    session.commit()
+    session.refresh(user)
 
     pg_schema = org.pg_schema
 
@@ -119,7 +132,7 @@ def organization(request, user):
 
 
 
-@pytest.fixture
+@pytest.fixture()
 def family(user_session):
     family = Family(family=utils.random_str())
     user_session.add(family)
@@ -128,7 +141,7 @@ def family(user_session):
     return family
 
 
-@pytest.fixture
+@pytest.fixture()
 def genus(user_session, family):
     genus = Genus(family=family, genus=utils.random_str())
     user_session.add(genus)
@@ -136,7 +149,7 @@ def genus(user_session, family):
     user_session.close()
     return genus
 
-@pytest.fixture
+@pytest.fixture()
 def taxon(user_session, genus):
     taxon = Taxon(genus=genus, sp=utils.random_str())
     user_session.add(taxon)
@@ -145,7 +158,7 @@ def taxon(user_session, genus):
     return taxon
 
 
-@pytest.fixture
+@pytest.fixture()
 def default_families(org):
     session = db.connect()
     fields = ["family"]

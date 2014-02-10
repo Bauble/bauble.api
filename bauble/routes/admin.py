@@ -5,6 +5,7 @@ import sqlalchemy.orm as orm
 
 import bauble.db as db
 import bauble.i18n
+from bauble.model import SystemModel
 from bauble import app, API_ROOT
 from bauble.middleware import *
 import bauble.types as types
@@ -31,16 +32,16 @@ def initdb():
         session = db.Session()
         connection = session.connection()
         transaction = connection.begin()
-        for table in db.system_metadata.sorted_tables:
+        for table in SystemModel.metadata.sorted_tables:
             if table.exists(connection):
                 bottle.abort(409, table.name + " already exists")
 
-        #db.system_metadata.create_all(bind=session.get_bind())
-        db.system_metadata.create_all(connection)
+        SystemModel.metadata.create_all(connection)
 
         # NOTE: the default admin user does not have a password when the
         # database is first created
-        admin_user = User(username="admin", is_sysadmin=True)
+        admin_user = User(email="admin@bauble.io", is_sysadmin=True)
+
         session.add(admin_user)
         transaction.commit()
         session.commit()

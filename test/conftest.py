@@ -1,6 +1,7 @@
 import os
 import pytest
 import subprocess
+import time
 
 process = None
 
@@ -16,6 +17,7 @@ def start_server(request):
             process.kill()
 
     process = subprocess.Popen(["bake", "server", "test"], env=os.environ)
+    time.sleep(1)
     request.addfinalizer(kill)
 
 

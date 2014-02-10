@@ -187,7 +187,8 @@ def reset_sequence(column):
                 % (sequence_name, column.name, column.table.name)
         conn.execute(stmt)
     except Exception as e:
-        warning('bauble.utils.reset_sequence(): %s' % utf8(e))
+        #warning('bauble.utils.reset_sequence(): %s' % utf8(e))
+        print('bauble.utils.reset_sequence(): {}'.format(e))
         trans.rollback()
     else:
         trans.commit()

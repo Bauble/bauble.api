@@ -40,7 +40,7 @@ def index_plant():
 @basic_auth
 @resolve_plant
 def get_plant(plant_id):
-    return request.plant.json(1)
+    return request.plant.json()
 
 
 @app.route(API_ROOT + "/plant/<plant_id:int>", method='PATCH')
@@ -64,7 +64,8 @@ def post_plant():
     mutable = []
 
     # create a copy of the request data with only the columns
-    data = { col: request.json[col] for col in request.json.keys() if col in column_names }
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in column_names}
 
     # make a copy of the data for only those fields that are columns
     plant = Plant(**data)

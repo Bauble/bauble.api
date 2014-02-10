@@ -13,7 +13,9 @@ except Exception as e:
     print("baker not installed. pip install 'baker>=1.3,<2.0a0'")
     raise
 
+
 os.environ['PYTHONPATH'] = os.getcwd()
+#DATABASE_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
 
 # these environments can be updated into os.environ
 environ = {}
@@ -67,9 +69,10 @@ def deploy():
 
 @baker.command
 def clean():
-    remove = lambda pattern: "find . -name {0} -type file | xargs -I rm {{}}".format(pattern)
+    remove = lambda pattern: "find . -name {0} -type file | xargs -I rm -fr {{}}".format(pattern)
     remove("\*~")
     remove("\*.pyc")
+    remove("__pycache__")
 
 
 @baker.command(default=True)

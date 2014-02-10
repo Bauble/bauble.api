@@ -8,7 +8,7 @@ import sqlalchemy.orm as orm
 from bauble import app, API_ROOT
 import bauble.mimetype as mimetype
 from bauble.middleware import *
-from bauble.model import Family, Genus# GenusNote, GenusSynonym
+from bauble.model import Family, Genus  # , GenusNote, GenusSynonym
 import bauble.utils as utils
 
 column_names = [col.name for col in sa.inspect(Genus).columns]
@@ -16,6 +16,8 @@ column_names = [col.name for col in sa.inspect(Genus).columns]
 def resolve_genus(next):
     def _wrapped(*args, **kwargs):
         request.genus = request.session.query(Genus).get(request.args['genus_id'])
+        if not request.genus:
+            bottle.abort(404, "Genus not found")
         return next(*args, **kwargs)
     return _wrapped
 
@@ -40,7 +42,7 @@ def index_genus():
 @basic_auth
 @resolve_genus
 def get_genus(genus_id):
-    return request.genus.json(1)
+    return request.genus.json()
 
 
 @app.route(API_ROOT + "/genus/<genus_id:int>", method='PATCH')
@@ -63,14 +65,11 @@ def post_genus():
     mutable = []
 
     # create a copy of the request data with only the columns
-    data = { col: request.json[col] for col in request.json.keys() if col in column_names }
+    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
 
     # if there isn't a family_id look for a family relation on the request data
-    if not 'family_id' in data:
-        if isinstance(request.json['family'], dict):
-            data['family_id'] = utils.get_ref_id(request.json['family']['ref'])
-        else:
-            data['family_id'] = utils.get_ref_id(request.json['family'])
+    if not 'family_id' in data and 'family' in request.json and isinstance(request.json['family'], dict) and 'id' in request.json['family']:
+        data['family_id'] = request.json['family']['id']
 
     # make a copy of the data for only those fields that are columns
     genus = Genus(**data)

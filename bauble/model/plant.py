@@ -117,17 +117,6 @@ class PlantNote(Model):
     plant = relation('Plant', uselist=False,
                      backref=backref('notes', cascade='all, delete-orphan'))
 
-    def json(self, depth=1):
-        """Return a JSON representation of this AccessionNote
-        """
-        d = dict(ref="/plant/" + str(self.plant_id) + "/note/" + str(self.id))
-        if(depth > 0):
-            d['date'] = str(self.date)
-            d['user'] = self.user
-            d['category'] = self.category
-            d['note'] = self.note
-            d['plant'] = self.plant.json(depth=depth - 1)
-        return d
 
 
 # TODO: some of these reasons are specific to UBC and could probably be culled.
@@ -196,34 +185,6 @@ class PlantChange(Model):
                            primaryjoin='PlantChange.to_location_id == Location.id')
 
 
-    def json(self, depth=1):
-        """
-        """
-        d = dict(ref="/plant/" + str(self.plant_id) + "/change/" + str(self.id))
-        if(depth > 0):
-            d['plant'] = self.plant.json(depth=depth - 1)
-            d['parent_plant'] = self.parent_plant.json(depth=depth - 1)
-            d['from_location'] = self.from_location.json(depth=depth - 1)
-            d['to_location'] = self.to_location.json(depth=depth - 1)
-            d['note'] = self.note.json(depth=depth - 1)
-
-            # - if to_location_id is None change is a removal
-            # - if from_location_id is None then this change is a creation
-            # - if to_location_id != from_location_id change is a transfer
-            if not to_location_id:
-                d['change_type'] = 'removal'
-            elif not from_location_id:
-                d['change_type'] = 'creation'
-            elif not to_location_id == from_location_id:
-                d['change_type'] = 'transfer'
-            else:
-                d['change_type'] = 'unknown'
-
-        if(depth > 1):
-            d['reason'] = self.reason
-            d['person'] = self.person
-
-        return d
 
 
 condition_values = {
@@ -296,26 +257,6 @@ class PlantStatus(Model):
 
     # TODO: needs container table
     #container_id = Column(Integer)
-
-    def json(self, depth=1):
-        """
-        """
-        d = dict(ref="/plant/" + str(self.plant_id) + "/status/" + str(self.id))
-        if depth > 0:
-            d['date'] = str(self.date)
-            d['condition'] = self.condition
-            d['checked_by'] = self.condition
-            d['flowering_status'] = self.flowering_status
-            d['fruiting_status'] = self.fruiting_status
-            d['plant'] = self.plant.json(depth=depth - 1)
-
-        if depth > 1:
-            d['autumn_color_pct'] = self.autumn_color_pct
-            d['leaf_drop_pct'] = self.leaf_drop_pct
-            d['leaf_emergence_pct'] = self.leaf_emergence_pct
-            d['sex'] = self.sex
-
-        return d
 
 
 
@@ -469,23 +410,6 @@ class Plant(Model):
         return "%s%s%s (%s)" % (self.accession, self.delimiter, self.code,
                                 self.accession.taxon_str(markup=True))
 
-
-    def json(self, depth=1):
-        """
-        """
-        d = dict(ref="/plant/" + str(self.id))
-        if depth > 0:
-            d['code'] = self.code
-            d['accession'] = self.accession.json(depth=depth - 1)
-            d['location'] = self.location.json(depth=depth - 1)
-            d['quantity'] = self.quantity
-            d['str'] = str(self)
-
-        if depth > 0:
-            d['acc_type'] = self.acc_type
-            d['memorial'] = self.memorial
-
-        return d
 
 
 # setup the search mapper

@@ -1,9 +1,10 @@
+from datetime import datetime, date
 import json
 
 from bottle import request, response
 
 import bauble.db as db
-from bauble.model import Model
+from bauble.model import Model, SystemModel
 
 class ArgsPlugin(object):
     """
@@ -72,15 +73,20 @@ class JSONPlugin(object):
     name = 'json'
     api = 2
 
+    def encoder(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        raise TypeError
+
     def apply(self, callback, route):
 
         def wrapper(*args, **kwargs):
             response_data = callback(*args, **kwargs)
-            if isinstance(response_data, (Model, db.SystemBase)):
+            if isinstance(response_data, (Model, SystemModel)):
                 response.content_type = 'application/json'
-                return json.dumps(response_data.json())
+                return json.dumps(response_data.json(), default=self.encoder)
             elif isinstance(response_data, (list, tuple, dict)):
                 response.content_type = 'application/json'
-                return json.dumps(response_data)
+                return json.dumps(response_data, default=self.encoder)
             return response_data
         return wrapper

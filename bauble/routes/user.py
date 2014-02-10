@@ -10,7 +10,7 @@ import bauble.mimetype as mimetype
 from bauble.middleware import *
 from bauble.model import User
 
-column_names = [col.name for col in sa.inspect(User).columns]
+column_names = {col.name for col in sa.inspect(User).columns}
 
 def resolve_user(next):
     def _wrapped(*args, **kwargs):
@@ -27,7 +27,7 @@ def index_user():
     q = request.query.q
     if q:
         # TODO: this should be a ilike or something simiar
-        orgs = orgs.filter_by(name=q)
+        orgs = orgs.filter_by(username=q)
 
     # set response type explicitly since the auto json doesn't trigger for
     # lists for some reason
@@ -40,8 +40,7 @@ def index_user():
 @accept(mimetype.json)
 @resolve_user
 def get_user(user_id):
-    depth = request.accept[mimetype.json]['depth']
-    return request.user.json(int(depth))
+    return request.user.json()
 
 
 @app.route(API_ROOT + "/user/<user_id:int>", method='PATCH')
@@ -52,7 +51,7 @@ def patch_user(user_id):
     # need to drop nonmutable columns like id
 
     # create a copy of the request data with only the columns
-    data = { col: request.json[col] for col in request.json.keys() if col in column_names }
+    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
     for key, value in data.items():
         setattr(request.user, key, data[key])
     request.session.commit()
@@ -60,21 +59,29 @@ def patch_user(user_id):
 
 
 @app.post(API_ROOT + "/user")
-@basic_auth
 def post_user():
+    """
+    Create a new user.
+    """
+    # TODO: send an email to verify user account
 
     # TODO create a subset of the columns that we consider mutable
-    mutable = []
+    omit = {'id', 'access_token', 'access_token_expiration'}
+    mutable = column_names.difference(omit)
 
     # create a copy of the request data with only the columns
-    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in mutable}
 
-    # make a copy of the data for only those fields that are columns
-    user = User(**data)
-    request.session.add(user)
-    request.session.commit()
-    response.status = 201
-    return user.json()
+    session = db.Session()
+    try:
+        user = User(**data)
+        session.add(user)
+        session.commit()
+        response.status = 201
+        return user.json()
+    finally:
+        session.close()
 
 
 @app.delete(API_ROOT + "/user/<user_id:int>")
@@ -99,4 +106,4 @@ def get_user_relation(user_id, relations):
             join(*relations.split('/'))
 
     response.content_type = '; '.join((mimetype.json, "charset=utf8"))
-    return json.dumps([obj.json(1) for parent, obj in query])
+    return json.dumps([obj.json() for parent, obj in query])
