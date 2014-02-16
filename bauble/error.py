@@ -2,6 +2,8 @@
 # all bauble exceptions and errors
 #
 
+import sqlalchemy.exc as sa_exc
+
 import bottle
 from bottle import request
 from bauble import app
@@ -85,10 +87,12 @@ def default_error_handler(error):
     set_cors_headers()
     if isinstance(error, str):
         return error
-    elif error.body:
-        return str(error.body)
-    elif error.exception:
-        return str(error.exception)
+    # elif error.body:
+    #     return str(error.body)
+    # TODO: returning exception is really that safe since we don't know what will be
+    # in the response text
+    # elif error.exception:
+    #     return str(error.exception)
 
 
 common_errors = [400, 403, 404, 406, 409, 415, 500]
@@ -106,6 +110,33 @@ def error_handler_401(error):
     else:
         return "No Authorization header."
 
+
+# @app.error(409)
+# def error_handler_409(error):
+#     # set the cors headers explicity since the error handler use a fresh request
+#     from bauble.routes import set_cors_headers
+#     set_cors_headers()
+#     print('error.body: ', error.body)
+#     #print('error.exception: ', error.body)
+#     print('error: ', error)
+#     return str(error.body)
+    # if isinstance(error.body, sa_exc.IntegrityError):
+    #     print('error.body.orig: ', error.body.orig)
+    #     # s = "{}: {}".format(error.body.orig.diag.column_name,
+    #     #                     error.body.orig.diag.message_primary)
+    #     # print('s: ', s)
+
+
+    #     d = {
+    #         'field': error.exception.orig.diag.column_name,
+    #         'message': error.exception.orig.diag.message_primary
+    #     }
+    #     print('d: ', d)
+    #     return d
+    #     # return "{}: {}".format(error.body.orig.diag.column_name,
+    #     #                        error.body.orig.diag.message_primary)
+    # else:
+    #     return str(error)
 
 
 #
