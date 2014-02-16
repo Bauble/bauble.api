@@ -65,8 +65,10 @@ def patch_organization(organization_id):
 
 
 @app.post(API_ROOT + "/organization")
-#@basic_auth
+@basic_auth
 def post_organization():
+
+    # TODO: if the requesting user already has an organization_id then raise an error
 
     # TODO create a subset of the columns that we consider mutable
     mutable = column_names
@@ -75,9 +77,11 @@ def post_organization():
     data = {col: request.json[col] for col in request.json.keys() if col in mutable}
 
     session = db.Session()
+    session = request.session
     try:
         # make a copy of the data for only those fields that are columns
         organization = Organization(**data)
+        organization.owners.append(request.user)
         session.add(organization)
         session.commit()
         response.status = 201

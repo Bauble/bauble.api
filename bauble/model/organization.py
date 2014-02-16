@@ -18,8 +18,10 @@ class Organization(SystemModel):
     pg_user = Column(String, unique=True)
     pg_schema = Column(String, unique=True)
 
-    # TODO: do we need this????
-    #pg_user = Column(String, unique=True)
+    address = Column(String)
+    city = Column(String)
+    state = Column(String)
+    zip = Column(String)
 
     owners = relationship('User', cascade='save-update, merge, expunge, refresh-expire',  # cascade='all, delete-orphan',
                           primaryjoin="and_("

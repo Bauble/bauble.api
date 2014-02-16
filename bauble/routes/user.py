@@ -1,14 +1,18 @@
 
 import json
 
-from bottle import route
+import bottle
+from bottle import request, response
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
+import sqlalchemy.exc as sa_exc
 
 from bauble import app, API_ROOT
+import bauble.db as db
 import bauble.mimetype as mimetype
-from bauble.middleware import *
+from bauble.middleware import basic_auth, accept
 from bauble.model import User
+from bauble.routes import auth
 
 column_names = {col.name for col in sa.inspect(User).columns}
 
@@ -76,10 +80,14 @@ def post_user():
     session = db.Session()
     try:
         user = User(**data)
+        user.access_token, user.access_token_expiration = auth.create_access_token()
         session.add(user)
         session.commit()
         response.status = 201
         return user.json()
+    except sa_exc.IntegrityError as exc:
+        print('exc.orig.diag.column_name,: ', exc.orig.diag.column_name,)
+        bottle.abort(409, exc)
     finally:
         session.close()
 
@@ -101,9 +109,9 @@ def get_user_relation(user_id, relations):
     for name in relations.split('/'):
         mapper = getattr(mapper.relationships, name).mapper
 
-    query = request.session.query(User, mapper.class_).\
-            filter(getattr(User, 'id') == user_id).\
-            join(*relations.split('/'))
+    query = request.session.query(User, mapper.class_)\
+        .filter(getattr(User, 'id') == user_id)\
+        .join(*relations.split('/'))
 
     response.content_type = '; '.join((mimetype.json, "charset=utf8"))
     return json.dumps([obj.json() for parent, obj in query])
