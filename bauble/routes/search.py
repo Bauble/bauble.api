@@ -2,6 +2,8 @@
 # Handle search requests
 #
 
+import json
+
 import bottle
 from bottle import request, response
 
@@ -25,4 +27,9 @@ def get_search(depth=1):
 
     # if accepted type was */* or json then we always return json
     response.content_type = '; '.join((mimetype.json, "charset=utf8"))
-    return {'results': [r.json() for r in results]}
+
+    data = {}
+    for key, values in results.items():
+        if len(values) > 0:
+            data[key] = [obj.json() for obj in values]
+    return data

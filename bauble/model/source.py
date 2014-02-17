@@ -160,7 +160,7 @@ class Collection(Model):
 
 # setup the search mapper
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('contact', 'contacts', 'person', 'org',
+mapper_search.add_meta(('contacts', 'contact', 'contacts', 'person', 'org',
                         'source'), SourceDetail, ['name'])
-mapper_search.add_meta(('collection', 'col', 'coll'),
+mapper_search.add_meta(('collections', 'collection', 'col', 'coll'),
                        Collection, ['locale'])

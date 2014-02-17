@@ -64,4 +64,4 @@ class Location(Model):
 
 # setup the search mapper
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('location', 'loc'), Location, ['name', 'code'])
+mapper_search.add_meta(('locations', 'location', 'loc'), Location, ['name', 'code'])

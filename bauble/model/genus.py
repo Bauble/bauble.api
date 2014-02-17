@@ -186,4 +186,4 @@ Genus.taxa = relation('Taxon', cascade='all, delete-orphan',
 
 #  setup the search matches
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('genus', 'gen'), Genus, ['genus'])
+mapper_search.add_meta(('genera', 'genus', 'gen'), Genus, ['genus'])

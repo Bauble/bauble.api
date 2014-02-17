@@ -19,10 +19,10 @@ import bauble.utils as utils
 # combos for enum types values instead of text entries
 
 def search(text, session):
-    results = set()
+    results = dict()
     for strategy in _search_strategies:
         results.update(strategy.search(text, session))
-    return list(results)
+    return results
 
 
 
@@ -34,23 +34,21 @@ class SearchParser(object):
     # value can contain any string once its quoted
     value = value_chars | quotedString.setParseAction(removeQuotes)
     value_list = (value ^ delimitedList(value) ^ OneOrMore(value))
-    binop = oneOf('= == != <> < <= > >= not like contains has ilike '\
+    binop = oneOf('= == != <> < <= > >= not like contains has ilike '
                   'icontains ihas is')('binop')
     domain = Word(alphas, alphanums)('domain')
     domain_values = Group(value_list.copy())
     domain_expression = (domain + Literal('=') + Literal('*') + StringEnd()) \
-                        | (domain + binop + domain_values + StringEnd())
+        | (domain + binop + domain_values + StringEnd())
 
     and_token = CaselessKeyword('and')
     or_token = CaselessKeyword('or')
     log_op = and_token | or_token
 
-    identifier = Group(delimitedList(Word(alphas, alphanums+'_'), '.'))
+    identifier = Group(delimitedList(Word(alphas, alphanums + '_'), '.'))
     ident_expression = Group(identifier + binop + value)
-    query_expression = ident_expression \
-                       + ZeroOrMore(log_op + ident_expression)
-    query = domain + CaselessKeyword('where').suppress() \
-            + Group(query_expression) + StringEnd()
+    query_expression = ident_expression + ZeroOrMore(log_op + ident_expression)
+    query = domain + CaselessKeyword('where').suppress() + Group(query_expression) + StringEnd()
 
     statement = query | domain_expression | value_list
 
@@ -95,11 +93,16 @@ class MapperSearch(SearchStrategy):
 
     _domains = {}
     _shorthand = {}
+
+    # a map of classes to the class properties to search
     _properties = {}
+
+    # a map of the class to the result key, this will be domain[0] from add_meta
+    _result_keys = {}
 
     def __init__(self):
         super(MapperSearch, self).__init__()
-        self._results = set()
+        self._results = {}
         self.parser = SearchParser()
 
 
@@ -118,10 +121,13 @@ class MapperSearch(SearchStrategy):
         check(len(properties) > 0, _('MapperSearch.add_meta(): '
                                      'default_columns argument cannot be empty'))
         if isinstance(domain, (list, tuple)):
+            # domain[0] is the result key
+            self._result_keys[cls] = domain[0]
             self._domains[domain[0]] = cls, properties
             for d in domain[1:]:
                 self._shorthand[d] = domain[0]
         else:
+            self._result_keys[cls] = domain
             self._domains[d] = cls, properties
         self._properties[cls] = properties
 
@@ -132,6 +138,7 @@ class MapperSearch(SearchStrategy):
         for domain, item in cls._domains.items():
             d.setdefault(domain, item[0])
         return d
+
 
     def on_query(self, s, loc, tokens):
         """
@@ -178,7 +185,7 @@ class MapperSearch(SearchStrategy):
                 # on the mapper table..i.e. a column
                 col = idents[0]
                 msg = _('The %(tablename)s table does not have a '\
-                       'column named "%(columname)s"') % \
+                        'column named "%(columname)s"') % \
                        dict(tablename=mapper.local_table.name,
                             columname=col)
                 check(col in mapper.c, msg)
@@ -220,7 +227,7 @@ class MapperSearch(SearchStrategy):
             except StopIteration:
                 pass
 
-        self._results.update(main_query.order_by(None).all())
+        self._results[self._result_keys[cls]] = main_query.order_by(None).all()
 
 
     def on_domain_expression(self, s, loc, tokens):
@@ -241,11 +248,14 @@ class MapperSearch(SearchStrategy):
         except KeyError:
             raise KeyError(_('Unknown search domain: %s' % domain))
 
+        result_key = self._result_keys[cls]
+        self._results[result_key] = set()
+
         query = self._session.query(cls)
 
-	# select all objects from the domain
+        # select all objects from the domain
         if values == '*':
-            self._results.update(query.all())
+            self._results[result_key].update(query.all())
             return
 
         mapper = class_mapper(cls)
@@ -264,7 +274,7 @@ class MapperSearch(SearchStrategy):
         for col in properties:
             #ors = or_(*list(condition(col), values))
             ors = or_(*map(condition(col), values))
-            self._results.update(query.filter(ors).all())
+            self._results[result_key].update(query.filter(ors).all())
         return tokens
 
 
@@ -288,22 +298,12 @@ class MapperSearch(SearchStrategy):
 
         for cls, columns in self._properties.items():
             q = self._session.query(cls)
-            cv = [(c,v) for c in columns for v in tokens]
-            # as of SQLAlchemy>=0.4.2 we convert the value to a unicode
-            # object if the col is a Unicode or UnicodeText column in order
-            # to avoid the "Unicode type received non-unicode bind param"
-            def unicol(col, v):
-                mapper = class_mapper(cls)
-                return str
-                # if isinstance(mapper.c[col].type, (Unicode,UnicodeText)):
-                #     return unicode(v)
-                # else:
-                #     return v
+            cv = [(c, v) for c in columns for v in tokens]
             mapper = class_mapper(cls)
-            #q = q.filter(or_(*[like(mapper, c, unicol(c, v)) for c,v in cv]))
             q = q.filter(or_(*(like(mapper, c, v) for c, v in cv)))
             #print(q)
-            self._results.update(q.all())
+            self._results[self._result_keys[cls]] = q.all()
+
 
 
     def search(self, text, session):

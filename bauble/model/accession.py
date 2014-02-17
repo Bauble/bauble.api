@@ -419,4 +419,4 @@ class Accession(Model):
 
 # setup the search matcher
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('accession', 'acc'), Accession, ['code'])
+mapper_search.add_meta(('accessions', 'accession', 'acc'), Accession, ['code'])

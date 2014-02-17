@@ -150,4 +150,4 @@ class FamilySynonym(Model):
 # setup the search matchers
 #
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('family', 'fam'), Family, ['family'])
+mapper_search.add_meta(('families', 'family', 'fam'), Family, ['family'])

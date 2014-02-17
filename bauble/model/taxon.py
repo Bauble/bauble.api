@@ -538,11 +538,8 @@ class Color(Model):
 
 # setup search matcher
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('species', 'sp'), Taxon,
+mapper_search.add_meta(('taxa, taxon', 'sp'), Taxon,
                        ['sp', 'sp2', 'infrasp1', 'infrasp2',
                         'infrasp3', 'infrasp4'])
-mapper_search.add_meta(('taxon', 'sp'), Taxon,
-                       ['sp', 'sp2', 'infrasp1', 'infrasp2',
-                        'infrasp3', 'infrasp4'])
-mapper_search.add_meta(('vernacular', 'vern', 'common'),
+mapper_search.add_meta(('taxa, vernacular', 'vern', 'common'),
                        VernacularName, ['name'])
