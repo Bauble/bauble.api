@@ -14,6 +14,45 @@ def setup(organization, session):
     return setup
 
 
+def test_synonyms(setup):
+    session = setup.session
+    family = Family(family=api.get_random_name())
+    family2 = Family(family=api.get_random_name())
+    session.add_all([family, family2])
+    session.commit()
+
+    family.synonyms.append(family2)
+    session.commit()
+    assert family2 in family.synonyms
+
+    # make sure the FamilySynonym was created
+    count = session.query(FamilySynonym).filter_by(family_id=family.id,
+                                                   synonym_id=family2.id).count()
+    assert count == 1
+
+    family.synonyms.remove(family2)
+    session.commit()
+    assert family2 not in family.synonyms
+
+    # make sure the FamilySynonym was removed
+    count = session.query(FamilySynonym).filter_by(family_id=family.id,
+                                                   synonym_id=family2.id).count()
+    assert count == 0
+
+    # make sure that if a family is deleted all its synonyms get deleted
+    family.synonyms.append(family2)
+    session.commit()
+    count = session.query(FamilySynonym).filter_by(family_id=family.id,
+                                                   synonym_id=family2.id).count()
+    assert count == 1
+    session.delete(family)
+    session.commit()
+    count = session.query(FamilySynonym).filter_by(family_id=family.id,
+                                                   synonym_id=family2.id).count()
+    assert count == 0
+
+
+
 def test_family_json(setup):
     session = setup.session
 

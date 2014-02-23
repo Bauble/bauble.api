@@ -70,18 +70,10 @@ class Family(Model):
 
     # relations
     synonyms = association_proxy('_synonyms', 'synonym')
-   #genera = relation('Genus', backref='family', cascade='all, delete-orphan')
     _synonyms = relation('FamilySynonym',
                          primaryjoin='Family.id==FamilySynonym.family_id',
                          cascade='all, delete-orphan', uselist=True,
                          backref='family')
-
-    # this is a dummy relation, it is only here to make cascading work
-    # correctly and to ensure that all synonyms related to this family
-    # get deleted if this family gets deleted
-    __syn = relation('FamilySynonym',
-                     primaryjoin='Family.id==FamilySynonym.synonym_id',
-                     cascade='all, delete-orphan', uselist=True)
 
     def __str__(self):
         return Family.str(self)
