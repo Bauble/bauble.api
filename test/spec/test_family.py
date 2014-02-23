@@ -1,4 +1,7 @@
+import json
+
 import pytest
+import requests
 
 import bauble.db as db
 from bauble.model.family import Family, FamilySynonym, FamilyNote
@@ -114,9 +117,9 @@ def test_get_schema(setup):
     assert 'accessions' in schema['relations']
 
 
-def test_server(setup):
+def test_route(setup):
     """
-    Test the server properly /family resources
+    Test the /family resource.
     """
 
     #session = organization.get_session()
@@ -149,10 +152,37 @@ def test_server(setup):
     first_family = api.get_resource('/family/{}'.format(first_family['id']), user=user)
 
     # query for families
-    response_json = api.query_resource('/family', q=second_family['family'], user=user)
-
+    #response_json = api.query_resource('/family', q=second_family['family'], user=user)
+    filter_by = json.dumps({'family': second_family['family'][0:4] + '%'})
+    response_json = api.get_resource('/family', {'filter': filter_by}, user=user)
+    assert len(response_json) == 1
     second_family = response_json[0]  # we're assuming there's only one
     assert second_family['id'] == second_id
+
+    # make sure filtering against properties that aren't columns doesn't work
+    filter_by = json.dumps({'something': 'test'})
+    response_json = api.get_resource('/family', {'filter': filter_by}, user=user)
+    assert len(response_json) > 1
+
     # delete the created resources
     api.delete_resource('/family/{}'.format(first_family['id']), user)
     api.delete_resource('/family/{}'.format(second_family['id']), user)
+
+
+def test_embed(setup):
+    session = setup.session
+    user = setup.user
+
+    family = Family(family=api.get_random_name())
+    family2 = Family(family=api.get_random_name())
+    family.synonyms.append(family2)
+    session.add_all([family, family2])
+    session.commit()
+
+    response = requests.get('{}/family/{}?embed=synonyms&embed=notes'.format(api.api_root, family.id), auth=(user.email, user.access_token))
+    # response_json = api.get_resource('/family/{}'.format(family.id),
+    #                                  {'embed': ['synonyms', 'notes']}, user=user)
+    print('response: ', response)
+    assert response.status_code == 200
+    response_json = response.json()
+    print('response_json: ', response_json)

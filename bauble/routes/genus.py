@@ -8,7 +8,7 @@ import sqlalchemy.orm as orm
 from bauble import app, API_ROOT
 import bauble.mimetype as mimetype
 from bauble.middleware import *
-from bauble.model import Family, Genus  # , GenusNote, GenusSynonym
+from bauble.model import Family, Genus, get_relation  # , GenusNote, GenusSynonym
 import bauble.utils as utils
 
 column_names = [col.name for col in sa.inspect(Genus).columns]
@@ -20,6 +20,19 @@ def resolve_genus(next):
             bottle.abort(404, "Genus not found")
         return next(*args, **kwargs)
     return _wrapped
+
+
+def build_embedded(embed, genus):
+    if embed == 'synonyms':
+        data = genus.synonyms
+    else:
+        data = get_relation(Genus, genus.id, embed, session=request.session)
+
+    if isinstance(data, list):
+        return (embed, [obj.json() for obj in data])
+    else:
+        return (embed, data.json() if data else '{}')
+
 
 
 @app.get(API_ROOT + "/genus")
@@ -42,7 +55,15 @@ def index_genus():
 @basic_auth
 @resolve_genus
 def get_genus(genus_id):
-    return request.genus.json()
+    json_data = request.genus.json()
+
+    if 'embed' in request.params:
+        embed_list = request.params.embed if isinstance(request.params.embed, list) \
+            else [request.params.embed]
+        embedded = map(lambda embed: build_embedded(embed, request.genus), embed_list)
+        json_data.update(list(embedded))
+
+    return json_data
 
 
 @app.route(API_ROOT + "/genus/<genus_id:int>", method='PATCH')
@@ -50,7 +71,7 @@ def get_genus(genus_id):
 @resolve_genus
 def patch_genus(genus_id):
     # create a copy of the request data with only the columns
-    data = { col: request.json[col] for col in request.json.keys() if col in column_names }
+    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
     for key, value in data.items():
         setattr(request.genus, key, data[key])
     request.session.commit()

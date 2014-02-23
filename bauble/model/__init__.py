@@ -1,8 +1,38 @@
 import json
 
 from sqlalchemy import Column, Integer, func, inspect, schema
-from bauble.types import DateTime
 from sqlalchemy.ext.declarative import declarative_base, declared_attr, DeclarativeMeta
+import sqlalchemy.orm as orm
+
+from bauble.types import DateTime
+import bauble.db as db
+
+
+def get_relation(model, model_id, path, session=None):
+    mapper = orm.class_mapper(model)
+    if isinstance(path, str):
+        path = path.split('.')
+    for name in path:
+        relationship = mapper.relationships[name]
+        mapper = relationship.mapper
+
+    local_session = True if session else False
+    if not session:
+        session = db.Session()
+
+    result = session.query(model, mapper.class_)\
+        .filter(model.id == model_id)\
+        .join(*path).all()
+
+    if local_session:
+        session.close()
+
+    # if its a scalar return it as a scalar else return it as a list
+    if relationship.uselist:
+        return [r[1] for r in result]
+    else:
+        return result[0][1] if len(result) > 0 else None
+
 
 class ModelBase:
 
