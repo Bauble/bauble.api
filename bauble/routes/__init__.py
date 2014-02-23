@@ -41,6 +41,6 @@ def set_cors_headers():
     response.set_header('Access-Control-Allow-Origin',
                         request.headers.get("Origin"))
     response.set_header('Access-Control-Allow-Methods',
-                        'PUT, GET, POST, DELETE, OPTIONS')
+                        'PUT, GET, POST, DELETE, OPTIONS, PATCH')
     response.set_header('Access-Control-Allow-Headers',
                         'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token, Authorization')
