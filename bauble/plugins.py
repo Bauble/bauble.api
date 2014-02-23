@@ -82,10 +82,22 @@ class JSONPlugin(object):
 
         def wrapper(*args, **kwargs):
             response_data = callback(*args, **kwargs)
-            if isinstance(response_data, (Model, SystemModel)):
-                response.content_type = 'application/json'
-                return json.dumps(response_data.json(), default=self.encoder)
-            elif isinstance(response_data, (list, tuple, dict)):
+
+            ## NOTE: we can't automatically decode our models here because at
+            ## this point the request.session is closed and we can't get a user
+            ## session (with the correct PG search path) with authenticating
+            ## again, it's not impossible but its probably better to avoid the
+            ## magic and require a json dict to be explicity returned
+            # if isinstance(response_data, (Model, SystemModel)):
+            #     session = db.Session()
+            #     try:
+            #         json_dict = session.merge(response_data).json()
+            #         response.content_type = 'application/json'
+            #     finally:
+            #         session.close()
+            #     return json.dumps(json_dict, default=self.encoder)
+            #     #return json.dumps(response_data.json(), default=self.encoder)
+            if isinstance(response_data, (list, tuple, dict)):
                 response.content_type = 'application/json'
                 return json.dumps(response_data, default=self.encoder)
             return response_data
