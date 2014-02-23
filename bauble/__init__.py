@@ -38,6 +38,7 @@ import bauble.routes
 import bauble.error
 
 app.install(plugins.OptionsPlugin())
+app.install(plugins.QueryStringPlugin())
 app.install(plugins.ArgsPlugin())
 app.install(plugins.CORSPlugin())
 app.install(plugins.JSONPlugin())

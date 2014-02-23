@@ -90,3 +90,28 @@ class JSONPlugin(object):
                 return json.dumps(response_data, default=self.encoder)
             return response_data
         return wrapper
+
+
+class QueryStringPlugin(object):
+
+    name = 'querystring'
+    api = 2
+
+
+    def apply(self, callback, route):
+
+        def wrapper(*args, **kwargs):
+            if request.query_string and request.query_string.strip() != "":
+                query_string = request.query_string
+                for param in query_string.split('&'):
+                    key, value = param.split('=')
+                    if key in request.params:
+                        if isinstance(request.params[key], list):
+                            request.params[key].append(value)
+                        else:
+                            request.params[key] = [value]
+                    else:
+                        request.params[key] = value
+
+            return callback(*args, **kwargs)
+        return wrapper
