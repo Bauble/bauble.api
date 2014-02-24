@@ -52,11 +52,10 @@ def test_search(setup):
     assert response.status_code == 200
 
     response_json = json.loads(response.text)
-    results = response_json['results']
-    # make sure we only get the one we searched for
-    assert len(results) == 1
-
-    assert results[0]['id'] == family['id']
+    assert 'families' in response_json
+    families = response_json['families']
+    assert len(families) == 1
+    assert families[0]['id'] == family['id']
 
     api.delete_resource('/family/{}'.format(family['id']), user=user)
     api.delete_resource('/family/{}'.format(family2['id']), user=user)
