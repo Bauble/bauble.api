@@ -113,9 +113,11 @@ class QueryStringPlugin(object):
     def apply(self, callback, route):
 
         def wrapper(*args, **kwargs):
-            if request.query_string and request.query_string.strip() != "":
-                query_string = request.query_string
+            query_string = request.query_string
+            if query_string and query_string.strip() != "":
                 for param in query_string.split('&'):
+                    if param.strip() == "":
+                        continue
                     key, value = param.split('=')
                     if key in request.params:
                         if isinstance(request.params[key], list):
