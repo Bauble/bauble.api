@@ -16,6 +16,8 @@ column_names = [col.name for col in sa.inspect(Family).columns]
 def resolve_family(next):
     def _wrapped(*args, **kwargs):
         request.family = request.session.query(Family).get(request.args['family_id'])
+        if not request.family:
+            bottle.abort(404, "Family not found")
         return next(*args, **kwargs)
     return _wrapped
 
@@ -53,25 +55,31 @@ def get_family(family_id):
     return json_data
 
 
-
 @app.route(API_ROOT + "/family/<family_id:int>", method='PATCH')
 @basic_auth
 @resolve_family
 def patch_family(family_id):
 
-    # need to drop nonmutable columns like id
+    if not request.json:
+        bottle.abort(400, 'The request doesn\'t contain a request body')
+
+    # TODO: restrict the columns to only those that are patchable
 
     # create a copy of the request data with only the columns
     data = {col: request.json[col] for col in request.json.keys() if col in column_names}
     for key, value in data.items():
         setattr(request.family, key, data[key])
     request.session.commit()
+
     return request.family.json()
 
 
 @app.post(API_ROOT + "/family")
 @basic_auth
 def post_family():
+
+    if not request.json:
+        bottle.abort(400, 'The request doesn\'t contain a request body')
 
     # TODO create a subset of the columns that we consider mutable
     mutable = []
@@ -99,14 +107,14 @@ def delete_family(family_id):
 @basic_auth
 @resolve_family
 def list_synonyms(family_id):
-    return family.synonyms
+    return request.family.synonyms
 
 
 @app.get(API_ROOT + "/family/<family_id:int>/synonyms/<synonym_id:int>")
 @basic_auth
 @resolve_family
 def get_synonym(family_id, synonym_id):
-    return family.synonyms
+    return request.family.synonyms
 
 
 @app.post(API_ROOT + "/family/<family_id:int>/synonyms")

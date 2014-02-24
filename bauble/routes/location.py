@@ -13,6 +13,8 @@ column_names = [col.name for col in sa.inspect(Location).columns]
 def resolve_location(next):
     def _wrapped(*args, **kwargs):
         request.location = request.session.query(Location).get(request.args['location_id'])
+        if not request.location:
+            bottle.abort(404, "Location not found")
         return next(*args, **kwargs)
     return _wrapped
 
@@ -38,8 +40,12 @@ def get_location(location_id):
 @basic_auth
 @resolve_location
 def patch_location(location_id):
+
+    if not request.json:
+        bottle.abort(400, 'The request doesn\'t contain a request body')
+
     # create a copy of the request data with only the columns
-    data = { col: request.json[col] for col in request.json.keys() if col in column_names }
+    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
     for key, value in data.items():
         setattr(request.location, key, data[key])
     request.session.commit()
@@ -50,11 +56,14 @@ def patch_location(location_id):
 @basic_auth
 def post_location():
 
+    if not request.json:
+        bottle.abort(400, 'The request doesn\'t contain a request body')
+
     # TODO create a subset of the columns that we consider mutable
     mutable = []
 
     # create a copy of the request data with only the columns
-    data = { col: request.json[col] for col in request.json.keys() if col in column_names }
+    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
 
     # make a copy of the data for only those fields that are columns
     location = Location(**data)

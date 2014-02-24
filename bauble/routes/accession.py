@@ -13,6 +13,8 @@ column_names = [col.name for col in sa.inspect(Accession).columns]
 def resolve_accession(next):
     def _wrapped(*args, **kwargs):
         request.accession = request.session.query(Accession).get(request.args['accession_id'])
+        if not request.accession:
+            bottle.abort(404, "Accession not found")
         return next(*args, **kwargs)
     return _wrapped
 
@@ -38,8 +40,12 @@ def get_accession(accession_id):
 @basic_auth
 @resolve_accession
 def patch_accession(accession_id):
+
+    if not request.json:
+        bottle.abort(400, 'The request doesn\'t contain a request body')
+
     # create a copy of the request data with only the columns
-    data = { col: request.json[col] for col in request.json.keys() if col in column_names }
+    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
     for key, value in data.items():
         setattr(request.accession, key, data[key])
     request.session.commit()

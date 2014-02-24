@@ -15,6 +15,8 @@ column_names = [col.name for col in sa.inspect(Taxon).columns]
 def resolve_taxon(next):
     def _wrapped(*args, **kwargs):
         request.taxon = request.session.query(Taxon).get(request.args['taxon_id'])
+        if not request.taxon:
+            bottle.abort(404, "Taxon not found")
         return next(*args, **kwargs)
     return _wrapped
 
@@ -40,8 +42,12 @@ def get_taxon(taxon_id):
 @basic_auth
 @resolve_taxon
 def patch_taxon(taxon_id):
+
+    if not request.taxon:
+        bottle.abort(400, 'The request doesn\'t contain a request body')
+
     # create a copy of the request data with only the columns
-    data = { col: request.json[col] for col in request.json.keys() if col in column_names }
+    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
     for key, value in data.items():
         setattr(request.taxon, key, data[key])
     request.session.commit()
@@ -51,6 +57,9 @@ def patch_taxon(taxon_id):
 @app.post(API_ROOT + "/taxon")
 @basic_auth
 def post_taxon():
+
+    if not request.json:
+        bottle.abort(400, 'The request doesn\'t contain a request body')
 
     # TODO create a subset of the columns that we consider mutable
     mutable = []

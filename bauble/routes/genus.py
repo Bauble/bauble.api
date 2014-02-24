@@ -64,6 +64,10 @@ def get_genus(genus_id):
 @basic_auth
 @resolve_genus
 def patch_genus(genus_id):
+
+    if not request.json:
+        bottle.abort(400, 'The request doesn\'t contain a request body')
+
     # create a copy of the request data with only the columns
     data = {col: request.json[col] for col in request.json.keys() if col in column_names}
     for key, value in data.items():
@@ -75,6 +79,9 @@ def patch_genus(genus_id):
 @app.post(API_ROOT + "/genus")
 @basic_auth
 def post_genus():
+
+    if not request.json:
+        bottle.abort(400, 'The request doesn\'t contain a request body')
 
     # TODO create a subset of the columns that we consider mutable
     mutable = []
