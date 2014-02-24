@@ -229,7 +229,5 @@ def test_embed(setup):
     response = requests.get('{}/family/{}?embed=synonyms&embed=notes'.format(api.api_root, family.id), auth=(user.email, user.access_token))
     # response_json = api.get_resource('/family/{}'.format(family.id),
     #                                  {'embed': ['synonyms', 'notes']}, user=user)
-    print('response: ', response)
     assert response.status_code == 200
     response_json = response.json()
-    print('response_json: ', response_json)

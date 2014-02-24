@@ -17,14 +17,6 @@ if "api.bauble.io" in server or os.environ.get('BAUBLE_ENV') != 'development':
     print("NOT IN PRODUCTION YOU FOOL!")
 
 
-def setup_module(module):
-    pass
-
-
-def teardown_module(module):
-    pass
-
-
 def json_encoder(obj):
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
@@ -104,12 +96,8 @@ def get_resource(resource, params=None, user=None):
     if(not resource.startswith(api_root)):
         resource = api_root + resource
 
-    # params = {}
-    # if relations:
-    #     params['relations'] = relations
     auth = (user.email, user.access_token) if user else None
     response = requests.get(resource, params=params, auth=auth)
-    #print('response: ', response.text)
     assert response.status_code == 200
     assert "application/json" in response.headers['content-type']
     return response.json()
