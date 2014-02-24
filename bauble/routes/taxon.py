@@ -1,15 +1,14 @@
 
 import json
 
-from bottle import route
+import bottle
+from bottle import request, response
 import sqlalchemy as sa
-import sqlalchemy.orm as orm
 
 from bauble import app, API_ROOT
-import bauble.mimetype as mimetype
-from bauble.middleware import *
-from bauble.model import Genus, Taxon  # TaxonNote, TaxonSynonym
-import bauble.utils as utils
+from bauble.middleware import basic_auth, filter_param
+from bauble.model import Taxon  # TaxonNote, TaxonSynonym
+
 
 column_names = [col.name for col in sa.inspect(Taxon).columns]
 
@@ -22,18 +21,12 @@ def resolve_taxon(next):
 
 @app.get(API_ROOT + "/taxon")
 @basic_auth
+@filter_param(Taxon, column_names)
 def index_taxon():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
-    taxa = request.session.query(Taxon)
-    q = request.query.q
-    if q:
-        # TODO: this should be a ilike or something simiar
-        taxa.filter_by(taxon=q)
 
-    # set response type explicitly since the auto json doesn't trigger for
-    # lists for some reason
-    response.content_type = '; '.join((mimetype.json, "charset=utf8"))
-    return json.dumps([taxon.json() for taxon in taxa])
+    taxa = request.filter if request.filter else request.session.query(Taxon)
+    return [taxon.json() for taxon in taxa]
 
 
 @app.get(API_ROOT + "/taxon/<taxon_id:int>")

@@ -37,18 +37,12 @@ def build_embedded(embed, genus):
 
 @app.get(API_ROOT + "/genus")
 @basic_auth
+@filter_param(Genus, column_names)
 def index_genus():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
-    genera = request.session.query(Genus)
-    q = request.query.q
-    if q:
-        # TODO: this should be a ilike or something simiar
-        genera.filter_by(genus=q)
 
-    # set response type explicitly since the auto json doesn't trigger for
-    # lists for some reason
-    response.content_type = '; '.join((mimetype.json, "charset=utf8"))
-    return json.dumps([genus.json() for genus in genera])
+    genera = request.filter if request.filter else request.session.query(Genus)
+    return [genus.json() for genus in genera]
 
 
 @app.get(API_ROOT + "/genus/<genus_id:int>")

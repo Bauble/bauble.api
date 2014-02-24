@@ -1,5 +1,6 @@
 
 import datetime
+import json
 
 import bcrypt
 import bottle
@@ -173,3 +174,22 @@ class accept2:
                 bottle.abort(406, 'Expected application/json')
             return next(*args, **kwargs)
         return inner
+
+
+def filter_param(mapped_class, columns):
+    def _decorator(next):
+        def _wrapped(*args, **kwargs):
+            request.filter = None
+            if 'filter' in request.query:
+                query = request.session.query(mapped_class)
+                filter_json = json.loads(request.query.filter)
+                filter_by = {key: value for (key, value) in filter_json.items()
+                             if key in columns}
+                for col, value in filter_by.items():
+                    print(col, ", ", value)
+                    query = query.filter(getattr(mapped_class, col).ilike(value))
+
+                request.filter = query
+            return next(*args, **kwargs)
+        return _wrapped
+    return _decorator

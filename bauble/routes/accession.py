@@ -1,15 +1,12 @@
 
-import json
-
-from bottle import route
+import bottle
+from bottle import route, request, response
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
 from bauble import app, API_ROOT
-import bauble.mimetype as mimetype
-from bauble.middleware import *
-from bauble.model import Genus, Accession# AccessionNote, AccessionSynonym
-import bauble.utils as utils
+from bauble.middleware import basic_auth, filter_param, resolve_relation
+from bauble.model import Accession  # AccessionNote, AccessionSynonym
 
 column_names = [col.name for col in sa.inspect(Accession).columns]
 
@@ -22,18 +19,12 @@ def resolve_accession(next):
 
 @app.get(API_ROOT + "/accession")
 @basic_auth
+@filter_param(Accession, column_names)
 def index_accession():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
-    accessions = request.session.query(Accession)
-    q = request.query.q
-    if q:
-        # TODO: this should be a ilike or something simiar
-        accessions.filter_by(code=q)
 
-    # set response type explicitly since the auto json doesn't trigger for
-    # lists for some reason
-    response.content_type = '; '.join((mimetype.json, "charset=utf8"))
-    return json.dumps([accession.json() for accession in accessions])
+    accessions = request.filter if request.filter else request.session.query(Accession)
+    return [accession.json() for accession in accessions]
 
 
 @app.get(API_ROOT + "/accession/<accession_id:int>")

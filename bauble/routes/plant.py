@@ -1,15 +1,12 @@
 
-import json
-
-from bottle import route
+import bottle
+from bottle import request, response
 import sqlalchemy as sa
-import sqlalchemy.orm as orm
 
 from bauble import app, API_ROOT
-import bauble.mimetype as mimetype
-from bauble.middleware import *
-from bauble.model import Genus, Plant
-import bauble.utils as utils
+from bauble.middleware import basic_auth, filter_param, resolve_relation
+from bauble.model import Plant
+
 
 column_names = [col.name for col in sa.inspect(Plant).columns]
 
@@ -22,18 +19,12 @@ def resolve_plant(next):
 
 @app.get(API_ROOT + "/plant")
 @basic_auth
+@filter_param(Plant, column_names)
 def index_plant():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
-    plants = request.session.query(Plant)
-    q = request.query.q
-    if q:
-        # TODO: this should be a ilike or something simiar
-        plants.filter_by(code=q)
 
-    # set response type explicitly since the auto json doesn't trigger for
-    # lists for some reason
-    response.content_type = '; '.join((mimetype.json, "charset=utf8"))
-    return json.dumps([plant.json() for plant in plants])
+    plants = request.filter if request.filter else request.session.query(Plant)
+    return [plant.json() for plant in plants]
 
 
 @app.get(API_ROOT + "/plant/<plant_id:int>")

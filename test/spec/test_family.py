@@ -117,6 +117,55 @@ def test_get_schema(setup):
     assert 'accessions' in schema['relations']
 
 
+def test_index(setup):
+    session = setup.session
+    user = setup.user
+
+    families = []
+    for num in range(0, 5):
+        families.append(Family(family=api.get_random_name()))
+    session.add_all(families)
+    session.commit()
+
+    # a list request should work
+    response = api.get_resource('/family', user=user)
+    assert isinstance(response, list)
+
+    # a list request with a filter should work
+    filter = json.dumps({'family': families[0].family[0:4] + "%"})
+    response = api.get_resource('/family?filter={}'.format(filter), user=user)
+    assert isinstance(response, list)
+    assert response[0]['family'] == families[0].family
+
+    for family in families:
+        session.delete(family)
+    session.commit()
+
+
+def test_patch(setup):
+    session = setup.session
+    user = setup.user
+
+    family = Family(family=api.get_random_name())
+    session.add(family)
+    session.commit()
+
+    family.family = family.family + "_patched"
+
+    # should fail with a 400 response if there is no request body
+    response = requests.request('PATCH', '{}/family/{}'.format(api.api_root, family.id),
+                                auth=(user.email, user.access_token),
+                                headers = {'content-type': 'application/json'})
+    assert response.status_code == 400, response.body
+
+    data = json.dumps(family.json())
+    api.update_resource('/family/{}'.format(family.id), data, user)
+    session.delete(family)
+    session.commit()
+
+
+
+
 def test_route(setup):
     """
     Test the /family resource.
@@ -126,8 +175,6 @@ def test_route(setup):
     #db.set_session_schema(session, session.merge(organization).pg_schema)
     session = setup.session
     user = setup.user
-
-    families = session.query(Family)
 
     # create a family family
     first_family = api.create_resource('/family', {'family': api.get_random_name()}, user)

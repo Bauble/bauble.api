@@ -1,15 +1,14 @@
 
 import json
 
-from bottle import route
+import bottle
+from bottle import request, response
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
-from sqlalchemy.ext.associationproxy import AssociationProxy
-
 from bauble import app, API_ROOT
 import bauble.mimetype as mimetype
-from bauble.middleware import *
+from bauble.middleware import basic_auth, filter_param
 from bauble.model import Family, FamilyNote, FamilySynonym, get_relation
 
 column_names = [col.name for col in sa.inspect(Family).columns]
@@ -31,18 +30,12 @@ def build_embedded(embed, family):
 
 @app.get(API_ROOT + "/family")
 @basic_auth
+@filter_param(Family, column_names)
 def index_family():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
-    families = request.session.query(Family)
-    q = request.query.q
-    if q:
-        # TODO: this should be a ilike or something simiar
-        families = families.filter_by(family=q)
 
-    # set response type explicitly since the auto json doesn't trigger for
-    # lists for some reason
-    response.content_type = '; '.join((mimetype.json, "charset=utf8"))
-    return json.dumps([family.json() for family in families])
+    families = request.filter if request.filter else request.session.query(Family)
+    return [family.json() for family in families]
 
 
 @app.get(API_ROOT + "/family/<family_id:int>")
