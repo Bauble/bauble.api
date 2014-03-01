@@ -187,7 +187,8 @@ def reset_sequence(column):
                 % (sequence_name, column.name, column.table.name)
         conn.execute(stmt)
     except Exception as e:
-        warning('bauble.utils.reset_sequence(): %s' % utf8(e))
+        #warning('bauble.utils.reset_sequence(): %s' % utf8(e))
+        print('bauble.utils.reset_sequence(): {}'.format(e))
         trans.rollback()
     else:
         trans.commit()
@@ -404,3 +405,10 @@ def get_urls(text):
         #print match.groups()
         matches.append(match.groups())
     return matches
+
+
+def get_ref_id(ref):
+    # assume that if ref is not a str then it is a resource JSON object
+    if not isinstance(ref, str):
+        ref = ref['ref']
+    return ref.split('/')[-1]

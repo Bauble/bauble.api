@@ -12,6 +12,7 @@ import bauble.db as db
 #import bauble.utils as utils
 #from bauble.utils.log import debug
 #import bauble.utils.web as web
+from bauble.model import Model
 import bauble.types as types
 import bauble.search as search
 
@@ -27,7 +28,7 @@ def family_markup_func(family):
 #
 # Family
 #
-class Family(db.Base):
+class Family(Model):
     """
     :Table name: family
 
@@ -69,18 +70,10 @@ class Family(db.Base):
 
     # relations
     synonyms = association_proxy('_synonyms', 'synonym')
-   #genera = relation('Genus', backref='family', cascade='all, delete-orphan')
     _synonyms = relation('FamilySynonym',
                          primaryjoin='Family.id==FamilySynonym.family_id',
                          cascade='all, delete-orphan', uselist=True,
                          backref='family')
-
-    # this is a dummy relation, it is only here to make cascading work
-    # correctly and to ensure that all synonyms related to this family
-    # get deleted if this family gets deleted
-    __syn = relation('FamilySynonym',
-                     primaryjoin='Family.id==FamilySynonym.synonym_id',
-                     cascade='all, delete-orphan', uselist=True)
 
     def __str__(self):
         return Family.str(self)
@@ -94,30 +87,7 @@ class Family(db.Base):
                              if s not in (None, '')])
 
 
-    def json(self, depth=1, markup=True):
-        """Return a dictionary representation of the Family.
-
-        Kwargs:
-           depth (int): The level of detail to return in the dict
-           markup (bool): Whether the returned str should include markup.  This
-                          parameter is only relevant with a depth>0
-        Returns:
-           dict.
-        """
-        d = dict(ref="/family/" + str(self.id))
-        if(depth > 0):
-            d['family'] = self.family
-            d['qualifier'] = self.qualifier
-            d['str'] = str(self)
-
-        if(depth > 1):
-            d['synonyms'] = [syn.json(depth=depth - 1) for syn in self.synonyms]
-            d['notes'] = [note.json(depth=depth - 1) for note in self.notes]
-
-        return d
-
-
-class FamilyNote(db.Base):
+class FamilyNote(Model):
     """
     Notes for the family table
     """
@@ -131,20 +101,8 @@ class FamilyNote(db.Base):
     family = relation('Family', uselist=False,
                       backref=backref('notes', cascade='all, delete-orphan'))
 
-    def json(self, depth=1):
-        """Return a JSON representation of this FamilyNote
-        """
-        d = dict(ref="/family/" + str(self.family_id) + "/note/" + str(self.id))
-        if(depth > 0):
-            d['date'] = str(self.date)
-            d['user'] = self.user
-            d['category'] = self.category
-            d['note'] = self.note
-            d['family'] = self.family.json(depth=depth - 1)
-        return d
 
-
-class FamilySynonym(db.Base):
+class FamilySynonym(Model):
     """
     :Table name: family_synonyms
 
@@ -180,19 +138,8 @@ class FamilySynonym(db.Base):
         return Family.str(self.synonym)
 
 
-    def json(self, depth=1):
-        """Return a JSON representation of this FamilySynonym
-        """
-        d = dict(ref="/family/" + str(self.family_id) + "/synonym/" + str(self.id))
-        if(depth > 0):
-            d['family'] = self.family.json(depth=depth - 1)
-            d['synonym'] = self.synonym.json(depth=depth - 1)
-        return d
-
-
-
 #
 # setup the search matchers
 #
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('family', 'fam'), Family, ['family'])
+mapper_search.add_meta(('families', 'family', 'fam'), Family, ['family'])

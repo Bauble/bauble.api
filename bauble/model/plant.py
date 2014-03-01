@@ -20,6 +20,7 @@ import bauble.db as db
 from bauble.error import check, CheckConditionError
 
 import bauble.paths as pathsn
+from bauble.model import Model
 from bauble.model import meta
 from bauble.model.location import Location
 from bauble.model.propagation import PlantPropagation
@@ -104,7 +105,7 @@ def is_code_unique(plant, code):
 # TODO: what would happend if the PlantRemove.plant_id and
 # PlantNote.plant_id were out of sink....how could we avoid these sort
 # of cycles
-class PlantNote(db.Base):
+class PlantNote(Model):
     __tablename__ = 'plant_note'
     __mapper_args__ = {'order_by': 'plant_note.date'}
 
@@ -116,17 +117,6 @@ class PlantNote(db.Base):
     plant = relation('Plant', uselist=False,
                      backref=backref('notes', cascade='all, delete-orphan'))
 
-    def json(self, depth=1):
-        """Return a JSON representation of this AccessionNote
-        """
-        d = dict(ref="/plant/" + str(self.plant_id) + "/note/" + str(self.id))
-        if(depth > 0):
-            d['date'] = str(self.date)
-            d['user'] = self.user
-            d['category'] = self.category
-            d['note'] = self.note
-            d['plant'] = self.plant.json(depth=depth - 1)
-        return d
 
 
 # TODO: some of these reasons are specific to UBC and could probably be culled.
@@ -154,7 +144,7 @@ change_reasons = {
 }
 
 
-class PlantChange(db.Base):
+class PlantChange(Model):
     """
     """
     __tablename__ = 'plant_change'
@@ -195,34 +185,6 @@ class PlantChange(db.Base):
                            primaryjoin='PlantChange.to_location_id == Location.id')
 
 
-    def json(self, depth=1):
-        """
-        """
-        d = dict(ref="/plant/" + str(self.plant_id) + "/change/" + str(self.id))
-        if(depth > 0):
-            d['plant'] = self.plant.json(depth=depth - 1)
-            d['parent_plant'] = self.parent_plant.json(depth=depth - 1)
-            d['from_location'] = self.from_location.json(depth=depth - 1)
-            d['to_location'] = self.to_location.json(depth=depth - 1)
-            d['note'] = self.note.json(depth=depth - 1)
-
-            # - if to_location_id is None change is a removal
-            # - if from_location_id is None then this change is a creation
-            # - if to_location_id != from_location_id change is a transfer
-            if not to_location_id:
-                d['change_type'] = 'removal'
-            elif not from_location_id:
-                d['change_type'] = 'creation'
-            elif not to_location_id == from_location_id:
-                d['change_type'] = 'transfer'
-            else:
-                d['change_type'] = 'unknown'
-
-        if(depth > 1):
-            d['reason'] = self.reason
-            d['person'] = self.person
-
-        return d
 
 
 condition_values = {
@@ -255,7 +217,7 @@ sex_values = {
     'Male': _('Male'),
     'Both': ''}
 
-# class Container(db.Base):
+# class Container(Model):
 #     __tablename__ = 'container'
 #     __mapper_args__ = {'order_by': 'name'}
 #     code = Column(Unicode)
@@ -265,7 +227,7 @@ sex_values = {
 # TODO: PlantStatus was never used integrated into Bauble 1.x....???
 #
 
-class PlantStatus(db.Base):
+class PlantStatus(Model):
     """
     date: date checked
     status: status of plant
@@ -296,26 +258,6 @@ class PlantStatus(db.Base):
     # TODO: needs container table
     #container_id = Column(Integer)
 
-    def json(self, depth=1):
-        """
-        """
-        d = dict(ref="/plant/" + str(self.plant_id) + "/status/" + str(self.id))
-        if depth > 0:
-            d['date'] = str(self.date)
-            d['condition'] = self.condition
-            d['checked_by'] = self.condition
-            d['flowering_status'] = self.flowering_status
-            d['fruiting_status'] = self.fruiting_status
-            d['plant'] = self.plant.json(depth=depth - 1)
-
-        if depth > 1:
-            d['autumn_color_pct'] = self.autumn_color_pct
-            d['leaf_drop_pct'] = self.leaf_drop_pct
-            d['leaf_emergence_pct'] = self.leaf_emergence_pct
-            d['sex'] = self.sex
-
-        return d
-
 
 
 acc_type_values = {'Plant': _('Plant'),
@@ -326,7 +268,7 @@ acc_type_values = {'Plant': _('Plant'),
                    None: ''}
 
 
-class Plant(db.Base):
+class Plant(Model):
     """
     :Table name: plant
 
@@ -469,25 +411,8 @@ class Plant(db.Base):
                                 self.accession.taxon_str(markup=True))
 
 
-    def json(self, depth=1):
-        """
-        """
-        d = dict(ref="/plant/" + str(self.id))
-        if depth > 0:
-            d['code'] = self.code
-            d['accession'] = self.accession.json(depth=depth - 1)
-            d['location'] = self.location.json(depth=depth - 1)
-            d['quantity'] = self.quantity
-            d['str'] = str(self)
-
-        if depth > 0:
-            d['acc_type'] = self.acc_type
-            d['memorial'] = self.memorial
-
-        return d
-
 
 # setup the search mapper
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('plant', 'plants'), Plant, ['code'])
+mapper_search.add_meta(('plants', 'plant'), Plant, ['code'])
 #search.add_strategy(PlantSearch)

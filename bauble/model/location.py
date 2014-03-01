@@ -5,6 +5,7 @@ from sqlalchemy import *
 from sqlalchemy.orm import *
 
 import bauble.db as db
+from bauble.model import Model
 import bauble.search as search
 
 
@@ -16,7 +17,7 @@ def loc_markup_func(location):
         return utils.xml_safe(str(location))
 
 
-class Location(db.Base):
+class Location(Model):
     """
     :Table name: location
 
@@ -63,4 +64,4 @@ class Location(db.Base):
 
 # setup the search mapper
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('location', 'loc'), Location, ['name', 'code'])
+mapper_search.add_meta(('locations', 'location', 'loc'), Location, ['name', 'code'])

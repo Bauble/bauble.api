@@ -1,3 +1,4 @@
+import pytest
 
 import bauble.db as db
 from bauble.model.family import Family
@@ -5,64 +6,70 @@ from bauble.model.genus import Genus
 from bauble.model.taxon import Taxon, TaxonSynonym, TaxonNote
 
 import test.api as api
-import test.utils as utils
+from test.fixtures import organization, user, session
 
-def test_taxon_json():
+
+@pytest.fixture
+def setup(organization, session):
+    setup.organization = session.merge(organization)
+    setup.user = setup.organization.owners[0]
+    setup.session = session
+    db.set_session_schema(session, setup.organization.pg_schema)
+    return setup
+
+
+def test_taxon_json(setup):
+    session = setup.session
+
     family = Family(family=api.get_random_name())
     genus_name = api.get_random_name()
     genus = Genus(family=family, genus=genus_name)
-    taxon = Taxon(genus=genus, sp=utils.random_str())
+    taxon = Taxon(genus=genus, sp=api.get_random_name())
 
     note = TaxonNote(taxon=taxon, note="this is a test")
     syn = TaxonSynonym(taxon=taxon, synonym=taxon)
 
-    session = db.connect(api.default_user, api.default_password)
     session.add_all([family, genus, taxon, note, syn])
     session.commit()
 
-    taxon_json = taxon.json(depth=0)
-    assert 'ref' in taxon_json
-    assert taxon_json['ref'] == '/taxon/' + str(taxon.id)
-
-    taxon_json = taxon.json(depth=1)
+    taxon_json = taxon.json()
+    assert 'id' in taxon_json
     assert 'str' in taxon_json
-    assert taxon_json['genus'] == genus.json(depth=0)
+    assert taxon_json['genus_id'] == genus.id
 
-    taxon_json = taxon.json(depth=2)
+    taxon_json = taxon.json()
     assert 'str' in taxon_json
     # add all deph=2 fields
 
-    note_json = note.json(depth=0)
-    assert 'ref' in note_json
+    note_json = note.json()
+    assert 'id' in note_json
+    assert 'taxon_id' in note_json
+    assert note_json['taxon_id'] == taxon.id
 
-    note_json = note.json(depth=1)
-    assert 'taxon' in note_json
-    assert note_json['taxon'] == taxon.json(depth=0)
-
-    syn_json = syn.json(depth=0)
-    assert 'ref' in syn_json
-
-    syn_json = syn.json(depth=1)
-    assert syn_json['taxon'] == taxon.json(depth=0)
-    assert syn_json['synonym'] == taxon.json(depth=0)
+    syn_json = syn.json()
+    assert 'id' in syn_json
+    assert syn_json['taxon_id'] == taxon.id
+    assert syn_json['synonym_id'] == taxon.id
 
     map(lambda o: session.delete(o), [family, genus, taxon])
     session.commit()
     session.close()
 
 
-def test_server():
+def test_server(setup):
     """
     Test the server properly handle /taxon resources
     """
 
-    family = api.create_resource('/family', {'family': api.get_random_name()})
+    user = setup.user
+
+    family = api.create_resource('/family', {'family': api.get_random_name()}, user=user)
     genus = api.create_resource('/genus', {'genus': api.get_random_name(),
-                                 'family': family})
+                                           'family': family}, user=user)
 
     # create a taxon taxon
-    first_taxon = api.create_resource('/taxon',
-                                       {'sp': api.get_random_name(), 'genus': genus})
+    first_taxon = api.create_resource('/taxon', {'sp': api.get_random_name(), 'genus': genus},
+                                      user=user)
 
     # create another taxon and use the first as a synonym
     data = {'sp': api.get_random_name(), 'genus': genus,
@@ -71,17 +78,17 @@ def test_server():
             #'synonyms': [first_taxon]
             }
 
-    second_taxon = api.create_resource('/taxon', data)
-    assert 'ref' in second_taxon  # created
+    second_taxon = api.create_resource('/taxon', data, user=user)
+    assert 'id' in second_taxon  # created
 
     # update the taxon
     second_taxon['sp'] = api.get_random_name()
-    second_ref = second_taxon['ref']
-    second_taxon = api.update_resource(second_taxon)
-    assert second_taxon['ref'] == second_ref  # make sure they have the same ref after the update
+    second_id = second_taxon['id']
+    second_taxon = api.update_resource('/taxon/' + str(second_id), second_taxon, user=user)
+    assert second_taxon['id'] == second_id  # make sure they have the same ref after the update
 
     # get the taxon
-    first_taxon = api.get_resource(first_taxon['ref'])
+    first_taxon = api.get_resource('/taxon/' + str(first_taxon['id']), user=user)
 
     # query for taxa
     # print('data[sp]: ' + str(data['sp']))
@@ -92,12 +99,11 @@ def test_server():
     # assert second_taxon['ref'] == second_ref
 
     # test getting the taxon relative to its family
-    response_json = api.get_resource(family['ref'] + "/genera/taxa")
-    taxa = response_json['results']
-    assert first_taxon['ref'] in [taxon['ref'] for taxon in taxa]
+    taxa = api.get_resource('/family/{}/genera/taxa'.format(family['id']), user=user)
+    assert first_taxon['id'] in [taxon['id'] for taxon in taxa]
 
     # delete the created resources
-    api.delete_resource(first_taxon['ref'])
-    api.delete_resource(second_taxon['ref'])
-    api.delete_resource(genus)
-    api.delete_resource(family)
+    api.delete_resource('/taxon/' + str(first_taxon['id']), user=user)
+    api.delete_resource('/taxon/' + str(second_taxon['id']), user=user)
+    api.delete_resource('/genus/' + str(genus['id']), user=user)
+    api.delete_resource('/family/' + str(family['id']), user=user)

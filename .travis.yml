@@ -4,10 +4,12 @@ python:
 # command to install dependencies
 install:
   # - "pip install . --use-mirrors"
+  - "virtualenv --python=python3.3 venv"
+  - ". venv/bin/activate"
   - "pip install pytest --use-mirrors"
   - "pip install -r requirements.txt --use-mirrors"
 # command to run tests
-script: PYTHONPATH=. py.test
+script: ./bake test
 env:
   - DATABASE_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
 before_script:
@@ -20,9 +22,12 @@ before_script:
   - sudo adduser -disabled-password --gecos "" bauble
   - psql -c "create role test with createrole login password 'test\';" -U postgres
   - psql -c "create database bauble owner test encoding 'utf8';" -U postgres
-  - ./bake server # start the server just for setting up the db
+  # start the server for setting up the database
+  - ./bake server &
   - sleep 7
   - PYTHONPATH=. bin/initdb.py
   - PYTHONPATH=. bin/set_admin_password.py test
-  - PYTHONPATH=. bin/create_test_org.py
-  - ./bake test
+  # - PYTHONPATH=. bin/create_test_org.py
+  # kill the server so we can run the tests
+  - echo "Q" > /tmp/bauble.uwsgi.fifo
+  

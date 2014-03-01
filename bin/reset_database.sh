@@ -26,7 +26,7 @@ if [ $? == 1 ] ; then exit ; fi
 read -p "Start the Bauble API server and press a key when it's ready..."
 PYTHONPATH=. bin/initdb.py
 PYTHONPATH=. bin/set_admin_password.py test
-PYTHONPATH=. bin/create_test_org.py
+#PYTHONPATH=. bin/create_test_org.py
 
 
 

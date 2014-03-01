@@ -113,7 +113,7 @@ class DateTime(types.TypeDecorator):
             # parse the datetime which should be iso 8601 format with a preference
             # for YY-MM-DD, although the parser is a little bit loose on
             # what it accepts
-            value = date_parse.parse(value, dayfirst=false, yearfirst=True)
+            value = date_parser.parse(value, dayfirst=False, yearfirst=True)
 
         return value
 

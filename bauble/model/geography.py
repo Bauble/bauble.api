@@ -8,6 +8,7 @@ from sqlalchemy.orm import *
 
 import bauble
 import bauble.db as db
+from bauble.model import Model
 import bauble.search as search
 #from bauble.utils.log import debug
 
@@ -42,7 +43,7 @@ def get_taxa_in_geography(geo):#, session=None):
     return list(q)
 
 
-class Geography(db.Base):
+class Geography(Model):
     """
     Represents a geography unit.
 

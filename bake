@@ -13,31 +13,33 @@ except Exception as e:
     print("baker not installed. pip install 'baker>=1.3,<2.0a0'")
     raise
 
+
 os.environ['PYTHONPATH'] = os.getcwd()
+#DATABASE_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
 
 # these environments can be updated into os.environ
-environ = {
-    "all": {
+environ = {}
+environ['all'] = {
 
-    },
-    "dev": {
-        #'DEBUG': "true",
-        'BAUBLE_ENV': "test"
-    },
-    "test": {
-        #'DEBUG': "true",
-        'BAUBLE_ENV': "development"
-    },
-    "production": {
-        'BAUBLE_ENV': "production"
-    }
 }
+environ['dev'] = dict(environ['all'], **{
+    'BAUBLE_ENV': "development"
+})
+
+environ['test'] = dict(environ['dev'], **{
+    'TEST': 'true'
+})
+
+
+environ['production'] = dict(environ['all'], **{
+    'BAUBLE_ENV': "development"
+})
 
 # all the environment variables common to all tasks
-os.environ.update(environ['all']);
+os.environ.update(environ['all'])
 
-def shell(cmd):
-    return subprocess.call(cmd, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, shell=True)
+def shell(cmd, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr):
+    return subprocess.call(cmd, stdin=stdin, stdout=stdout, stderr=stderr, shell=True)
 
 
 @baker.command
@@ -45,6 +47,7 @@ def test(*args):
     """
     Deploy to the production environment.
     """
+    os.environ.update(environ['test'])
     pytest_args = ['py.test', 'test/spec'] if len(args) is 0 else ['py.test'] + list(args)
     shell(" ".join(pytest_args))
 
@@ -64,6 +67,14 @@ def deploy():
     pass
 
 
+@baker.command
+def clean():
+    remove = lambda pattern: "find . -name {0} -type file | xargs -I rm -fr {{}}".format(pattern)
+    remove("\*~")
+    remove("\*.pyc")
+    remove("__pycache__")
+
+
 @baker.command(default=True)
 def server(environment="dev"):
     """
@@ -71,7 +82,6 @@ def server(environment="dev"):
     """
     os.environ.update(environ.get(environment, {}))
     process = shell("uwsgi --ini uwsgi.ini:{}".format(environment))
-
 
 
 baker.run()

@@ -2,7 +2,6 @@
 # taxon.py
 #
 
-import traceback
 import xml.sax.saxutils as sax
 from itertools import chain
 
@@ -14,11 +13,11 @@ from sqlalchemy.orm.collections import collection
 
 import bauble
 import bauble.db as db
+from bauble.model import Model
 #import bauble.utils as utils
 #from bauble.utils.log import debug
 import bauble.types as types
-from bauble.model.geography import Geography
-from bauble.model.genus import Genus
+from bauble.model import Geography, Genus
 import bauble.search as search
 
 
@@ -58,7 +57,7 @@ infrasp_rank_values = {'subsp.': _('subsp.'),
 # make sure that at least one of the specific epithet, cultivar name
 # or cultivar group is specificed
 
-class Taxon(db.Base):
+class Taxon(Model):
     """
     :Table name: taxon
 
@@ -163,12 +162,6 @@ class Taxon(db.Base):
                          cascade='all, delete-orphan', uselist=True,
                          backref='taxon')
 
-    # this is a dummy relation, it is only here to make cascading work
-    # correctly and to ensure that all synonyms related to this genus
-    # get deleted if this genus gets deleted
-    _syn = relation('TaxonSynonym',
-                     primaryjoin='Taxon.id==TaxonSynonym.synonym_id',
-                     cascade='all, delete-orphan', uselist=True)
 
     vernacular_names = relation('VernacularName', cascade='all, delete-orphan',
                                  collection_class=VNList,
@@ -344,58 +337,6 @@ class Taxon(db.Base):
                         'author': 'infrasp4_author'}}
 
 
-    def json(self, depth=1, markup=False):
-        """Return a dictionary representation of the Taxon.
-
-        Kwargs:
-           depth (int): The level of detail to return in the dict
-           markup (bool): Whether the returned str should include markup.  This
-                          parameter is only relevant with a depth>0
-        Returns:
-           dict.
-        """
-        d = dict(ref="/taxon/" + str(self.id))
-        if(depth > 0):
-            d['str'] = Taxon.str(self, markup=markup)
-            d['genus'] = self.genus.json(depth=depth - 1)
-        if(depth > 1):
-            d['sp'] = self.sp
-            d['sp2'] = self.sp2
-            d['sp_author'] = self.sp_author
-            d['hybrid'] = self.hybrid
-            d['infrasp1'] = self.infrasp1
-            d['infrasp1_rank'] = self.infrasp1_rank
-            d['infrasp1_author'] = self.infrasp1_author
-            d['infrasp2'] = self.infrasp2
-            d['infrasp2_rank'] = self.infrasp2_rank
-            d['infrasp2_author'] = self.infrasp2_author
-            d['infrasp3'] = self.infrasp3
-            d['infrasp3_rank'] = self.infrasp3_rank
-            d['infrasp3_author'] = self.infrasp3_author
-            d['infrasp4'] = self.infrasp4
-            d['infrasp4_rank'] = self.infrasp4_rank
-            d['infrasp4_author'] = self.infrasp4_author
-            d['cv_group'] = self.cv_group
-            d['trade_name'] = self.trade_name
-            d['sp_qual'] = self.sp_qual
-            d['label_distribution'] = self.label_distribution
-            # d['distribution'] = self.distribution.json(depth=depth - 1)
-            d['habit'] = None  # self.habit.json(depth=depth - 1)
-            d['flower_color'] = None  # self.flower_color.json(depth=depth - 1)
-            d['awards'] = self.awards
-            if(self.flower_color):
-                d['flower_color'] = self.flower_color.json(depth=depth - 1)
-            if self.habit:
-                d['habit'] = self.habit.json(depth=depth - 1)
-
-            d['synonyms'] = [syn.json(depth=depth - 1) for syn in self.synonyms]
-            d['notes'] = [note.json(depth=depth - 1) for note in self.notes]
-            d['vernacular_names'] = [vn.json(depth=depth-1) for vn in self.vernacular_names]
-
-        return d
-
-
-
     def get_infrasp(self, level):
         """
         level should be 1-4
@@ -415,7 +356,7 @@ class Taxon(db.Base):
 
 
 
-class TaxonNote(db.Base):
+class TaxonNote(Model):
     """
     Notes for the taxon table
     """
@@ -431,21 +372,8 @@ class TaxonNote(db.Base):
                      backref=backref('notes', cascade='all, delete-orphan'))
 
 
-    def json(self, depth=1):
-        """Return a JSON representation of this TaxonNote
-        """
-        d = dict(ref="/taxon/" + str(self.taxon_id) + "/note/" + str(self.id))
-        if(depth > 0):
-            d['date'] = str(self.date)
-            d['user'] = self.user
-            d['category'] = self.category
-            d['note'] = self.note
-            d['taxon'] = self.taxon.json(depth=depth - 1)
-        return d
 
-
-
-class TaxonSynonym(db.Base):
+class TaxonSynonym(Model):
     """
     :Table name: taxon_synonym
     """
@@ -453,7 +381,7 @@ class TaxonSynonym(db.Base):
 
     # columns
     taxon_id = Column(Integer, ForeignKey('taxon.id'),
-                        nullable=False)
+                      nullable=False)
     synonym_id = Column(Integer, ForeignKey('taxon.id'),
                         nullable=False, unique=True)
 
@@ -472,18 +400,8 @@ class TaxonSynonym(db.Base):
         return str(self.synonym)
 
 
-    def json(self, depth=1):
-        """Return a JSON representation of this TaxonSynonym
-        """
-        d = dict(ref="/taxon/" + str(self.taxon_id) + "/synonym/" + str(self.id))
-        if(depth > 0):
-            d['taxon'] = self.taxon.json(depth=depth - 1)
-            d['synonym'] = self.synonym.json(depth=depth - 1)
-        return d
 
-
-
-class VernacularName(db.Base):
+class VernacularName(Model):
     """
     :Table name: vernacular_name
 
@@ -516,30 +434,8 @@ class VernacularName(db.Base):
             return ''
 
 
-    def json(self, depth=1):
-        """Return a dictionary representation of a VernacularName.
 
-        Kwargs:
-           depth (int): The level of detail to return in the dict
-        Returns:
-           dict.
-        """
-
-        # name for the taxon
-        d = dict(ref="/vernacularname/" + str(self.id))
-        if(depth > 0):
-            d['name'] = self.name
-            d['language'] = self.language
-            d['taxon'] = self.taxon.json(depth=depth - 1)
-            d['str'] = str(self)
-            d['default'] = True if self.taxon.default_vernacular_name == self else False
-            # if(self.taxon.default_vernacular_name == self):
-            #     d['default'] = True
-        return d
-
-
-
-class DefaultVernacularName(db.Base):
+class DefaultVernacularName(Model):
     """
     :Table name: default_vernacular_name
 
@@ -578,7 +474,7 @@ class DefaultVernacularName(db.Base):
 
 
 
-class TaxonDistribution(db.Base):
+class TaxonDistribution(Model):
     """
     :Table name: taxon_distribution
 
@@ -598,27 +494,14 @@ class TaxonDistribution(db.Base):
         return str(self.geography)
 
 
-    def json(self, depth=1):
-        """Return a dictionary representation of the TaxonDistribution.
 
-        Kwargs:
-           depth (int): The level of detail to return in the dict
-        Returns:
-           dict.
-        """
-        d = dict(ref="/taxon/" + str(self.taxon_id) + "/distribution/" + str(self.id))
-        if(depth > 0):
-            d['taxon'] = self.taxon.json(depth=depth - 1)
-            d['geography'] = self.geography.json(depth=depth - 1)
-            d['str'] = str(self)
-        return d
 
 # late bindings
 TaxonDistribution.geography = relation('Geography',
                 primaryjoin='TaxonDistribution.geography_id==Geography.id',
                                          uselist=False)
 
-class Habit(db.Base):
+class Habit(Model):
     __tablename__ = 'habit'
 
     name = Column(Unicode(64))
@@ -630,24 +513,8 @@ class Habit(db.Base):
         else:
             return str(self.code)
 
-    def json(self, depth=1):
-        """Return a dictionary representation of the Habit.
 
-        Kwargs:
-           depth (int): The level of detail to return in the dict
-        Returns:
-           dict.
-        """
-        d = dict(ref="/habit/" + str(self.id))
-        if(depth > 0):
-            d['name'] = self.name
-            d['code'] = self.code
-            d['str'] = str(self)
-        return d
-
-
-
-class Color(db.Base):
+class Color(Model):
     __tablename__ = 'color'
 
     name = Column(Unicode(32))
@@ -660,28 +527,10 @@ class Color(db.Base):
             return str(self.code)
 
 
-    def json(self, depth=1):
-        """Return a dictionary representation of the Color.
-
-        Kwargs:
-           depth (int): The level of detail to return in the dict
-        Returns:
-           dict.
-        """
-        d = dict(ref="/color/" + str(self.id))
-        if(depth > 0):
-            d['name'] = self.name
-            d['code'] = self.code
-            d['str'] = str(self)
-        return d
-
 
 # setup search matcher
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('species', 'sp'), Taxon,
-                       ['sp', 'sp2', 'infrasp1', 'infrasp2',
-                        'infrasp3', 'infrasp4'])
-mapper_search.add_meta(('taxon', 'sp'), Taxon,
+mapper_search.add_meta(('taxa', 'taxon', 'sp'), Taxon,
                        ['sp', 'sp2', 'infrasp1', 'infrasp2',
                         'infrasp3', 'infrasp4'])
 mapper_search.add_meta(('vernacular', 'vern', 'common'),

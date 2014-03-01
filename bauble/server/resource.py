@@ -15,6 +15,7 @@ import bauble.db as db
 import bauble.error as error
 import bauble.i18n
 import bauble.imp as imp
+from bauble.middleware import basic_auth, accept
 from bauble.model.family import Family, FamilySynonym, FamilyNote
 from bauble.model.genus import Genus, GenusNote, GenusSynonym
 from bauble.model.taxon import Taxon, TaxonSynonym, TaxonNote, VernacularName
@@ -27,7 +28,7 @@ from bauble.model.organization import Organization
 from bauble.model.user import User
 from bauble.model.reportdef import ReportDef
 from bauble.server import app, API_ROOT, parse_accept_header, JSON_MIMETYPE, \
-    TEXT_MIMETYPE, parse_auth_header, accept
+    TEXT_MIMETYPE, parse_auth_header#, accept
 import bauble.types as types
 import bauble.utils as utils
 
@@ -229,8 +230,9 @@ class Resource:
                 session.close()
 
 
+    @basic_auth
     @accept(JSON_MIMETYPE)
-    def get(self, resource_id, depth=1):
+    def get(self, resource_id):
         """
         Handle GET requests on this resource.
 
@@ -238,15 +240,9 @@ class Resource:
         where the queried objects are returned in the json object in
         the collection_name array.
         """
-        session = None
-        try:
-            session = self.connect()
-            obj = session.query(self.mapped_class).get(resource_id)
-
-            response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
-            return obj.json(depth=depth)
-        finally:
-            session.close()
+        obj = request.session.query(self.mapped_class).get(resource_id)
+        response.content_type = '; '.join((JSON_MIMETYPE, "charset=utf8"))
+        return obj.json(depth=int(request.accept[JSON_MIMETYPE]['depth']))
 
 
     def get_schema(self, relation=None):
@@ -302,6 +298,7 @@ class Resource:
         return schema
 
 
+    @basic_auth
     @accept(JSON_MIMETYPE)
     def query(self, depth=1):
         """
@@ -325,68 +322,60 @@ class Resource:
                 relation_mapper = getattr(relation_mapper.relationships, kid).mapper
             return relation_mapper.class_
 
-        session = None
-        try:
-            session = self.connect()
-            json_objs = []
-            if relations:
-                # use an OrderedDict so we can maintain the default sort
-                # order on the resource and
-                unique_objs = OrderedDict()
 
-                # get the json objects for each of the relations and add
-                # them to the main resource json at
-                # resource[relation_name], e.g. resource['genera.taxa']
-                for relation in relations:
-                    query = session.\
+        json_objs = []
+        if relations:
+            # use an OrderedDict so we can maintain the default sort
+            # order on the resource and
+            unique_objs = OrderedDict()
+
+            # get the json objects for each of the relations and add
+            # them to the main resource json at
+            # resource[relation_name], e.g. resource['genera.taxa']
+            for relation in relations:
+                query = request.session.\
                         query(self.mapped_class, get_relation_class(relation)).\
                         join(*relation.split('.'))
-                    if(q):
-                        query = self.apply_query(query, q)
-
-                    for result in query:
-                        resource = result[0]
-
-                        # add the resource_json to unique_objs if it
-                        # doesn't already exist
-                        if resource.id not in unique_objs:
-                            resource_json = resource.json(depth)
-                            resource_json[relation] = []
-                            unique_objs[resource.id] = resource_json
-                        else:
-                            resource_json = unique_objs[resource.id]
-
-                        resource_json[relation].append(result[1].json(depth=depth))
-
-                # create a list of json objs that should maintain the
-                json_objs = [obj for obj in unique_objs.values()]
-
-            else:
-                query = session.query(self.mapped_class)
                 if(q):
                     query = self.apply_query(query, q)
-                json_objs = [obj.json(depth) for obj in query]
 
-            session.close()
-            return {'results': json_objs}
-        finally:
-            if session:
-                session.close()
+                for result in query:
+                    resource = result[0]
+
+                    # add the resource_json to unique_objs if it
+                    # doesn't already exist
+                    if resource.id not in unique_objs:
+                        resource_json = resource.json(depth)
+                        resource_json[relation] = []
+                        unique_objs[resource.id] = resource_json
+                    else:
+                        resource_json = unique_objs[resource.id]
+
+                    resource_json[relation].append(result[1].json(depth=depth))
+
+            # create a list of json objs that should maintain the
+            json_objs = [obj for obj in unique_objs.values()]
+
+        else:
+            query = request.session.query(self.mapped_class)
+            if(q):
+                query = self.apply_query(query, q)
+            json_objs = [obj.json(depth) for obj in query]
 
 
+        return {'results': json_objs}
+
+
+
+    @basic_auth
     def delete(self, resource_id):
         """
         Handle DELETE requests on this resource.
         """
-        session = None
-        try:
-            session = self.connect()
-            obj = session.query(self.mapped_class).get(resource_id)
-            session.delete(obj)
-            session.commit()
-        finally:
-            if session:
-                session.close()
+        obj = request.session.query(self.mapped_class).get(resource_id)
+        request.session.delete(obj)
+        request.session.commit()
+
 
 
     @accept(JSON_MIMETYPE)
@@ -837,6 +826,7 @@ class OrganizationResource(Resource):
             user['is_org_owner'] = True
             user['is_org_admin'] = True
         self.handle_users(organization, users, session)
+
 
 
     def save_or_update(self, resource_id=None):

@@ -20,6 +20,7 @@ from sqlalchemy.exc import DBAPIError
 
 import bauble
 import bauble.db as db
+from bauble.model import Model
 #from bauble.error import check
 #import bauble.utils as utils
 import bauble.paths as paths
@@ -34,7 +35,7 @@ prop_type_values = {'Seed': _("Seed"),
                     'UnrootedCutting': _('Unrooted cutting'),
                     'Other': _('Other')}
 
-class PlantPropagation(db.Base):
+class PlantPropagation(Model):
     """
     PlantPropagation provides an intermediate relation from
     Plant->Propagation
@@ -57,7 +58,7 @@ class PlantPropagation(db.Base):
 
 
 
-class Propagation(db.Base):
+class Propagation(Model):
     """
     Propagation
     """
@@ -259,7 +260,7 @@ class Propagation(db.Base):
 
 
 
-class PropRooted(db.Base):
+class PropRooted(Model):
     """
     Rooting dates for cutting
     """
@@ -309,7 +310,7 @@ length_unit_values = {'mm': _('mm'),
                       'in': _('in'),
                       None: ''}
 
-class PropCutting(db.Base):
+class PropCutting(Model):
     """
     A cutting
     """
@@ -361,7 +362,7 @@ class PropCutting(db.Base):
                         backref=backref('cutting', uselist=False))
 
 
-class PropSeed(db.Base):
+class PropSeed(Model):
     """
     """
     __tablename__ = 'prop_seed'

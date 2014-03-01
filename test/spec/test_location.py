@@ -1,22 +1,33 @@
+import pytest
 
-import test.api as api
 import bauble.db as db
 from bauble.model.location import Location
 
+import test.api as api
+from test.fixtures import organization, session, user
 
-def test_location_json():
+@pytest.fixture
+def setup(organization, session):
+    setup.organization = session.merge(organization)
+    setup.user = setup.organization.owners[0]
+    setup.session = session
+    db.set_session_schema(session, setup.organization.pg_schema)
+    return setup
+
+
+def test_location_json(setup):
+
+    session = setup.session
+
     code = api.get_random_name()[0:9]
     location = Location(code=code)
 
-    session = db.connect(api.default_user, api.default_password)
     session.add(location)
     session.commit()
 
-    location_json = location.json(depth=0)
-    assert 'ref' in location_json
-    assert location_json['ref'] == '/location/' + str(location.id)
-
-    location_json = location.json(depth=1)
+    location_json = location.json()
+    assert 'id' in location_json
+    assert location_json['id'] == location.id
     assert 'code' in location_json
     assert 'str' in location_json
 
@@ -25,26 +36,28 @@ def test_location_json():
     session.close()
 
 
-def test_server():
+def test_server(setup):
     """
     Test the server properly handle /location resources
     """
-    # create a location
-    location = api.create_resource('/location', {'code': api.get_random_name()[0:9]})
 
-    assert 'ref' in location  # created
-    location_ref = location['ref']
+    user = setup.user
+
+    # create a location
+    location = api.create_resource('/location', {'code': api.get_random_name()[0:9]}, user)
+
+    assert 'id' in location  # created
+    location_id = location['id']
     location['code'] = api.get_random_name()[0:9]
-    location = api.update_resource(location)
-    assert location['ref'] == location_ref
+    location = api.update_resource('/location/{}'.format(location_id), location, user)
+    assert location['id'] == location_id
 
     # get the location
-    location = api.get_resource(location['ref'])
+    location = api.get_resource('/location/{}'.format(location['id']), user=user)
 
     # query for locations
-    response_json = api.query_resource('/location', q=location['code'])
-    location = response_json['results'][0]  # we're assuming there's only one
-    assert location['ref'] == location_ref
+    locations = api.query_resource('/location', q=location['code'], user=user)
+    assert location['id'] in [location['id'] for location in locations]
 
     # delete the created resources
-    api.delete_resource(location)
+    api.delete_resource('/location/{}'.format(location['id']), user)

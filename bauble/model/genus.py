@@ -3,9 +3,6 @@
 # Genera table module
 #
 
-import os
-import traceback
-import weakref
 import xml
 
 from sqlalchemy import *
@@ -16,6 +13,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 
 import bauble
 import bauble.db as db
+from bauble.model import Model
 #import bauble.utils as utils
 #import bauble.utils.desktop as desktop
 import bauble.types as types
@@ -48,7 +46,7 @@ def genus_markup_func(genus):
 
 
 
-class Genus(db.Base):
+class Genus(Model):
     """
     :Table name: genus
 
@@ -124,32 +122,15 @@ class Genus(db.Base):
         if genus.genus is None:
             return repr(genus)
         elif not author or genus.author is None:
-            return ' '.join([s for s in [genus.genus, genus.qualifier] \
-                                 if s not in ('', None)])
+            return ' '.join([s for s in [genus.genus, genus.qualifier] if s not in ('', None)])
         else:
             return ' '.join(
                 [s for s in [genus.genus, genus.qualifier,
-                             xml.sax.saxutils.escape(genus.author)] \
-                     if s not in ('', None)])
-
-    def json(self, depth=1):
-        """Return a JSON respresentation of this Genus.
-        """
-        d = dict(ref="/genus/{}".format(self.id))
-        if depth > 0:
-            d['genus'] = self.genus
-            d['str'] = str(self)
-            d['qualifier'] = self.qualifier
-            d['author'] = self.author
-            d['family'] = self.family.json(depth=depth - 1)
-
-        if(depth > 1):
-            d['synonyms'] = [syn.json(depth=depth - 1) for syn in self.synonyms]
-            d['notes'] = [note.json(depth=depth - 1) for note in self.notes]
-        return d
+                             xml.sax.saxutils.escape(genus.author)] if s not in ('', None)])
 
 
-class GenusNote(db.Base):
+
+class GenusNote(Model):
     """
     Notes for the genus table
     """
@@ -164,21 +145,9 @@ class GenusNote(db.Base):
     genus = relation('Genus', uselist=False,
                      backref=backref('notes', cascade='all, delete-orphan'))
 
-    def json(self, depth=1):
-        """Return a JSON representation of this GenusNote
-        """
-        d = dict(ref="/genus/" + str(self.genus_id) + "/note/" + str(self.id))
-        if(depth > 0):
-            d['date'] = str(self.date)
-            d['user'] = self.user
-            d['category'] = self.category
-            d['note'] = self.note
-            d['genus'] = self.genus.json(depth=depth - 1)
-        return d
 
 
-
-class GenusSynonym(db.Base):
+class GenusSynonym(Model):
     """
     :Table name: genus_synonym
     """
@@ -207,15 +176,6 @@ class GenusSynonym(db.Base):
         return str(self.synonym)
 
 
-    def json(self, depth=1):
-        """Return a JSON representation of this GenusSynonym
-        """
-        d = dict(ref="/genus/" + str(self.genus_id) + "/synonym/" + str(self.id))
-        if(depth > 0):
-            d['genus'] = self.genus.json(depth=depth - 1)
-            d['synonym'] = self.synonym.json(depth=depth - 1)
-        return d
-
 
 # TODO: could probably incorporate this into the class since if we can
 # avoid using the Taxon class name in the order_by
@@ -226,4 +186,4 @@ Genus.taxa = relation('Taxon', cascade='all, delete-orphan',
 
 #  setup the search matches
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('genus', 'gen'), Genus, ['genus'])
+mapper_search.add_meta(('genera', 'genus', 'gen'), Genus, ['genus'])
