@@ -16,7 +16,7 @@ def get_relation(model, model_id, path, session=None):
         relationship = mapper.relationships[name]
         mapper = relationship.mapper
 
-    local_session = True if session else False
+    local_session = False if session else True
     if not session:
         session = db.Session()
 
@@ -91,6 +91,7 @@ organization's schema.
 """
 
 import bauble.model.meta
+from bauble.model.geography import Geography
 from bauble.model.family import Family, FamilyNote, FamilySynonym
 from bauble.model.genus import Genus
 from bauble.model.taxon import Taxon
@@ -98,7 +99,6 @@ from bauble.model.accession import Accession
 from bauble.model.plant import Plant
 from bauble.model.location import Location
 from bauble.model.source import Source, SourceDetail, Collection
-from bauble.model.geography import Geography
 
 from bauble.model.user import User
 from bauble.model.organization import Organization

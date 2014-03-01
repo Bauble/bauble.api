@@ -4,10 +4,11 @@ import json
 import bottle
 from bottle import request, response
 import sqlalchemy as sa
+import sqlalchemy.orm as orm
 
 from bauble import app, API_ROOT
 from bauble.middleware import basic_auth, filter_param
-from bauble.model import Taxon  # TaxonNote, TaxonSynonym
+from bauble.model import Taxon, get_relation  # TaxonNote, TaxonSynonym
 
 
 column_names = [col.name for col in sa.inspect(Taxon).columns]
@@ -19,6 +20,18 @@ def resolve_taxon(next):
             bottle.abort(404, "Taxon not found")
         return next(*args, **kwargs)
     return _wrapped
+
+
+def build_embedded(embed, taxon):
+    if embed == 'synonyms':
+        data = taxon.synonyms
+    else:
+        data = get_relation(Taxon, taxon.id, embed, session=request.session)
+
+    if isinstance(data, list):
+        return (embed, [obj.json() for obj in data])
+    else:
+        return (embed, data.json() if data else '{}')
 
 
 @app.get(API_ROOT + "/taxon")
@@ -35,7 +48,16 @@ def index_taxon():
 @basic_auth
 @resolve_taxon
 def get_taxon(taxon_id):
-    return request.taxon.json()
+
+    json_data = request.taxon.json()
+
+    if 'embed' in request.params:
+        embed_list = request.params.embed if isinstance(request.params.embed, list) \
+            else [request.params.embed]
+        embedded = map(lambda embed: build_embedded(embed, request.taxon), embed_list)
+        json_data.update(embedded)
+
+    return json_data
 
 
 @app.route(API_ROOT + "/taxon/<taxon_id:int>", method='PATCH')

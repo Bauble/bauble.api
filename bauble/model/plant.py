@@ -414,5 +414,5 @@ class Plant(Model):
 
 # setup the search mapper
 mapper_search = search.get_strategy('MapperSearch')
-mapper_search.add_meta(('plant', 'plants'), Plant, ['code'])
+mapper_search.add_meta(('plants', 'plant'), Plant, ['code'])
 #search.add_strategy(PlantSearch)

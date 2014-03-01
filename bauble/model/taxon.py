@@ -2,7 +2,6 @@
 # taxon.py
 #
 
-import traceback
 import xml.sax.saxutils as sax
 from itertools import chain
 
@@ -18,8 +17,7 @@ from bauble.model import Model
 #import bauble.utils as utils
 #from bauble.utils.log import debug
 import bauble.types as types
-from bauble.model.geography import Geography
-from bauble.model.genus import Genus
+from bauble.model import Geography, Genus
 import bauble.search as search
 
 
@@ -164,12 +162,6 @@ class Taxon(Model):
                          cascade='all, delete-orphan', uselist=True,
                          backref='taxon')
 
-    # this is a dummy relation, it is only here to make cascading work
-    # correctly and to ensure that all synonyms related to this genus
-    # get deleted if this genus gets deleted
-    _syn = relation('TaxonSynonym',
-                     primaryjoin='Taxon.id==TaxonSynonym.synonym_id',
-                     cascade='all, delete-orphan', uselist=True)
 
     vernacular_names = relation('VernacularName', cascade='all, delete-orphan',
                                  collection_class=VNList,

@@ -55,7 +55,7 @@ def get_genus(genus_id):
         embed_list = request.params.embed if isinstance(request.params.embed, list) \
             else [request.params.embed]
         embedded = map(lambda embed: build_embedded(embed, request.genus), embed_list)
-        json_data.update(list(embedded))
+        json_data.update(embedded)
 
     return json_data
 
