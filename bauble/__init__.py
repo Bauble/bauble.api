@@ -8,7 +8,7 @@ from bottle import request
 # by the owner of this process
 #
 
-API_ROOT = "/api/v1"
+API_ROOT = "/v1"
 bauble_rcfile = os.path.join(os.environ['HOME'], ".bauble.api")
 
 # read environment variables from the bauble rcfile
