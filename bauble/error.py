@@ -83,6 +83,10 @@ def check(condition, msg=None):
 def default_error_handler(error):
     # TODO: only print the error when the debug flag is set
     # make sure the error is printed in the log
+
+    if response.status_code in (400, 500):
+        print(error)
+
     from bauble.routes import set_cors_headers
     set_cors_headers()
     if isinstance(error, str):
