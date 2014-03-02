@@ -5,14 +5,12 @@ import os
 import requests
 import requests.auth as auth
 
-import bauble
-
 if os.environ.get('BAUBLE_ENV', None) == "development" or os.environ.get('TRAVIS', None):
     server = "http://localhost:9090"
 else:
     server = 'http://api.bauble.io'
 
-api_root = server + "/api/v1"
+api_root = server + "/v1"
 url = api_root + "/admin/initdb"
 
 response = requests.post(url)
