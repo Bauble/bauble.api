@@ -8,11 +8,33 @@ from bottle import request, response
 
 import bauble.db as db
 from bauble.model import User
-from bauble.server import parse_accept_header
 import bauble.utils as utils
 
 # TODO: maybe we should just close the session in each middleware function
 # and if the
+
+def parse_accept_header(header=None):
+    """
+    Parse the Accept header.
+
+    Returns a dict of mimetype keys that map to an accept param dict
+    """
+    if(not header):
+        header = request.headers.get("Accept")
+
+    ranges = [rng.strip() for rng in header.split(',')]
+
+    result = {}
+    for rng in ranges:
+        params = rng.split(';')
+        d = {}
+        for param in params[1:]:
+            key, value = param.split("=")
+            d[key] = value
+        result[params[0]] = d
+
+    return result
+
 
 def basic_auth(next):
     """Route handler decorator that authorizes the user using Basic Auth.  This

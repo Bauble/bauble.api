@@ -2,7 +2,7 @@
 from test.api import *
 
 def test_parse_accept_header():
-    from bauble.server import parse_accept_header
+    from bauble.middleware import parse_accept_header
 
     result = parse_accept_header("application/json;q=0;depth=1")
     assert result == {"application/json": {'q': '0', 'depth': '1'}}
