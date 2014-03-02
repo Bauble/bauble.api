@@ -5,9 +5,8 @@
 import sqlalchemy.exc as sa_exc
 
 import bottle
-from bottle import request
+from bottle import request, response
 from bauble import app
-
 
 
 class BaubleError(Exception):
