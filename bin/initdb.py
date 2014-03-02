@@ -6,16 +6,13 @@
 #
 
 import os
+import sys
 
 import requests
-import requests.auth as auth
 
-
-
-if os.environ.get('BAUBLE_ENV', None) == "development" or os.environ.get('TRAVIS', None):
-    server = "http://localhost:9090"
-else:
-    server = 'http://api.bauble.io'
+server = "http://localhost:9090"
+if len(sys.argv) > 1:
+    server = sys.argv[1]
 
 api_root = server + "/v1"
 url = api_root + "/admin/initdb"

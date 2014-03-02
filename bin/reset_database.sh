@@ -40,7 +40,7 @@ else
     CREATE_ROLE="true"
 fi
 
-$SUDO $PSQL -c 'drop database if exists $DB_NAME;'
+$SUDO $PSQL -c "drop database if exists $DB_NAME;"
 if [ $? == 1 ] ; then exit ; fi
 
 if [[ $CREATE_ROLE == "true" ]] ; then
