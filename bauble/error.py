@@ -146,14 +146,14 @@ def error_handler_401(error):
 # 480 and up are custom response codes
 #
 # TODO: ** i'm not sure about these custom response codes anymore
-@app.error(480)
-def error_handler_480(error):
-    return default_error_handler("Account has not been approved")
+# @app.error(480)
+# def error_handler_480(error):
+#     return default_error_handler("Account has not been approved")
 
-@app.error(481)
-def error_handler_481(error):
-    return default_error_handler("Organization account has been suspended")
+# @app.error(481)
+# def error_handler_481(error):
+#     return default_error_handler("Organization account has been suspended")
 
-@app.error(482)
-def error_handler_482(error):
-    return default_error_handler("User account has been suspended")
+# @app.error(482)
+# def error_handler_482(error):
+#     return default_error_handler("User account has been suspended")
