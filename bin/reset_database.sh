@@ -40,7 +40,7 @@ else
     CREATE_ROLE="true"
 fi
 
-$SUDO $PSQL -c 'drop database if exists bauble;'
+$SUDO $PSQL -c 'drop database if exists $DB_NAME;'
 if [ $? == 1 ] ; then exit ; fi
 
 if [[ $CREATE_ROLE == "true" ]] ; then
@@ -53,8 +53,8 @@ if [[ $CREATE_ROLE == "true" ]] ; then
 fi
 
 $SUDO $PSQL -c "create database $DB_NAME with owner=$DB_OWNER;"
-
 if [ $? == 1 ] ; then exit ; fi
+
 read -p "Start the Bauble API server and press a key when it's ready..."
 PYTHONPATH=. bin/initdb.py
 
