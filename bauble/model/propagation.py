@@ -109,7 +109,7 @@ class Propagation(Model):
                 self.cutting = PropCutting()
             self.cutting.set_attributes(details)
         elif self.prop_type != 'Other':
-            raise NotImplementedError("Unknown propagation type: " + self.prop_type)
+            raise ValueError("Unknown propagation type: {}".format(self.prop_type))
 
     details = property(_get_details, _set_details)
 

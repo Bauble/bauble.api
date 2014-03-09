@@ -57,7 +57,7 @@ class Source(Model):
         data['sources_code'] = self.sources_code
         data['collection'] = self.collection.json() if self.collection is not None else {}
         data['propagation'] = self.propagation.json() if self.propagation is not None else {}
-        data['plant_propagation_id'] = self.plant_propagation.id if self.plant_propagation is not None else {}
+        data['plant_propagation_id'] = self.plant_propagation.id if self.plant_propagation is not None else None
         return data
 
 

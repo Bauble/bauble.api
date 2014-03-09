@@ -6,7 +6,7 @@ import sqlalchemy.orm as orm
 
 from bauble import app, API_ROOT
 from bauble.middleware import basic_auth, filter_param, resolve_relation
-from bauble.model import Accession, AccessionNote, Source, Collection, Propagation, PropSeed, PropCutting
+from bauble.model import Accession, AccessionNote, Source, Collection, Propagation, PropSeed, PropCutting, get_relation
 
 column_names = [col.name for col in sa.inspect(Accession).columns]
 source_mutable = ['sources_code', 'id', 'plant_propagation_id']
@@ -37,6 +37,19 @@ def resolve_source(next):
     return _wrapped
 
 
+def build_embedded(embed, accession):
+    # if embed == 'synonyms':
+    #     data = genus.synonyms
+    # else:
+    #     data = get_relation(Genus, genus.id, embed, session=request.session)
+    data = get_relation(Accession, accession.id, embed, session=request.session)
+
+    if isinstance(data, list):
+        return (embed, [obj.json() for obj in data])
+    else:
+        return (embed, data.json() if data else '{}')
+
+
 @app.get(API_ROOT + "/accession")
 @basic_auth
 @filter_param(Accession, column_names)
@@ -51,7 +64,16 @@ def index_accession():
 @basic_auth
 @resolve_accession
 def get_accession(accession_id):
-    return request.accession.json()
+
+    json_data = request.accession.json()
+
+    if 'embed' in request.params:
+        embed_list = request.params.embed if isinstance(request.params.embed, list) \
+            else [request.params.embed]
+        embedded = map(lambda embed: build_embedded(embed, request.accession), embed_list)
+        json_data.update(embedded)
+
+    return json_data
 
 
 @app.route(API_ROOT + "/accession/<accession_id:int>", method='PATCH')
@@ -78,9 +100,12 @@ def patch_accession(accession_id):
         source_data['source_detail_id'] = source_data.pop('id', None)
 
         # make a copy of the data for only those fields that are columns
-        source.set_attributes(data)
+        source.set_attributes(source_data)
 
-        if 'propagation' in source_json:
+        # make sure the propagation type is not empty b/c we'll get an error
+        # trying to set the propagation details (even if it's an empty dict) if
+        # the prop_type hasn't been set
+        if 'propagation' in source_json and len(source_json['propagation']) > 0:
             # TODO: validate prop_type
             if source.propagation is None:
                 source.propagation = Propagation()
@@ -92,8 +117,7 @@ def patch_accession(accession_id):
             source.propagation.details = {col: prop_data[col] for col in prop_data.keys()
                                           if col in prop_mutable}
 
-
-        if 'collection' in source_json:
+        if 'collection' in source_json and len(source_json['collection']) > 0:
             # TODO: validate collection datand set mutable properties
             if source.collection is None:
                 source.collection = Collection()
@@ -121,7 +145,6 @@ def post_accession():
     # make a copy of the data for only those fields that are columns
     accession = Accession(**data)
     request.session.add(accession)
-
 
     if 'source' in request.json:
         source_json = request.json['source']
