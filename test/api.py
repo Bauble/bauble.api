@@ -11,7 +11,7 @@ import test
 
 # WARNING: DO NOT RUN THIS SCRIPT ON THE PRODUCTION SERVER
 server = "http://localhost:9099"
-api_root = server + "/api/v1"
+api_root = server + "/v1"
 
 if "api.bauble.io" in server or os.environ.get('BAUBLE_ENV') != 'development':
     print("NOT IN PRODUCTION YOU FOOL!")

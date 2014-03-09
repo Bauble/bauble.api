@@ -36,14 +36,5 @@ def test_organization(setup, admin_user):
     user2_data['organization'] = org
     user2 = api.create_resource("/user", user2_data, user=user)
 
-    # approve the organization
-    response = requests.post(api.api_root + '/organization/{}'.format(org['id'])
-                             + "/approve", auth=(admin_user.email, admin_user.access_token))
-
-                             #auth=('admin', 'test'))
-    assert response.status_code == 200
-    org = json.loads(response.text)
-    assert org['date_approved'] is not None or org['date_approved'] is not ""
-
     # the organization and owners are deleted in the test finalizer
     pass

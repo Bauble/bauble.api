@@ -12,23 +12,33 @@ import test.api as test
 from test.fixtures import organization, user, session
 
 @pytest.fixture
-def setup(organization, session):
+def setup(request, organization, session):
     setup.organization = session.merge(organization)
     setup.user = setup.organization.owners[0]
     setup.session = session
     db.set_session_schema(session, setup.organization.pg_schema)
+
+    setup.family = Family(family=test.get_random_name())
+    setup.genus = Genus(family=setup.family, genus=test.get_random_name())
+    setup.taxon = Taxon(genus=setup.genus, sp=test.get_random_name())
+    setup.session.add_all([setup.family, setup.genus, setup.taxon])
+    setup.session.commit()
+
+    def cleanup():
+        setup.session.delete(setup.taxon)
+        setup.session.delete(setup.genus)
+        setup.session.delete(setup.family)
+        setup.session.commit()
+
+    request.addfinalizer(cleanup)
+
     return setup
 
 
 def test_accession_json(setup):
 
     session = setup.session
-
-    family = Family(family=test.get_random_name())
-    genus_name = test.get_random_name()
-    genus = Genus(family=family, genus=genus_name)
-    taxon = Taxon(genus=genus, sp=test.get_random_name())
-    acc = Accession(taxon=taxon, code=test.get_random_name())
+    acc = Accession(taxon=setup.taxon, code=test.get_random_name())
     source = Source(accession=acc, sources_code=test.get_random_name())
     source.source_detail = SourceDetail(name=test.get_random_name(), description="the description")
     source.collection = Collection(locale=test.get_random_name())
@@ -41,17 +51,14 @@ def test_accession_json(setup):
     # source.plant_propagation.seed = PropSeed(nseeds=100, date_sown="1/1/11")
 
     verification = Verification(accession=acc, verifier=test.get_random_name(),
-                                date="2011/1/1", level=1, taxon=taxon,
-                                prev_taxon=taxon)
+                                date="2011/1/1", level=1, taxon=setup.taxon,
+                                prev_taxon=setup.taxon)
     voucher = Voucher(accession=acc, herbarium=test.get_random_name(),
                       code=test.get_random_name())
 
     note = AccessionNote(accession=acc, note="this is a test")
 
-    #session = organization.get_session()
-
-
-    all_objs = [family, genus, taxon, note, acc, source]
+    all_objs = [note, acc, source]
     session.add_all(all_objs)
     session.commit()
 
@@ -59,7 +66,7 @@ def test_accession_json(setup):
     assert 'id' in acc_json
     assert acc_json['id'] == acc.id
     assert 'str' in acc_json
-    assert acc_json['taxon_id'] == taxon.id
+    assert acc_json['taxon_id'] == setup.taxon.id
 
     note_json = note.json()
     assert 'id' in note_json
@@ -94,58 +101,52 @@ def test_accession_json(setup):
     session.close()
 
 
-def test_server(setup):
+def test_route(setup):
     """
     Test the server properly handle /taxon resources
     """
 
     user = setup.user
+    source_detail = SourceDetail(name=test.get_random_name(), description="the description")
+    setup.session.add(source_detail)
+    setup.session.commit()
 
-    family = test.create_resource('/family', {'family': test.get_random_name()}, user)
-    genus = test.create_resource('/genus', {'genus': test.get_random_name(),
-                                            'family': family}, user)
-    taxon = test.create_resource('/taxon', {'genus': genus, 'sp': test.get_random_name()}, user)
+    # TODO: test that POST with taxon and taxon_id both work, same with source_detail
 
-    # source_detail = test.create_resource('/sourcedetail', {
-    #     'name': test.get_random_name(),
-    #     'source_type': "BG"
-    # })
-
-    # TODO: test that POST with taxon and taxon_id both work
-
-    # create a accession accession
+    # create an accession
     first_accession = test.create_resource('/accession', {
-        'taxon': taxon,
-        'code': test.get_random_name()
-
-        # 'source': {
-        #     'sources_id': test.get_random_name(),
-        #     'source_detail': source_detail,
-        #     'collection': {
-        #         "locale": test.get_random_name()
-        #     },
-        #     'propagation': {
-        #         'prop_type': 'UnrootedCutting',
-        #         'details': {
-        #             'media': "Fafard 3B"
-        #         }
-        #     }
-        # },
-        #'plant_propagation': {}
+        'taxon_id': setup.taxon.id,
+        'code': test.get_random_name(),
+        'source': {
+            'id': source_detail.id,
+            'sources_code': test.get_random_name(),
+            'collection': {
+                "locale": test.get_random_name()
+            },
+            'propagation': {
+                'prop_type': 'UnrootedCutting',
+                'media': "Fafard 3B"
+            }
+        },
+        # TODO: setting the plant propagation id would require us to create a second
+        # accession, plant and plant propagation record and set that record
+        # here
+        'plant_propagation': {}
     }, user)
 
     # create another accession and use the first as a synonym
-    data = {'taxon': taxon, 'code': test.get_random_name()
-            # 'notes': [{'user': 'me', 'category': 'test', 'date': '1/1/2001', 'note': 'test note'},
-            #           {'user': 'me', 'category': 'test', 'date': '2/2/2001', 'note': 'test note2'}],
-            # 'synonyms': [{'synonym': first_accession}]
-            }
+    data = {'taxon_id': setup.taxon.id, 'code': test.get_random_name()}
+
+    notes = [{'user': 'me', 'category': 'test', 'date': '1/1/2001', 'note': 'test note'},
+             {'user': 'me', 'category': 'test', 'date': '2/2/2001', 'note': 'test note2'}],
+    synonyms = [{'synonym': first_accession}]
 
     second_accession = test.create_resource('/accession', data, user)
     assert 'id' in second_accession  # created
 
     # update the accession
     second_accession['accession'] = test.get_random_name()
+    second_accession['source'] = first_accession['source']
     second_id = second_accession['id']
     second_accession = test.update_resource('/accession/' + str(second_id), second_accession, user)
     assert second_accession['id'] == second_id  # make sure they have the same ref after the update
@@ -160,5 +161,3 @@ def test_server(setup):
     # delete the created resources
     test.delete_resource('/accession/' + str(first_accession['id']), user)
     test.delete_resource('/accession/' + str(second_accession['id']), user)
-    test.delete_resource('/taxon/' + str(taxon['id']), user)
-    test.delete_resource('/genus/' + str(genus['id']), user)

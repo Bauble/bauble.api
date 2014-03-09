@@ -7,6 +7,7 @@ from . import family
 from . import genus
 from . import taxon
 from . import accession
+from . import source
 from . import plant
 from . import location
 

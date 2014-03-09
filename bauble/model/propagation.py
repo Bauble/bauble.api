@@ -64,10 +64,11 @@ class Propagation(Model):
     """
     __tablename__ = 'propagation'
     #recvd_as = Column(Unicode(10)) # seed, urcu, other
-    #recvd_as_other = Column(UnicodeText) # ** maybe this should be in the notes
+
     prop_type = Column(types.Enum(values=prop_type_values.keys(),
                                   translations=prop_type_values),
                        nullable=False)
+
     notes = Column(UnicodeText)
     date = Column(types.Date)
 
@@ -81,6 +82,7 @@ class Propagation(Model):
                     cascade='all,delete-orphan', uselist=False,
                     backref=backref('propagation', uselist=False))
 
+
     def _get_details(self):
         if self.prop_type == 'Seed':
             return self.seed
@@ -92,12 +94,20 @@ class Propagation(Model):
             raise NotImplementedError
 
     def _set_details(self, details):
+        """
+        The details param is a dictionary of properties for either the PropCutting or PropSeed
+        depenging on the property type.
+        """
         if self.prop_type == 'Seed':
             self.cutting = None
-            self.seed = PropSeed(**details)
+            if self.seed is None:
+                self.seed = PropSeed()
+            self.seed.set_attributes(details)
         elif self.prop_type == 'UnrootedCutting':
             self.seed = None
-            self.cutting = PropCutting(**details)
+            if self.cutting is None:
+                self.cutting = PropCutting()
+            self.cutting.set_attributes(details)
         elif self.prop_type != 'Other':
             raise NotImplementedError("Unknown propagation type: " + self.prop_type)
 
