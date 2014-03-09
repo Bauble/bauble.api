@@ -80,6 +80,11 @@ class ModelBase:
         return data
 
 
+    def set_attributes(self, dict_):
+        for key, value in dict_.items():
+            setattr(self, key, value)
+
+
 
 Model = declarative_base(cls=ModelBase)
 
@@ -93,12 +98,13 @@ organization's schema.
 import bauble.model.meta
 from bauble.model.geography import Geography
 from bauble.model.family import Family, FamilyNote, FamilySynonym
-from bauble.model.genus import Genus
-from bauble.model.taxon import Taxon
-from bauble.model.accession import Accession
+from bauble.model.genus import Genus, GenusNote
+from bauble.model.taxon import Taxon, TaxonNote
+from bauble.model.accession import Accession, AccessionNote
 from bauble.model.plant import Plant
 from bauble.model.location import Location
 from bauble.model.source import Source, SourceDetail, Collection
+from bauble.model.propagation import Propagation, PlantPropagation, PropRooted, PropCutting, PropSeed
 
 from bauble.model.user import User
 from bauble.model.organization import Organization

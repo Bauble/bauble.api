@@ -302,7 +302,7 @@ class Accession(Model):
 
     # relations
     taxon = relation('Taxon', uselist=False,
-                       backref=backref('accessions', cascade='all, delete-orphan'))
+                     backref=backref('accessions', cascade='all, delete-orphan'))
 
     # use Plant.code for the order_by to avoid ambiguous column names
     plants = relation('Plant', cascade='all, delete-orphan',
@@ -415,6 +415,13 @@ class Accession(Model):
 
     def markup(self):
         return '%s (%s)' % (self.code, self.taxon.markup())
+
+
+    def json(self, *args, **kwargs):
+        # always embed the source in the accession
+        data = super().json(*args, **kwargs)
+        data['source'] = self.source.json() if self.source is not None else {}
+        return data
 
 
 # setup the search matcher
