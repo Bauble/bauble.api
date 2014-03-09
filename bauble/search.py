@@ -249,13 +249,11 @@ class MapperSearch(SearchStrategy):
             raise KeyError(_('Unknown search domain: %s' % domain))
 
         result_key = self._result_keys[cls]
-        self._results[result_key] = set()
-
         query = self._session.query(cls)
 
         # select all objects from the domain
         if values == '*':
-            self._results[result_key].update(query.all())
+            self._results[result_key] = query.all()
             return
 
         mapper = class_mapper(cls)
@@ -271,11 +269,9 @@ class MapperSearch(SearchStrategy):
             condition = lambda col: \
                 lambda val: mapper.c[col].op(cond)(val)
 
-        for col in properties:
-            #ors = or_(*list(condition(col), values))
-            ors = or_(*map(condition(col), values))
-            self._results[result_key].update(query.filter(ors).all())
-        return tokens
+        ors = or_(*[condition(prop)(value) for value in values for prop in properties])
+        self._results[result_key] = query.filter(ors).all()
+
 
 
     def on_value_list(self, s, loc, tokens):
@@ -301,7 +297,6 @@ class MapperSearch(SearchStrategy):
             cv = [(c, v) for c in columns for v in tokens]
             mapper = class_mapper(cls)
             q = q.filter(or_(*(like(mapper, c, v) for c, v in cv)))
-            #print(q)
             self._results[self._result_keys[cls]] = q.all()
 
 
