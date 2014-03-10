@@ -7,6 +7,7 @@ import sqlalchemy.orm as orm
 import bauble
 import bauble.db as db
 from bauble.model import Model
+import bauble.utils as utils
 
 QUOTE_STYLE = csv.QUOTE_MINIMAL
 QUOTE_CHAR = '"'
@@ -28,12 +29,12 @@ def from_csv(filemap, schema):
     db.set_session_schema(session, schema)
     connection = session.connection()
     transaction = connection.begin()
+
     try:
         # import the files in order of their dependency
-        for table in Model.metadata.sorted_tables:
-            if not table.name in filemap:
-                continue
+        sorted_tables = list(filter(lambda t: t.name in filemap, Model.metadata.sorted_tables))
 
+        for table in sorted_tables:
             if isinstance(filemap[table.name], str):
                 import_file = open(filemap[table.name], newline='')
             else:
@@ -46,14 +47,15 @@ def from_csv(filemap, schema):
                 rows.append({key: value if value != "" else None
                              for key, value in row.items()})
             connection.execute(table.insert(), rows)
+
         session.commit()
+
+        # reset the sequence
+        for table in sorted_tables:
+            for col in table.c:
+                utils.reset_sequence(col)
     except:
         session.rollback()
         raise
     finally:
         session.close()
-
-    # reset the sequence
-    import bauble.utils as utils
-    for col in table.c:
-        utils.reset_sequence(col)

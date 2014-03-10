@@ -27,7 +27,8 @@ environ['dev'] = dict(environ['all'], **{
 })
 
 environ['test'] = dict(environ['dev'], **{
-    'TEST': 'true'
+    'TEST': 'true',
+    'BAUBLE_TEST': 'true'
 })
 
 

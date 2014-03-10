@@ -154,37 +154,39 @@ def reset_sequence(column):
     import bauble.db as db
     from sqlalchemy.types import Integer
     from sqlalchemy import schema
+
     if not db.engine.name == 'postgresql':
         return
 
     sequence_name = None
-    if hasattr(column,'default') and isinstance(column.default,schema.Sequence):
+    if hasattr(column, 'default') and isinstance(column.default, schema.Sequence):
         sequence_name = column.default.name
     elif (isinstance(column.type, Integer) and column.autoincrement) and \
-            (column.default is None or \
-                 (isinstance(column.default, schema.Sequence) and \
+            (column.default is None or
+                 (isinstance(column.default, schema.Sequence) and
                       column.default.optional)) and \
-                      len(column.foreign_keys)==0:
-        sequence_name = '%s_%s_seq' %(column.table.name, column.name)
+                      len(column.foreign_keys) == 0:
+        sequence_name = '{}_{}_seq'.format(column.table.name, column.name)
     else:
         return
     conn = db.engine.connect()
     trans = conn.begin()
     try:
         # the FOR UPDATE locks the table for the transaction
-        stmt = "SELECT %s from %s FOR UPDATE;" %(column.name, column.table.name)
+        stmt = "SELECT {} from {} FOR UPDATE;".format(column.name, column.table.name)
         result = conn.execute(stmt)
         maxid = None
         vals = list(result)
         if vals:
             maxid = max(vals, key=lambda x: x[0])[0]
         result.close()
-        if maxid == None:
+        if maxid is None:
             # set the sequence to nextval()
             stmt = "SELECT nextval('%s');" % (sequence_name)
         else:
             stmt = "SELECT setval('%s', max(%s)+1) from %s;" \
                 % (sequence_name, column.name, column.table.name)
+
         conn.execute(stmt)
     except Exception as e:
         #warning('bauble.utils.reset_sequence(): %s' % utf8(e))

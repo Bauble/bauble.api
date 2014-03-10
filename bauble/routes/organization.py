@@ -116,10 +116,9 @@ def post_organization():
             'habit': os.path.join(base_path, 'habit.txt')
         }
 
-        # TODO: in test mode we should call imp.from_csv directly but in production
+        # in test mode we should call imp.from_csv directly but in production
         # we should always do it asynchronously
-
-        if os.environ.get('BAUBLE_TEST', 'false') == 'false':
+        if os.environ.get('BAUBLE_TEST', 'false') == 'true':
             imp.from_csv(datamap, organization.pg_schema)
         else:
             process = Process(target=imp.from_csv, args=(datamap, organization.pg_schema))
