@@ -2,9 +2,9 @@
 import datetime
 import json
 
-import bcrypt
 import bottle
-from bottle import request, response
+from bottle import request
+import sqlalchemy.orm as orm
 
 import bauble.db as db
 from bauble.model import User
@@ -212,6 +212,39 @@ def filter_param(mapped_class, columns):
                     query = query.filter(getattr(mapped_class, col).ilike(value))
 
                 request.filter = query
+            return next(*args, **kwargs)
+        return _wrapped
+    return _decorator
+
+
+def build_counts(mapped_class, id_param):
+
+    def _decorator(next):
+        def _wrapped(*args, **kwargs):
+            relations = request.params.relation
+            if isinstance(relations, str):
+                relations = [relations]
+
+            request.counts = {}
+
+            for relation in relations:
+
+                # get the mapper for the last item in the list of relations
+                mapper = orm.class_mapper(mapped_class)
+                path = []  # building the path helps avoid extra slashes and
+                for name in relation.split('/'):
+                    if name.strip() != "":
+                        path.append(name)
+                        mapper = getattr(mapper.relationships, name).mapper
+
+                # query the mapped class and the end point relation using the
+                # list of the passed relations to create the join between the
+                # two
+                query = request.session.query(mapped_class, mapper.class_).\
+                    filter(getattr(mapped_class, 'id') == request.args[id_param]).\
+                    join(*path)
+
+                request.counts[relation] = query.count()
             return next(*args, **kwargs)
         return _wrapped
     return _decorator

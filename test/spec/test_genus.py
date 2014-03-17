@@ -91,13 +91,17 @@ def test_server(setup):
     assert second_genus['id'] in [genus['id'] for genus in genera]
 
     # test getting the genus relative to its family
-    genera = api.get_resource('/family/' + str(family['id']) + "/genera", user=user)
-    assert first_genus['id'] in [genus['id'] for genus in genera]
+
+    # ** TODO: now we just embed the relation in the /genera/:id
+    # ** request....need to create a test to make sure it's happening
+    # genera = api.get_resource('/family/' + str(family['id']) + "/genera", user=user)
+    # assert first_genus['id'] in [genus['id'] for genus in genera]
 
     # test getting a family with its genera relations
-    response_json = api.query_resource('/family', q=family['family'], relations="genera,notes",
-                                       user=user)
-    families = response_json
+    # ** TODO: now we just embed the relation in the /genera/:id
+    # ** request....need to create a test to make sure it's happening
+    #response_json = api.query_resource('/family', q=family['family'], relations="genera,notes", user=user)
+    #families = response_json
 
     # TODO: *** i don't know if we still support returning relations like this...do
     # we need to

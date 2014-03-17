@@ -1,13 +1,10 @@
 
-import json
-
 import bottle
 from bottle import request, response
 import sqlalchemy as sa
-import sqlalchemy.orm as orm
 
 from bauble import app, API_ROOT
-from bauble.middleware import basic_auth, filter_param
+from bauble.middleware import basic_auth, filter_param, build_counts
 from bauble.model import Taxon, get_relation  # TaxonNote, TaxonSynonym
 
 
@@ -107,3 +104,11 @@ def post_taxon():
 def delete_taxon(taxon_id):
     request.session.delete(request.taxon)
     request.session.commit()
+
+
+@app.get(API_ROOT + "/taxon/<taxon_id:int>/count")
+@basic_auth
+@resolve_taxon
+@build_counts(Taxon, 'taxon_id')
+def count(taxon_id):
+    return request.counts

@@ -99,8 +99,10 @@ def test_server(setup):
     # assert second_taxon['ref'] == second_ref
 
     # test getting the taxon relative to its family
-    taxa = api.get_resource('/family/{}/genera/taxa'.format(family['id']), user=user)
-    assert first_taxon['id'] in [taxon['id'] for taxon in taxa]
+    # ** TODO: now we just embed the relation in the /taxon/:id
+    # ** request....need to create a test to make sure it's happening
+    # taxa = api.get_resource('/family/{}/genera/taxa'.format(family['id']), user=user)
+    # assert first_taxon['id'] in [taxon['id'] for taxon in taxa]
 
     # delete the created resources
     api.delete_resource('/taxon/' + str(first_taxon['id']), user=user)

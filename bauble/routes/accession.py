@@ -1,11 +1,10 @@
 
 import bottle
-from bottle import route, request, response
+from bottle import request, response
 import sqlalchemy as sa
-import sqlalchemy.orm as orm
 
 from bauble import app, API_ROOT
-from bauble.middleware import basic_auth, filter_param, resolve_relation
+from bauble.middleware import basic_auth, build_counts, filter_param, resolve_relation
 from bauble.model import Accession, AccessionNote, Source, Collection, Propagation, PropSeed, PropCutting, get_relation
 
 column_names = [col.name for col in sa.inspect(Accession).columns]
@@ -188,3 +187,11 @@ def post_accession():
 def delete_accession(accession_id):
     request.session.delete(request.accession)
     request.session.commit()
+
+
+@app.get(API_ROOT + "/accession/<accession_id:int>/count")
+@basic_auth
+@resolve_accession
+@build_counts(Accession, 'accession_id')
+def count(accession_id):
+    return request.counts

@@ -95,8 +95,8 @@ def test_accession_json(setup):
 
     voucher_json = voucher.json()
 
-
-    map(lambda o: session.delete(o), all_objs)
+    for obj in all_objs:
+        session.delete(obj)
     session.commit()
     session.close()
 
