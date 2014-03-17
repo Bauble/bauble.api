@@ -7,8 +7,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
 from bauble import app, API_ROOT
-import bauble.mimetype as mimetype
-from bauble.middleware import basic_auth, filter_param
+from bauble.middleware import basic_auth, filter_param, build_counts
 from bauble.model import Family, FamilyNote, FamilySynonym, get_relation
 
 column_names = [col.name for col in sa.inspect(Family).columns]
@@ -142,27 +141,10 @@ def remove_synonym_(family_id, synonym_id):
     req.family.synonyms.remove(syn_family)
 
 
-@app.get(API_ROOT + "/family/<family_id:int>/<relations:path>")
+
+@app.get(API_ROOT + "/family/<family_id:int>/count")
 @basic_auth
 @resolve_family
-def get_family_relation(family_id, relations):
-
-    mapper = orm.class_mapper(Family)
-    for name in relations.split('/'):
-        mapper = getattr(mapper.relationships, name).mapper
-
-    query = request.session.query(Family, mapper.class_).\
-        filter(getattr(Family, 'id') == family_id).\
-        join(*relations.split('/'))
-
-    response.content_type = '; '.join((mimetype.json, "charset=utf8"))
-    return json.dumps([obj.json() for parent, obj in query])
-
-
-
-###############################################################
-#
-# There shouldn't be any routes below here b/c get_family_relations acts as a catch-all
-# route.
-#
-###############################################################
+@build_counts(Family, 'family_id')
+def count(family_id):
+    return request.counts

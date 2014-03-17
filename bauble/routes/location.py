@@ -4,7 +4,7 @@ from bottle import request, response
 import sqlalchemy as sa
 
 from bauble import app, API_ROOT
-from bauble.middleware import basic_auth, filter_param
+from bauble.middleware import basic_auth, build_counts, filter_param
 from bauble.model import Location
 
 
@@ -79,3 +79,11 @@ def post_location():
 def delete_location(location_id):
     request.session.delete(request.location)
     request.session.commit()
+
+
+@app.get(API_ROOT + "/location/<location_id:int>/count")
+@basic_auth
+@resolve_location
+@build_counts(Location, 'location_id')
+def count(location_id):
+    return request.counts

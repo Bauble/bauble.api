@@ -1,15 +1,11 @@
 
-import json
-
-from bottle import route
+import bottle
+from bottle import request, response
 import sqlalchemy as sa
-import sqlalchemy.orm as orm
 
 from bauble import app, API_ROOT
-import bauble.mimetype as mimetype
-from bauble.middleware import *
+from bauble.middleware import basic_auth, build_counts, filter_param
 from bauble.model import Family, Genus, get_relation  # , GenusNote, GenusSynonym
-import bauble.utils as utils
 
 column_names = [col.name for col in sa.inspect(Genus).columns]
 
@@ -107,3 +103,11 @@ def post_genus():
 def delete_genus(genus_id):
     request.session.delete(request.genus)
     request.session.commit()
+
+
+@app.get(API_ROOT + "/genus/<genus_id:int>/count")
+@basic_auth
+@resolve_genus
+@build_counts(Genus, 'genus_id')
+def count(genus_id):
+    return request.counts

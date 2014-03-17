@@ -1,5 +1,6 @@
 from datetime import datetime, date
 import json
+import urllib
 
 from bottle import request, response
 
@@ -119,6 +120,7 @@ class QueryStringPlugin(object):
                     if param.strip() == "":
                         continue
                     key, value = param.split('=')
+                    value = urllib.parse.unquote_plus(value)
                     if key in request.params:
                         if isinstance(request.params[key], list):
                             request.params[key].append(value)

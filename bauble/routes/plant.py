@@ -4,7 +4,7 @@ from bottle import request, response
 import sqlalchemy as sa
 
 from bauble import app, API_ROOT
-from bauble.middleware import basic_auth, filter_param, resolve_relation
+from bauble.middleware import build_counts, basic_auth, filter_param, resolve_relation
 from bauble.model import Plant
 
 
@@ -82,3 +82,11 @@ def post_plant():
 def delete_plant(plant_id):
     request.session.delete(request.plant)
     request.session.commit()
+
+
+@app.get(API_ROOT + "/plant/<plant_id:int>/count")
+@basic_auth
+@resolve_plant
+@build_counts(Plant, 'plant_id')
+def count(plant_id):
+    return request.counts
