@@ -29,6 +29,8 @@ def test_import(organization, session):
     family1 = families.filter_by(family=family_data[0][0]).one()
     assert family1.family == family_data[0][0]
 
+    # TODO: test that the sequences were reset
+
     # for obj in session:
     #     session.delete(obj)
     # session.commit()
