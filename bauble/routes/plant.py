@@ -5,7 +5,7 @@ import sqlalchemy as sa
 
 from bauble import app, API_ROOT
 from bauble.middleware import build_counts, basic_auth, filter_param, resolve_relation
-from bauble.model import Plant
+from bauble.model import Plant, get_relation
 
 
 column_names = [col.name for col in sa.inspect(Plant).columns]
@@ -17,6 +17,19 @@ def resolve_plant(next):
             bottle.abort(404, "Plant not found")
         return next(*args, **kwargs)
     return _wrapped
+
+
+def build_embedded(embed, plant):
+    # if embed == 'synonyms':
+    #     data = genus.synonyms
+    # else:
+    #     data = get_relation(Genus, genus.id, embed, session=request.session)
+    data = get_relation(Plant, plant.id, embed, session=request.session)
+
+    if isinstance(data, list):
+        return (embed, [obj.json() for obj in data])
+    else:
+        return (embed, data.json() if data else '{}')
 
 
 @app.get(API_ROOT + "/plant")
@@ -33,7 +46,16 @@ def index_plant():
 @basic_auth
 @resolve_plant
 def get_plant(plant_id):
-    return request.plant.json()
+
+    json_data = request.plant.json()
+
+    if 'embed' in request.params:
+        embed_list = request.params.embed if isinstance(request.params.embed, list) \
+            else [request.params.embed]
+        embedded = map(lambda embed: build_embedded(embed, request.plant), embed_list)
+        json_data.update(embedded)
+
+    return json_data
 
 
 @app.route(API_ROOT + "/plant/<plant_id:int>", method='PATCH')
