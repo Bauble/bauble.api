@@ -28,7 +28,7 @@ def build_embedded(embed, taxon):
     if isinstance(data, list):
         return (embed, [obj.json() for obj in data])
     else:
-        return (embed, data.json() if data else '{}')
+        return (embed, data.json() if data else {})
 
 
 @app.get(API_ROOT + "/taxon")
