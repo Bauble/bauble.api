@@ -105,6 +105,43 @@ def delete_genus(genus_id):
     request.session.commit()
 
 
+@app.get(API_ROOT + "/genus/<genus_id:int>/synonyms")
+@basic_auth
+@resolve_genus
+def list_synonyms(genus_id):
+    return request.genus.synonyms
+
+
+# @app.get(API_ROOT + "/genus/<genus_id:int>/synonyms/<synonym_id:int>")
+# @basic_auth
+# @resolve_genus
+# def get_synonym(genus_id, synonym_id):
+#     return request.genus.synonyms
+
+
+@app.post(API_ROOT + "/genus/<genus_id:int>/synonyms")
+@basic_auth
+@resolve_genus
+def add_synonym(genus_id):
+    synonym_json = request.json
+    if 'id' not in synonym_json:
+        bottle.abort(400, "No id in request body")
+    syn_genus = request.session.query(Genus).get(synonym_json['id'])
+    request.genus.synonyms.append(syn_genus)
+    request.session.commit()
+    response.status = 201
+
+
+@app.delete(API_ROOT + "/genus/<genus_id:int>/synonyms/<synonym_id:int>")
+@basic_auth
+@resolve_genus
+def remove_synonym_(genus_id, synonym_id):
+    # synonym_id is the id of the genus not the GenusSynonym object
+    syn_genus = request.session.query(Genus).get(synonym_id)
+    request.genus.synonyms.remove(syn_genus)
+    request.session.commit()
+
+
 @app.get(API_ROOT + "/genus/<genus_id:int>/count")
 @basic_auth
 @resolve_genus

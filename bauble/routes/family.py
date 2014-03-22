@@ -109,11 +109,11 @@ def list_synonyms(family_id):
     return request.family.synonyms
 
 
-@app.get(API_ROOT + "/family/<family_id:int>/synonyms/<synonym_id:int>")
-@basic_auth
-@resolve_family
-def get_synonym(family_id, synonym_id):
-    return request.family.synonyms
+# @app.get(API_ROOT + "/family/<family_id:int>/synonyms/<synonym_id:int>")
+# @basic_auth
+# @resolve_family
+# def get_synonym(family_id, synonym_id):
+#     return request.family.synonyms
 
 
 @app.post(API_ROOT + "/family/<family_id:int>/synonyms")
@@ -124,7 +124,6 @@ def add_synonym(family_id):
     if 'id' not in synonym_json:
         bottle.abort(400, "No id in request body")
     syn_family = request.session.query(Family).get(synonym_json['id'])
-    print('syn_family.json(): ', syn_family.json())
     request.family.synonyms.append(syn_family)
     request.session.commit()
     response.status = 201
@@ -134,12 +133,10 @@ def add_synonym(family_id):
 @basic_auth
 @resolve_family
 def remove_synonym_(family_id, synonym_id):
-    # :synonym_id is the id of the family not the FamilySynonym object
-    synonym_json = request.json
-    syn_family_id = synonym_json.id
-    syn_family = request.session.query(Family).get(syn_family_id)
-    req.family.synonyms.remove(syn_family)
-
+    # synonym_id is the id of the family not the FamilySynonym object
+    syn_family = request.session.query(Family).get(synonym_id)
+    request.family.synonyms.remove(syn_family)
+    request.session.commit()
 
 
 @app.get(API_ROOT + "/family/<family_id:int>/count")

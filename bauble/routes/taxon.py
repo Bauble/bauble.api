@@ -106,6 +106,43 @@ def delete_taxon(taxon_id):
     request.session.commit()
 
 
+@app.get(API_ROOT + "/taxon/<taxon_id:int>/synonyms")
+@basic_auth
+@resolve_taxon
+def list_synonyms(taxon_id):
+    return request.taxon.synonyms
+
+
+# @app.get(API_ROOT + "/taxon/<taxon_id:int>/synonyms/<synonym_id:int>")
+# @basic_auth
+# @resolve_taxon
+# def get_synonym(taxon_id, synonym_id):
+#     return request.taxon.synonyms
+
+
+@app.post(API_ROOT + "/taxon/<taxon_id:int>/synonyms")
+@basic_auth
+@resolve_taxon
+def add_synonym(taxon_id):
+    synonym_json = request.json
+    if 'id' not in synonym_json:
+        bottle.abort(400, "No id in request body")
+    syn_taxon = request.session.query(Taxon).get(synonym_json['id'])
+    request.taxon.synonyms.append(syn_taxon)
+    request.session.commit()
+    response.status = 201
+
+
+@app.delete(API_ROOT + "/taxon/<taxon_id:int>/synonyms/<synonym_id:int>")
+@basic_auth
+@resolve_taxon
+def remove_synonym_(taxon_id, synonym_id):
+    # synonym_id is the id of the taxon not the TaxonSynonym object
+    syn_taxon = request.session.query(Taxon).get(synonym_id)
+    request.taxon.synonyms.remove(syn_taxon)
+    request.session.commit()
+
+
 @app.get(API_ROOT + "/taxon/<taxon_id:int>/count")
 @basic_auth
 @resolve_taxon
