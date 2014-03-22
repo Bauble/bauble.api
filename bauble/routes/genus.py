@@ -1,3 +1,4 @@
+import types
 
 import bottle
 from bottle import request, response
@@ -20,11 +21,11 @@ def resolve_genus(next):
 
 def build_embedded(embed, genus):
     if embed == 'synonyms':
-        data = genus.synonyms
-    else:
-        data = get_relation(Genus, genus.id, embed, session=request.session)
+        # handle synonyms differently since they're an SA association list
+        return (embed, [obj.json() for obj in genus.synonyms])
 
-    if isinstance(data, list):
+    data = get_relation(Genus, genus.id, embed, session=request.session)
+    if isinstance(data, (list, types.GeneratorType)):
         return (embed, [obj.json() for obj in data])
     else:
         return (embed, data.json() if data else {})
@@ -36,7 +37,6 @@ def build_embedded(embed, genus):
 @filter_param(Genus, column_names)
 def index_genus():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
-
     genera = request.filter if request.filter else request.session.query(Genus)
     return [genus.json() for genus in genera]
 

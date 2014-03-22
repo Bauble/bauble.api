@@ -104,14 +104,6 @@ class Genus(Model):
                          cascade='all, delete-orphan', uselist=True,
                          backref='genus')
 
-    # this is a dummy relation, it is only here to make cascading work
-    # correctly and to ensure that all synonyms related to this genus
-    # get deleted if this genus gets deleted
-    __syn = relation('GenusSynonym',
-                     primaryjoin='Genus.id==GenusSynonym.synonym_id',
-                     cascade='all, delete-orphan', uselist=True)
-
-
     def __str__(self):
         return Genus.str(self)
 

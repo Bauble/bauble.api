@@ -1,3 +1,4 @@
+import types
 
 import bottle
 from bottle import request, response
@@ -21,11 +22,10 @@ def resolve_taxon(next):
 
 def build_embedded(embed, taxon):
     if embed == 'synonyms':
-        data = taxon.synonyms
-    else:
-        data = get_relation(Taxon, taxon.id, embed, session=request.session)
+        return (embed, [obj.json() for obj in taxon.synonyms])
 
-    if isinstance(data, list):
+    data = get_relation(Taxon, taxon.id, embed, session=request.session)
+    if isinstance(data, (list, types.GeneratorType)):
         return (embed, [obj.json() for obj in data])
     else:
         return (embed, data.json() if data else {})
