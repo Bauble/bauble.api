@@ -8,7 +8,9 @@ from bauble.middleware import basic_auth, build_counts, filter_param
 from bauble.model import Location
 
 
-column_names = [col.name for col in sa.inspect(Location).columns]
+location_column_names = [col.name for col in sa.inspect(Location).columns]
+location_mutable = [col for col in location_column_names
+                    if col not in ['id'] and not col.startswith('_')]
 
 def resolve_location(next):
     def _wrapped(*args, **kwargs):
@@ -21,7 +23,7 @@ def resolve_location(next):
 
 @app.get(API_ROOT + "/location")
 @basic_auth
-@filter_param(Location, column_names)
+@filter_param(Location, location_column_names)
 def index_location():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
 
@@ -45,7 +47,8 @@ def patch_location(location_id):
         bottle.abort(400, 'The request doesn\'t contain a request body')
 
     # create a copy of the request data with only the columns
-    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in location_mutable}
     for key, value in data.items():
         setattr(request.location, key, data[key])
     request.session.commit()
@@ -59,11 +62,9 @@ def post_location():
     if not request.json:
         bottle.abort(400, 'The request doesn\'t contain a request body')
 
-    # TODO create a subset of the columns that we consider mutable
-    mutable = []
-
     # create a copy of the request data with only the columns
-    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in location_mutable}
 
     # make a copy of the data for only those fields that are columns
     location = Location(**data)

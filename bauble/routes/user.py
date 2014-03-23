@@ -14,7 +14,10 @@ from bauble.middleware import basic_auth, accept
 from bauble.model import User
 from bauble.routes import auth
 
-column_names = {col.name for col in sa.inspect(User).columns}
+user_column_names = [col.name for col in sa.inspect(User).columns]
+user_mutable = [col for col in user_column_names
+                if col not in ['id', 'access_token', 'access_token_expiration']
+                and not col.startswith('_')]
 
 def resolve_user(next):
     def _wrapped(*args, **kwargs):
@@ -52,10 +55,9 @@ def get_user(user_id):
 @resolve_user
 def patch_user(user_id):
 
-    # need to drop nonmutable columns like id
-
     # create a copy of the request data with only the columns
-    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in user_mutable}
     for key, value in data.items():
         setattr(request.user, key, data[key])
     request.session.commit()
@@ -69,13 +71,9 @@ def post_user():
     """
     # TODO: send an email to verify user account
 
-    # TODO create a subset of the columns that we consider mutable
-    omit = {'id', 'access_token', 'access_token_expiration'}
-    mutable = column_names.difference(omit)
-
     # create a copy of the request data with only the columns
     data = {col: request.json[col] for col in request.json.keys()
-            if col in mutable}
+            if col in user_mutable}
 
     session = db.Session()
     try:

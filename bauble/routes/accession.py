@@ -5,9 +5,12 @@ import sqlalchemy as sa
 
 from bauble import app, API_ROOT
 from bauble.middleware import basic_auth, build_counts, filter_param, resolve_relation
-from bauble.model import Accession, AccessionNote, Source, Collection, Propagation, PropSeed, PropCutting, get_relation
+from bauble.model import Accession, Source, Collection, Propagation, PropSeed, PropCutting, get_relation
 
-column_names = [col.name for col in sa.inspect(Accession).columns]
+acc_column_names = [col.name for col in sa.inspect(Accession).columns]
+acc_mutable = [col for col in acc_column_names
+               if col not in ['id'] and not col.startswith('_')]
+
 source_mutable = ['sources_code', 'id', 'plant_propagation_id']
 
 prop_seed_mutable = [col.name for col in sa.inspect(PropSeed).columns
@@ -51,7 +54,7 @@ def build_embedded(embed, accession):
 
 @app.get(API_ROOT + "/accession")
 @basic_auth
-@filter_param(Accession, column_names)
+@filter_param(Accession, acc_column_names)
 def index_accession():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
 
@@ -85,7 +88,7 @@ def patch_accession(accession_id):
 
     # create a copy of the request data with only the columns
     data = {col: request.json[col] for col in request.json.keys()
-            if col in column_names and col not in ['id']}
+            if col in acc_mutable}
     request.accession.set_attributes(data)
 
     if 'source' in request.json:
@@ -134,12 +137,9 @@ def patch_accession(accession_id):
 @resolve_relation('taxon_id', 'taxon')
 def post_accession():
 
-    # TODO create a subset of the columns that we consider mutable
-    mutable = []
-
     # create a copy of the request data with only the columns
     data = {col: request.json[col] for col in request.json.keys()
-            if col in column_names and col not in ['id']}
+            if col in acc_mutable}
 
     # make a copy of the data for only those fields that are columns
     accession = Accession(**data)

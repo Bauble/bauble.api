@@ -15,7 +15,10 @@ import bauble.mimetype as mimetype
 from bauble.middleware import *
 from bauble.model import Organization
 
-column_names = [col.name for col in sa.inspect(Organization).columns]
+
+org_column_names = [col.name for col in sa.inspect(Organization).columns]
+org_mutable = [col for col in org_column_names
+               if col not in ['id', 'pg_schema'] and not col.startswith('_')]
 
 def resolve_organization(next):
     def _wrapped(*args, **kwargs):
@@ -53,11 +56,10 @@ def get_organization(organization_id):
 @resolve_organization
 def patch_organization(organization_id):
 
-    # need to drop nonmutable columns like id
-    mutable = set('name').intersection(column_names)
-
     # create a copy of the request data with only the columns
-    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in org_mutable}
+
     for key, value in data.items():
         setattr(request.organization, key, data[key])
     request.session.commit()
@@ -70,11 +72,9 @@ def post_organization():
 
     # TODO: if the requesting user already has an organization_id then raise an error
 
-    # TODO create a subset of the columns that we consider mutable
-    mutable = column_names
-
     # create a copy of the request data with only the columns
-    data = {col: request.json[col] for col in request.json.keys() if col in mutable}
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in org_mutable}
 
     session = db.Session()
     session = request.session

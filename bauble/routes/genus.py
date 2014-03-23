@@ -6,9 +6,12 @@ import sqlalchemy as sa
 
 from bauble import app, API_ROOT
 from bauble.middleware import basic_auth, build_counts, filter_param
-from bauble.model import Family, Genus, get_relation  # , GenusNote, GenusSynonym
+from bauble.model import Genus, get_relation  # , GenusNote, GenusSynonym
 
-column_names = [col.name for col in sa.inspect(Genus).columns]
+genus_column_names = [col.name for col in sa.inspect(Genus).columns]
+genus_mutable = [col for col in genus_column_names
+                 if col not in ['id'] and not col.startswith('_')]
+
 
 def resolve_genus(next):
     def _wrapped(*args, **kwargs):
@@ -34,7 +37,7 @@ def build_embedded(embed, genus):
 
 @app.get(API_ROOT + "/genus")
 @basic_auth
-@filter_param(Genus, column_names)
+@filter_param(Genus, genus_column_names)
 def index_genus():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
     genera = request.filter if request.filter else request.session.query(Genus)
@@ -65,7 +68,8 @@ def patch_genus(genus_id):
         bottle.abort(400, 'The request doesn\'t contain a request body')
 
     # create a copy of the request data with only the columns
-    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in genus_mutable}
     for key, value in data.items():
         setattr(request.genus, key, data[key])
     request.session.commit()
@@ -79,11 +83,9 @@ def post_genus():
     if not request.json:
         bottle.abort(400, 'The request doesn\'t contain a request body')
 
-    # TODO create a subset of the columns that we consider mutable
-    mutable = []
-
     # create a copy of the request data with only the columns
-    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in genus_mutable}
 
     # if there isn't a family_id look for a family relation on the request data
     if not 'family_id' in data and 'family' in request.json and isinstance(request.json['family'], dict) and 'id' in request.json['family']:

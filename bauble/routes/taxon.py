@@ -48,7 +48,7 @@ def build_embedded(embed, taxon):
 
 @app.get(API_ROOT + "/taxon")
 @basic_auth
-@filter_param(Taxon, column_names)
+@filter_param(Taxon, taxon_column_names)
 def index_taxon():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
 

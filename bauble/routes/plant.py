@@ -8,7 +8,9 @@ from bauble.middleware import build_counts, basic_auth, filter_param, resolve_re
 from bauble.model import Plant, get_relation
 
 
-column_names = [col.name for col in sa.inspect(Plant).columns]
+plant_column_names = [col.name for col in sa.inspect(Plant).columns]
+plant_mutable = [col for col in plant_column_names
+                 if col not in ['id'] and not col.startswith('_')]
 
 def resolve_plant(next):
     def _wrapped(*args, **kwargs):
@@ -34,7 +36,7 @@ def build_embedded(embed, plant):
 
 @app.get(API_ROOT + "/plant")
 @basic_auth
-@filter_param(Plant, column_names)
+@filter_param(Plant, plant_column_names)
 def index_plant():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
 
@@ -66,8 +68,9 @@ def patch_plant(plant_id):
     if not request.json:
         bottle.abort(400, 'The request doesn\'t contain a request body')
 
-    # create a copy of the request data with only the columns
-    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
+    # create a copy of the request data with only the mutable columns
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in plant_mutable}
     for key, value in data.items():
         setattr(request.plant, key, data[key])
     request.session.commit()
@@ -83,12 +86,9 @@ def post_plant():
     if not request.json:
         bottle.abort(400, 'The request doesn\'t contain a request body')
 
-    # TODO create a subset of the columns that we consider mutable
-    mutable = []
-
     # create a copy of the request data with only the columns
     data = {col: request.json[col] for col in request.json.keys()
-            if col in column_names}
+            if col in plant_mutable}
 
     # make a copy of the data for only those fields that are columns
     plant = Plant(**data)
