@@ -13,3 +13,5 @@
 ```./bake server```
 
 
+# License
+BSD 3-Clause
