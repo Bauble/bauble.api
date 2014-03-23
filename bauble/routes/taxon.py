@@ -9,13 +9,28 @@ from bauble.middleware import basic_auth, filter_param, build_counts
 from bauble.model import Taxon, VernacularName, get_relation  # TaxonNote
 
 
-column_names = [col.name for col in sa.inspect(Taxon).columns]
+taxon_column_names = [col.name for col in sa.inspect(Taxon).columns]
+taxon_mutable = [col for col in taxon_column_names
+                 if col not in ['id'] and not col.startswith('_')]
+
+vn_column_names = [col.name for col in sa.inspect(VernacularName).columns]
+vn_mutable = [col for col in vn_column_names
+              if col not in ['id'] and not col.startswith('_')]
 
 def resolve_taxon(next):
     def _wrapped(*args, **kwargs):
         request.taxon = request.session.query(Taxon).get(request.args['taxon_id'])
         if not request.taxon:
             bottle.abort(404, "Taxon not found")
+        return next(*args, **kwargs)
+    return _wrapped
+
+
+def resolve_name(next):
+    def _wrapped(*args, **kwargs):
+        request.name = request.session.query(VernacularName).get(request.args['name_id'])
+        if not request.name:
+            bottle.abort(404, "Name not found")
         return next(*args, **kwargs)
     return _wrapped
 
@@ -62,11 +77,12 @@ def get_taxon(taxon_id):
 @resolve_taxon
 def patch_taxon(taxon_id):
 
-    if not request.taxon:
+    if not request.json:
         bottle.abort(400, 'The request doesn\'t contain a request body')
 
-    # create a copy of the request data with only the columns
-    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
+    # create a copy of the request data with only mutable
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in taxon_mutable}
     for key, value in data.items():
         setattr(request.taxon, key, data[key])
     request.session.commit()
@@ -80,11 +96,9 @@ def post_taxon():
     if not request.json:
         bottle.abort(400, 'The request doesn\'t contain a request body')
 
-    # TODO create a subset of the columns that we consider mutable
-    mutable = []
-
     # create a copy of the request data with only the columns
-    data = {col: request.json[col] for col in request.json.keys() if col in column_names}
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in taxon_mutable}
 
     # if there isn't a genus_id look for a genus relation on the request data
     if not 'genus_id' in data and 'genus' in request.json and isinstance(request.json['genus'], dict) and 'id' in request.json['genus']:
@@ -160,9 +174,10 @@ def list_names(taxon_id):
 @app.post(API_ROOT + "/taxon/<taxon_id:int>/names")
 @basic_auth
 @resolve_taxon
-def add_name(taxon_id):
+def post_name(taxon_id):
     name_json = request.json
-    name = VernacularName(name=name_json['name'], language=name_json['language'])
+    name = VernacularName(name=name_json['name'], language=name_json['language']
+                          if 'language' in name_json else None)
     request.taxon.vernacular_names.append(name)
     if 'default' in name_json and name_json['default'] is True:
         request.taxon.default_vernacular_name = name
@@ -171,15 +186,31 @@ def add_name(taxon_id):
     return name.json()
 
 
+@app.route(API_ROOT + "/taxon/<taxon_id:int>/names/<name_id:int>", method='PATCH')
+@basic_auth
+@resolve_taxon
+@resolve_name
+def patch_name(taxon_id, name_id):
+
+    if not request.json:
+        bottle.abort(400, 'The request doesn\'t contain a request body')
+
+    # create a copy of the request data with only the columns
+    data = {col: request.json[col] for col in request.json.keys()
+            if col in vn_mutable}
+    for key, value in data.items():
+        setattr(request.name, key, data[key])
+
+    request.session.commit()
+    return request.taxon.json()
+
+
 @app.delete(API_ROOT + "/taxon/<taxon_id:int>/names/<name_id:int>")
 @basic_auth
 @resolve_taxon
+@resolve_name
 def remove_name(taxon_id, name_id):
-    # synonym_id is the id of the taxon not the TaxonSynonym object
-    name = request.session.query(VernacularName).get(request.args['name_id'])
-    if not name:
-        bottle.abort(404, "Name not found")
-    request.taxon.vernacular_names.remove(name)
+    request.taxon.vernacular_names.remove(request.name)
     request.session.commit()
 
 
