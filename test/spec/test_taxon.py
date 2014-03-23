@@ -10,32 +10,42 @@ from test.fixtures import organization, user, session
 
 
 @pytest.fixture
-def setup(organization, session):
+def setup(request, organization, session):
     setup.organization = session.merge(organization)
     setup.user = setup.organization.owners[0]
     setup.session = session
     db.set_session_schema(session, setup.organization.pg_schema)
+
+    setup.family = Family(family=api.get_random_name())
+    setup.genus = Genus(family=setup.family, genus=api.get_random_name())
+    setup.session.add_all([setup.family, setup.genus])
+    setup.session.commit()
+
+    def cleanup():
+        setup.session.delete(setup.genus)
+        setup.session.delete(setup.family)
+        setup.session.commit()
+
+    request.addfinalizer(cleanup)
+
     return setup
 
 
-def test_taxon_json(setup):
+def test_json(setup):
     session = setup.session
 
-    family = Family(family=api.get_random_name())
-    genus_name = api.get_random_name()
-    genus = Genus(family=family, genus=genus_name)
-    taxon = Taxon(genus=genus, sp=api.get_random_name())
+    taxon = Taxon(genus=setup.genus, sp=api.get_random_name())
 
     note = TaxonNote(taxon=taxon, note="this is a test")
     syn = TaxonSynonym(taxon=taxon, synonym=taxon)
 
-    session.add_all([family, genus, taxon, note, syn])
+    session.add_all([taxon, note, syn])
     session.commit()
 
     taxon_json = taxon.json()
     assert 'id' in taxon_json
     assert 'str' in taxon_json
-    assert taxon_json['genus_id'] == genus.id
+    assert taxon_json['genus_id'] == setup.genus.id
 
     taxon_json = taxon.json()
     assert 'str' in taxon_json
@@ -51,44 +61,38 @@ def test_taxon_json(setup):
     assert syn_json['taxon_id'] == taxon.id
     assert syn_json['synonym_id'] == taxon.id
 
-    map(lambda o: session.delete(o), [family, genus, taxon])
+    session.delete(taxon)
     session.commit()
     session.close()
 
 
-def test_server(setup):
+def test_route(setup):
     """
     Test the server properly handle /taxon resources
     """
 
-    user = setup.user
-
-    family = api.create_resource('/family', {'family': api.get_random_name()}, user=user)
-    genus = api.create_resource('/genus', {'genus': api.get_random_name(),
-                                           'family': family}, user=user)
-
     # create a taxon taxon
-    first_taxon = api.create_resource('/taxon', {'sp': api.get_random_name(), 'genus': genus},
-                                      user=user)
+    first_taxon = api.create_resource('/taxon', {
+        'sp': api.get_random_name(),
+        'genus_id': setup.genus.id
+    }, user=setup.user)
 
-    # create another taxon and use the first as a synonym
-    data = {'sp': api.get_random_name(), 'genus': genus,
-            # 'notes': [{'user': 'me', 'category': 'test', 'date': '1/1/2001', 'note': 'test note'},
-            #           {'user': 'me', 'category': 'test', 'date': '2/2/2001', 'note': 'test note2'}],
-            #'synonyms': [first_taxon]
-            }
+    second_taxon = api.create_resource('/taxon', {
+        'sp': api.get_random_name(),
+        'genus_id': setup.genus.id
+    }, user=setup.user)
 
-    second_taxon = api.create_resource('/taxon', data, user=user)
     assert 'id' in second_taxon  # created
 
     # update the taxon
     second_taxon['sp'] = api.get_random_name()
     second_id = second_taxon['id']
-    second_taxon = api.update_resource('/taxon/' + str(second_id), second_taxon, user=user)
+    second_taxon = api.update_resource('/taxon/' + str(second_id), second_taxon,
+                                       user=setup.user)
     assert second_taxon['id'] == second_id  # make sure they have the same ref after the update
 
     # get the taxon
-    first_taxon = api.get_resource('/taxon/' + str(first_taxon['id']), user=user)
+    first_taxon = api.get_resource('/taxon/' + str(first_taxon['id']), user=setup.user)
 
     # query for taxa
     # print('data[sp]: ' + str(data['sp']))
@@ -105,7 +109,38 @@ def test_server(setup):
     # assert first_taxon['id'] in [taxon['id'] for taxon in taxa]
 
     # delete the created resources
-    api.delete_resource('/taxon/' + str(first_taxon['id']), user=user)
-    api.delete_resource('/taxon/' + str(second_taxon['id']), user=user)
-    api.delete_resource('/genus/' + str(genus['id']), user=user)
-    api.delete_resource('/family/' + str(family['id']), user=user)
+    api.delete_resource('/taxon/' + str(first_taxon['id']), user=setup.user)
+    api.delete_resource('/taxon/' + str(second_taxon['id']), user=setup.user)
+
+
+def test_synonyms(setup):
+    pass
+
+
+
+def test_names(setup):
+    # create a taxon taxon
+    taxon = Taxon(genus=setup.genus, sp=api.get_random_name())
+    setup.session.add(taxon)
+    setup.session.commit()
+
+    names_route = '/taxon/{}/names'.format(taxon.id)
+
+    # create a vernacular name using the route
+    name_json = api.create_resource(names_route, {
+        'name': api.get_random_name(),
+        'language': api.get_random_name()
+    }, user=setup.user)
+
+    assert 'id' in name_json
+
+    # check the name is in the list of names
+    names = api.get_resource(names_route, user=setup.user)
+    assert isinstance(names, list)
+    assert name_json['id'] in [name['id'] for name in names]
+
+    # delete the name via the route
+    api.delete_resource(names_route + '/{}'.format(name_json['id']), user=setup.user)
+
+    setup.session.delete(taxon)
+    setup.session.commit()

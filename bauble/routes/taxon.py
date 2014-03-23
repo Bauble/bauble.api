@@ -6,7 +6,7 @@ import sqlalchemy as sa
 
 from bauble import app, API_ROOT
 from bauble.middleware import basic_auth, filter_param, build_counts
-from bauble.model import Taxon, get_relation  # TaxonNote, TaxonSynonym
+from bauble.model import Taxon, VernacularName, get_relation  # TaxonNote
 
 
 column_names = [col.name for col in sa.inspect(Taxon).columns]
@@ -140,6 +140,46 @@ def remove_synonym_(taxon_id, synonym_id):
     # synonym_id is the id of the taxon not the TaxonSynonym object
     syn_taxon = request.session.query(Taxon).get(synonym_id)
     request.taxon.synonyms.remove(syn_taxon)
+    request.session.commit()
+
+
+@app.get(API_ROOT + "/taxon/<taxon_id:int>/names")
+@basic_auth
+@resolve_taxon
+def list_names(taxon_id):
+    return [name.json() for name in request.taxon.vernacular_names]
+
+
+# @app.get(API_ROOT + "/taxon/<taxon_id:int>/names/<synonym_id:int>")
+# @basic_auth
+# @resolve_taxon
+# def get_synonym(taxon_id, synonym_id):
+#     return request.taxon.names
+
+
+@app.post(API_ROOT + "/taxon/<taxon_id:int>/names")
+@basic_auth
+@resolve_taxon
+def add_name(taxon_id):
+    name_json = request.json
+    name = VernacularName(name=name_json['name'], language=name_json['language'])
+    request.taxon.vernacular_names.append(name)
+    if 'default' in name_json and name_json['default'] is True:
+        request.taxon.default_vernacular_name = name
+    request.session.commit()
+    response.status = 201
+    return name.json()
+
+
+@app.delete(API_ROOT + "/taxon/<taxon_id:int>/names/<name_id:int>")
+@basic_auth
+@resolve_taxon
+def remove_name(taxon_id, name_id):
+    # synonym_id is the id of the taxon not the TaxonSynonym object
+    name = request.session.query(VernacularName).get(request.args['name_id'])
+    if not name:
+        bottle.abort(404, "Name not found")
+    request.taxon.vernacular_names.remove(name)
     request.session.commit()
 
 

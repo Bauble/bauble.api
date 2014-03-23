@@ -35,7 +35,7 @@ def setup(request, organization, session):
     return setup
 
 
-def test_accession_json(setup):
+def test_json(setup):
 
     session = setup.session
     acc = Accession(taxon=setup.taxon, code=test.get_random_name())

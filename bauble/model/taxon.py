@@ -2,22 +2,14 @@
 # taxon.py
 #
 
-import xml.sax.saxutils as sax
 from itertools import chain
 
 from sqlalchemy import *
 from sqlalchemy.orm import *
-from sqlalchemy.orm.session import object_session
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm.collections import collection
 
-import bauble
-import bauble.db as db
 from bauble.model import Model
-#import bauble.utils as utils
-#from bauble.utils.log import debug
 import bauble.types as types
-from bauble.model import Geography, Genus
 import bauble.search as search
 
 
@@ -164,12 +156,11 @@ class Taxon(Model):
 
 
     vernacular_names = relation('VernacularName', cascade='all, delete-orphan',
-                                 collection_class=VNList,
+                                collection_class=VNList,
                                 backref=backref('taxon', uselist=False))
     _default_vernacular_name = relation('DefaultVernacularName', uselist=False,
-                                         cascade='all, delete-orphan',
-                                         backref=backref('taxon',
-                                                         uselist=False))
+                                        cascade='all, delete-orphan',
+                                        backref=backref('taxon', uselist=False))
     distribution = relation('TaxonDistribution',
                             cascade='all, delete-orphan',
                             backref=backref('taxon', uselist=False))
