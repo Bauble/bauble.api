@@ -1,7 +1,13 @@
 
 # Bauble API
 
-*** WARNING: This is an experimental repo.
+The Bauble API server for the [Bauble (http://bauble.io)](http://bauble.io) web app.  Bauble is a web app for managing plant records and living collections collections for botanic gardens and arboretums.
+
+## Installation
+ 1. Install PostgreSQL >= 0.9.2
+ 2. Install Python 3
+ 3. ```pip install -r requirements.txt```
+ 4. ```bin/reset_database.sh```
 
 ## Run tests
 
