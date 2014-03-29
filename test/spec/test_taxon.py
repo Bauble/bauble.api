@@ -3,7 +3,7 @@ import pytest
 import bauble.db as db
 from bauble.model.family import Family
 from bauble.model.genus import Genus
-from bauble.model.taxon import Taxon, TaxonSynonym, TaxonNote
+from bauble.model import Taxon, TaxonSynonym, TaxonNote, Geography
 
 import test.api as api
 from test.fixtures import organization, user, session
@@ -141,6 +141,38 @@ def test_names(setup):
 
     # delete the name via the route
     api.delete_resource(names_route + '/{}'.format(name_json['id']), user=setup.user)
+
+    setup.session.delete(taxon)
+    setup.session.commit()
+
+
+def test_distribution(setup):
+
+    # create a taxon taxon
+    taxon = Taxon(genus=setup.genus, sp=api.get_random_name())
+    setup.session.add(taxon)
+
+    geography = Geography(name='Test')
+    setup.session.add(geography)
+    setup.session.commit()
+
+    dist_route = '/taxon/{}/distributions'.format(taxon.id)
+
+    # get a geogrpahy
+    #geography = setup.session.query(Geography).get(1)
+    #assert geography is not None
+
+    # add the geography to the taxon
+    # create a vernacular name using the route
+    dist_json = api.create_resource(dist_route, geography.json(), user=setup.user)
+
+    # check the geography is in the distribution list
+    dists = api.get_resource(dist_route, user=setup.user)
+    assert isinstance(dists, list)
+    assert geography.id in [dist['id'] for dist in dists]
+
+    # delete the name via the route
+    api.delete_resource(dist_route + '/{}'.format(dist_json['id']), user=setup.user)
 
     setup.session.delete(taxon)
     setup.session.commit()

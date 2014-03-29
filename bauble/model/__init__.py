@@ -99,7 +99,7 @@ import bauble.model.meta
 from bauble.model.geography import Geography
 from bauble.model.family import Family, FamilyNote, FamilySynonym
 from bauble.model.genus import Genus, GenusNote
-from bauble.model.taxon import Taxon, TaxonNote, TaxonSynonym, VernacularName
+from bauble.model.taxon import Taxon, TaxonDistribution, TaxonNote, TaxonSynonym, VernacularName
 from bauble.model.accession import Accession, AccessionNote
 from bauble.model.plant import Plant
 from bauble.model.location import Location

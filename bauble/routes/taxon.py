@@ -6,7 +6,7 @@ import sqlalchemy as sa
 
 from bauble import app, API_ROOT
 from bauble.middleware import basic_auth, filter_param, build_counts
-from bauble.model import Taxon, VernacularName, get_relation  # TaxonNote
+from bauble.model import Taxon, TaxonDistribution, VernacularName, Geography, get_relation  # TaxonNote
 
 
 taxon_column_names = [col.name for col in sa.inspect(Taxon).columns]
@@ -118,7 +118,22 @@ def post_taxon():
 def delete_taxon(taxon_id):
     request.session.delete(request.taxon)
     request.session.commit()
+    #response.status = 204
 
+
+@app.get(API_ROOT + "/taxon/<taxon_id:int>/count")
+@basic_auth
+@resolve_taxon
+@build_counts(Taxon, 'taxon_id')
+def count(taxon_id):
+    return request.counts
+
+
+#############################################################
+#
+# Synonyms routes
+#
+#############################################################
 
 @app.get(API_ROOT + "/taxon/<taxon_id:int>/synonyms")
 @basic_auth
@@ -155,7 +170,14 @@ def remove_synonym_(taxon_id, synonym_id):
     syn_taxon = request.session.query(Taxon).get(synonym_id)
     request.taxon.synonyms.remove(syn_taxon)
     request.session.commit()
+    #response.status = 204
 
+
+#############################################################
+#
+# Vernacular Names routes
+#
+#############################################################
 
 @app.get(API_ROOT + "/taxon/<taxon_id:int>/names")
 @basic_auth
@@ -212,11 +234,56 @@ def patch_name(taxon_id, name_id):
 def remove_name(taxon_id, name_id):
     request.taxon.vernacular_names.remove(request.name)
     request.session.commit()
+    #response.status = 204
 
 
-@app.get(API_ROOT + "/taxon/<taxon_id:int>/count")
+#############################################################
+#
+# Distribtion routes
+#
+#############################################################
+
+@app.get(API_ROOT + "/taxon/<taxon_id:int>/distributions")
 @basic_auth
 @resolve_taxon
-@build_counts(Taxon, 'taxon_id')
-def count(taxon_id):
-    return request.counts
+def list_distributions(taxon_id):
+    return [dist.json() for dist in request.taxon.distribution]
+
+
+@app.post(API_ROOT + "/taxon/<taxon_id:int>/distributions")
+@basic_auth
+@resolve_taxon
+def post_distribution(taxon_id):
+    if 'id' not in request.json:
+        bottle.abort(400, "JSON object does not contain a geography id")
+
+    geo_id = request.json['id']
+    for dist in request.taxon.distribution:
+        # return the dist if it already exists
+        if dist.geography_id == geo_id:
+            return dist.json()
+
+    # make sure a geo with with id exists
+    geo = request.session.query(Geography).get(geo_id)
+    if not geo:
+        bottle.abort(400, "Unknown geography id")
+
+    dist = TaxonDistribution(geography_id=geo_id)
+    request.taxon.distribution.append(dist)
+    request.session.commit()
+    response.status = 201
+    return dist.json()
+
+
+@app.delete(API_ROOT + "/taxon/<taxon_id:int>/distributions/<geography_id:int>")
+@basic_auth
+@resolve_taxon
+def remove_distribution(taxon_id, geography_id):
+
+    # should we remove all occurrences of this geography only the first??
+    for dist in request.taxon.distribution:
+        if dist.geography_id == geography_id:
+            request.taxon.distribution.remove(dist)
+
+    request.session.commit()
+    #response.status = 204

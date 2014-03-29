@@ -76,22 +76,6 @@ class Geography(Model):
         return self.name
 
 
-    def json(self, depth=1):
-        d = dict(ref="/geography/" + str(self.id))
-        if depth > 0:
-            d['name'] = self.name
-            d['parent'] = self.parent.json(depth=depth - 1) if self.parent else ''
-            d['str'] = str(self)
-
-        if depth > 1:
-            d['tdwg_code'] = self.tdwg_code
-            d['iso_code'] = self.iso_code
-
-        return d
-
-
-
-
 # late bindings
 Geography.children = relation(Geography,
                               primaryjoin=Geography.parent_id==Geography.id,

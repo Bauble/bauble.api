@@ -481,6 +481,11 @@ class TaxonDistribution(Model):
     geography_id = Column(Integer, ForeignKey('geography.id'), nullable=False)
     taxon_id = Column(Integer, ForeignKey('taxon.id'), nullable=False)
 
+
+    def json(self, pick=None):
+        return self.geography.json()
+
+
     def __str__(self):
         return str(self.geography)
 
