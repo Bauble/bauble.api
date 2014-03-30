@@ -107,9 +107,6 @@ def post_organization():
         base_path = os.path.join(os.path.join(*bauble.__path__), 'data')
         request.session.commit()
 
-        # TODO: we should probably do the imports in the background
-        # and since we can be reasonably sure they will succeeed then
-        # go ahead an return a 200 response
         datamap = {
             'family': os.path.join(base_path, "family.txt"),
             'genus': os.path.join(base_path, 'genus.txt'),
@@ -117,6 +114,8 @@ def post_organization():
             'geography': os.path.join(base_path, 'geography.txt'),
             'habit': os.path.join(base_path, 'habit.txt')
         }
+
+        print("importing default data into", organization.pg_schema)
 
         # in test mode we should call imp.from_csv directly but in production
         # we should always do it asynchronously

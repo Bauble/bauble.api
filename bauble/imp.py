@@ -1,8 +1,4 @@
 import csv
-import sys
-
-import sqlalchemy as sa
-import sqlalchemy.orm as orm
 
 import bauble
 import bauble.db as db
@@ -30,20 +26,24 @@ def from_csv(filemap, schema):
     connection = session.connection()
     transaction = connection.begin()
 
+    table_name = ''
+    current_row = []
     try:
         # import the files in order of their dependency
         sorted_tables = list(filter(lambda t: t.name in filemap, Model.metadata.sorted_tables))
 
         for table in sorted_tables:
-            if isinstance(filemap[table.name], str):
-                import_file = open(filemap[table.name], newline='')
+            table_name = table.name  # mostly for error reporting
+            if isinstance(filemap[table_name], str):
+                import_file = open(filemap[table_name], newline='', encoding='utf-8')
             else:
-                import_file = filemap[table.name]
+                import_file = filemap[table_name]
 
             reader = csv.DictReader(import_file, quotechar=QUOTE_CHAR,
                                     quoting=QUOTE_STYLE)
             rows = []
             for row in reader:
+                current_row = row
                 rows.append({key: value if value != "" else None
                              for key, value in row.items()})
             connection.execute(table.insert(), rows)
@@ -55,6 +55,8 @@ def from_csv(filemap, schema):
             for col in table.c:
                 utils.reset_sequence(col)
     except:
+        print("Error importing into ", table_name)
+        print('current_row: ', current_row)
         session.rollback()
         raise
     finally:
