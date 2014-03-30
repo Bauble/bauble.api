@@ -78,34 +78,34 @@ def post_organization():
     data = {col: request.json[col] for col in request.json.keys()
             if col in org_mutable}
 
-    session = db.Session()
-    session = request.session
+    # use an admin session for creating the organization and importing data
+    # into the public schema
+    admin_session = db.Session()
     try:
         # make a copy of the data for only those fields that are columns
         organization = Organization(**data)
         organization.owners.append(request.user)
-        session.add(organization)
-        session.commit()
+        admin_session.add(organization)
+        admin_session.commit()
         response.status = 201
 
-        # create the default tables for the organization
+        # once the organization has been created it should have it's own
+        # postgresql schema
         if not organization.pg_schema:
             bottle.abort(500, "Couldn't create the organization's schema")
 
-        #tables = db.Base.metadata.sorted_tables
         metadata = Model.metadata
         tables = metadata.sorted_tables
         for table in tables:
             table.schema = organization.pg_schema
-        metadata.create_all(session.get_bind(), tables=tables)
+        metadata.create_all(admin_session.get_bind(), tables=tables)
+        admin_session.commit()
 
         for table in tables:
             table.schema = None
 
-
         # import the default data
         base_path = os.path.join(os.path.join(*bauble.__path__), 'data')
-        request.session.commit()
 
         datamap = {
             'family': os.path.join(base_path, "family.txt"),
@@ -127,7 +127,7 @@ def post_organization():
 
         return organization.json()
     finally:
-        session.close()
+        admin_session.close()
 
 
 @app.delete(API_ROOT + "/organization/<organization_id:int>")
