@@ -15,12 +15,6 @@ def from_csv(filemap, schema):
 
     schema: the name of the schema for the tables in filemap
     """
-
-    # TODO:
-    # 1. need to support schemas or even
-    # 2. should we support imports to system level tables
-    # 3. need to setup a test organization so we can get the schema from it
-
     session = db.Session()
     db.set_session_schema(session, schema)
     connection = session.connection()
@@ -33,6 +27,7 @@ def from_csv(filemap, schema):
         sorted_tables = list(filter(lambda t: t.name in filemap, Model.metadata.sorted_tables))
 
         for table in sorted_tables:
+            print('importing into {} ...'.format(table_name))
             table_name = table.name  # mostly for error reporting
             if isinstance(filemap[table_name], str):
                 import_file = open(filemap[table_name], newline='', encoding='utf-8')
@@ -46,6 +41,7 @@ def from_csv(filemap, schema):
                 current_row = row
                 rows.append({key: value if value != "" else None
                              for key, value in row.items()})
+            print('importing {} row in to {}'.format(rows.length, table_name))
             connection.execute(table.insert(), rows)
 
         session.commit()
