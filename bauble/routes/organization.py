@@ -84,7 +84,11 @@ def post_organization():
     try:
         # make a copy of the data for only those fields that are columns
         organization = Organization(**data)
-        organization.owners.append(request.user)
+
+        owner = admin_session.merge(request.user)
+        organization.owners.append(owner)
+        owner.is_org_owner = True
+
         admin_session.add(organization)
         admin_session.commit()
         response.status = 201
@@ -120,7 +124,7 @@ def post_organization():
         # in test mode we should call imp.from_csv directly but in production
         # we should always do it asynchronously
         if os.environ.get('BAUBLE_TEST', 'false') == 'true':
-            imp.from_csv(datamap, organization.pg_schema)
+            imp.from_csv({'geography': datamap['geography']}, organization.pg_schema)
         else:
             process = Process(target=imp.from_csv, args=(datamap, organization.pg_schema))
             process.start()
@@ -134,6 +138,11 @@ def post_organization():
 @basic_auth
 @resolve_organization
 def delete_organization(organization_id):
+    if request.user not in request.organization.owners:
+        bottle.abort('403', 'Only an organization owner may delete an organization')
+
+    # TODO: we should probably just disable or organization rather than delete
+    # all their date
     request.session.delete(request.organization)
     request.session.commit()
 

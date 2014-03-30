@@ -5,36 +5,34 @@ import pytest
 
 import bauble.db as db
 import test.api as api
-from test.fixtures import organization, session, user, admin_user
+from test.fixtures import session, user
 
 @pytest.fixture
-def setup(organization, session):
-    setup.organization = session.merge(organization)
-    setup.user = setup.organization.owners[0]
+def setup(user, session):
+    setup.user = user
     setup.session = session
-    db.set_session_schema(session, setup.organization.pg_schema)
     return setup
 
 
-def test_organization(setup, admin_user):
+def test_organization(setup):
 
-    organization = setup.organization
-    session = setup.session
-    user = setup.user
+    org_json = api.create_resource("/organization", {
+        'name': 'Test BG'
+    }, user=setup.user)
 
     # make sure we can get the organization resource
-    org = api.get_resource('/organization/{}'.format(organization.id), user=user)
-    owner_id = org['owners'][0]
-    user_json = api.get_resource('/user/{}'.format(owner_id), user=user)
+    org_json = api.get_resource('/organization/{}'.format(org_json['id']), user=setup.user)
+    owner_id = org_json['owners'][0]
+    user_json = api.get_resource('/user/{}'.format(owner_id), user=setup.user)
     assert user_json['id'] == owner_id
 
     # add another user to the organization
     #user2_data = organization.owners[0].json()
-    user2_data = user.json()
+    user2_data = setup.user.json()
     user2_data['username'] = api.get_random_name()
     user2_data['email'] = api.get_random_name()
-    user2_data['organization'] = org
-    user2 = api.create_resource("/user", user2_data, user=user)
+    user2_data['organization'] = org_json
+    user2 = api.create_resource("/user", user2_data, user=setup.user)
+    assert user2 is not None
 
-    # the organization and owners are deleted in the test finalizer
-    pass
+    api.delete_resource('/organization/{}'.format(org_json['id']), user=setup.user)
