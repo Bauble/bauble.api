@@ -17,8 +17,6 @@ def from_csv(filemap, schema):
     """
     session = db.Session()
     db.set_session_schema(session, schema)
-    connection = session.connection()
-    transaction = connection.begin()
 
     table_name = ''
     current_row = []
@@ -42,7 +40,7 @@ def from_csv(filemap, schema):
                 rows.append({key: value if value != "" else None
                              for key, value in row.items()})
             print('importing {} row in to {}'.format(len(rows), table_name))
-            connection.execute(table.insert(), rows)
+            session.execute(table.insert(), rows)
 
         session.commit()
 
