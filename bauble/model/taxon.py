@@ -226,7 +226,7 @@ class Taxon(Model):
 
 
     # in PlantPlugins.init() we set this to 'x' for win32
-    hybrid_char = '\u2a09' # U+2A09
+    hybrid_char = '\u2a09'  # U+2A09
 
     @staticmethod
     def str(taxon, authors=False, markup=False):
