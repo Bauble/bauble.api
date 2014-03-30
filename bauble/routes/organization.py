@@ -9,7 +9,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
 import bauble
-import bauble db as db
+import bauble.db as db
 import bauble.imp as imp
 from bauble.model import Model
 from bauble import app, API_ROOT
