@@ -4,6 +4,7 @@ import json
 
 import bottle
 from bottle import request
+import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
 import bauble.db as db
@@ -52,7 +53,7 @@ def basic_auth(next):
 
         email, password = auth
         request.session = db.Session()
-        request.user = request.session.query(User).filter_by(email=email).first()
+        request.user = request.session.query(User).filter(sa.func.lower(User.email) == email.lower()).first()
         if not request.user or not password:
             bottle.abort(401)  # not authorized
 

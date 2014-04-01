@@ -4,6 +4,7 @@ import string
 
 import bottle
 from bottle import request
+import sqlalchemy as sa
 
 import bauble.db as db
 from bauble import app, API_ROOT
@@ -26,7 +27,7 @@ def login():
     username, password = auth
     session = db.Session()
     try:
-        user = session.query(User).filter_by(email=username).first()
+        user = session.query(User).filter(sa.func.lower(User.email) == username.lower()).first()
         if not user or not user.password == password:
             bottle.abort(401)  # not authorized
 
