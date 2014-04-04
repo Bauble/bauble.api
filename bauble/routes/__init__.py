@@ -21,7 +21,6 @@ from . import user
 from bauble import app, API_ROOT
 
 
-
 @app.hook('after_request')
 def after_request_hook(*args):
     # this can be used for debugging but any other request hooks should be setup in bauble.plugins
