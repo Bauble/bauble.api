@@ -114,20 +114,23 @@ class QueryStringPlugin(object):
     def apply(self, callback, route):
 
         def wrapper(*args, **kwargs):
-            query_string = request.query_string
+            query_string = request.query_string  # cache
+            query_params = {}
             if query_string and query_string.strip() != "":
                 for param in query_string.split('&'):
                     if param.strip() == "":
                         continue
                     key, value = param.split('=')
                     value = urllib.parse.unquote_plus(value)
-                    if key in request.params:
-                        if isinstance(request.params[key], list):
-                            request.params[key].append(value)
-                        else:
-                            request.params[key] = [value]
+                    if key in query_params:
+                        if not isinstance(query_params[key], list):
+                            query_params[key] = [query_params[key]]
+                        query_params[key].append(value)
                     else:
-                        request.params[key] = value
+                        query_params[key] = value
+
+                # update the original request params with our new params
+                request.params.update(query_params)
 
             return callback(*args, **kwargs)
         return wrapper

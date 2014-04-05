@@ -1,14 +1,11 @@
 
 from datetime import datetime
+import json
 
 import requests
-import requests.auth as auth
 
-import bauble.db as db
-from bauble.model.user import User
 from test.fixtures import user, session
 from test.api import api_root, get_random_name
-import test
 
 
 def test_auth(user, session):
@@ -36,3 +33,26 @@ def test_auth(user, session):
     session.refresh(user)
     assert user.access_token is None
     assert user.access_token_expiration is None
+
+
+def test_forgot_password(user, session):
+    user = session.merge(user)
+
+    response = requests.post(api_root + "/forgot_password?email=" + user.email)
+    assert response.status_code == 200, response.text
+    session.refresh(user)
+    assert user.password_reset_token is not None
+    assert isinstance(user.password_reset_token, str)
+    assert len(user.password_reset_token) >= 32
+    #assert user.reset_password_token_expiration is not None
+
+    response = requests.post(api_root + "/reset_password",
+                             headers={'content-type': 'application/json'},
+                             data=json.dumps({
+                                 'email': user.email,
+                                 'password': 'new_password',
+                                 'token': user.password_reset_token
+                             }))
+    assert response.status_code == 200, response.text
+    session.refresh(user)
+    assert user.password_reset_token is None
