@@ -15,7 +15,7 @@ except Exception as e:
 
 
 os.environ['PYTHONPATH'] = os.getcwd()
-#DATABASE_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
+#BAUBLE_DB_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
 
 # these environments can be updated into os.environ
 environ = {}

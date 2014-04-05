@@ -3,7 +3,6 @@ import weakref
 from pyparsing import *
 from sqlalchemy import *
 from sqlalchemy.orm import *
-from sqlalchemy.orm.properties import ColumnProperty, RelationProperty
 
 import bauble
 import bauble.i18n

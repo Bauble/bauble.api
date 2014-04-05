@@ -23,8 +23,8 @@ if os.path.exists(bauble_rcfile) and os.path.isfile(bauble_rcfile):
             print(exc)
 
 
-if 'DATABASE_URL' not in os.environ:
-    raise Exception("DATABASE_URL not in environment")
+if 'BAUBLE_DB_URL' not in os.environ:
+    raise EnvironmentError("BAUBLE_DB_URL not in environment")
 
 
 app = None

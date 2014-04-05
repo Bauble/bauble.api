@@ -73,6 +73,8 @@ class User(SystemModel):
     last_accessed = Column(types.DateTime)
     date_suspended = Column(types.Date)
 
+    password_reset_token = Column(String)
+
     # the user->organization relationship is created as a backref on the
     # organization object
     organization_id = Column(Integer, ForeignKey('organization.id'))
