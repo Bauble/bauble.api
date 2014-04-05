@@ -11,10 +11,10 @@ install:
 # command to run tests
 script: ./bake test
 env:
-  - DATABASE_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
+  - BAUBLE_DB_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
 before_script:
-  # the DATABASE_URL from the env: section is set when running the test script
-  - echo "DATABASE_URL=postgresql://test:test@localhost/bauble" > ~/.bauble.api
+  # the BAUBLE_DB_URL from the env: section is set when running the test script
+  - echo "BAUBLE_DB_URL=postgresql://test:test@localhost/bauble" > ~/.bauble.api
   # disable ssl mode on postgresql
   - sudo sed -i -e 's/ssl = true/#ssl = true/' /etc/postgresql/9.1/main/postgresql.conf
   - sudo service postgresql restart
@@ -30,4 +30,3 @@ before_script:
   # - PYTHONPATH=. bin/create_test_org.py
   # kill the server so we can run the tests
   - echo "Q" > /tmp/bauble.uwsgi.fifo
-  
