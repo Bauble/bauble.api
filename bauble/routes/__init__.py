@@ -12,7 +12,6 @@ from . import plant
 from . import location
 
 from . import admin
-from . import contact
 from . import organization
 from . import search
 from . import schema
