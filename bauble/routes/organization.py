@@ -15,7 +15,7 @@ from bauble.model import Model
 from bauble import app, API_ROOT
 import bauble.mimetype as mimetype
 from bauble.middleware import basic_auth, accept
-from bauble.model import Organization
+from bauble.model import Organization, get_relation
 
 
 org_column_names = [col.name for col in sa.inspect(Organization).columns]
@@ -27,6 +27,15 @@ def resolve_organization(next):
         request.organization = request.session.query(Organization).get(request.args['organization_id'])
         return next(*args, **kwargs)
     return _wrapped
+
+
+def build_embedded(embed, organization):
+    data = get_relation(Organization, organization.id, embed, session=request.session)
+
+    if isinstance(data, list):
+        return (embed, [obj.json() for obj in data])
+    else:
+        return (embed, data.json() if data else {})
 
 
 @app.get(API_ROOT + "/organization")
@@ -50,7 +59,16 @@ def index_organization():
 @accept(mimetype.json)
 @resolve_organization
 def get_organization(organization_id):
-    return request.organization.json()
+
+    json_data = request.organization.json()
+
+    if 'embed' in request.params:
+        embed_list = request.params.embed if isinstance(request.params.embed, list) \
+            else [request.params.embed]
+        embedded = map(lambda embed: build_embedded(embed, request.organization), embed_list)
+        json_data.update(embedded)
+
+    return json_data
 
 
 @app.route(API_ROOT + "/organization/<organization_id:int>", method='PATCH')

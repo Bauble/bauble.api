@@ -53,6 +53,7 @@ class Organization(SystemModel):
         d['owners'] = [owner.id for owner in self.owners]
         d['users'] = [user.id for user in self.users]
         del d['pg_schema']
+        del d['pg_user']
         return d
 
     # def json(self, pick=None):

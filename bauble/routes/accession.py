@@ -40,10 +40,6 @@ def resolve_source(next):
 
 
 def build_embedded(embed, accession):
-    # if embed == 'synonyms':
-    #     data = genus.synonyms
-    # else:
-    #     data = get_relation(Genus, genus.id, embed, session=request.session)
     data = get_relation(Accession, accession.id, embed, session=request.session)
 
     if isinstance(data, list):
