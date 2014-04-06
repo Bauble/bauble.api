@@ -2,14 +2,8 @@
 import bcrypt
 from sqlalchemy import Column, String, Boolean, Integer, ForeignKey
 from sqlalchemy.ext.hybrid import Comparator, hybrid_property
-from sqlalchemy.orm import *
 
-import bauble
-import bauble.db as db
 from bauble.model import SystemModel
-#import bauble.utils as utils
-#from bauble.utils.log import debug
-#import bauble.utils.web as web
 import bauble.types as types
 
 
@@ -38,7 +32,6 @@ class EncryptedPassword(Comparator):
 
 
 
-#class User(db.SystemBase):
 class User(SystemModel):
 
     def __init__(self, *args, password=None, **kwargs):
