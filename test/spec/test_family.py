@@ -64,8 +64,6 @@ def test_family_json(setup):
     note = FamilyNote(family=family, note="this is a test")
     syn = FamilySynonym(family=family, synonym=family)
 
-    #session = organization.get_session()
-    #db.set_session_schema(session, session.merge(organization).pg_schema)
     session.add_all([family, note, syn])
     session.commit()
 
@@ -170,9 +168,6 @@ def test_route(setup):
     """
     Test the /family resource.
     """
-
-    #session = organization.get_session()
-    #db.set_session_schema(session, session.merge(organization).pg_schema)
     session = setup.session
     user = setup.user
 

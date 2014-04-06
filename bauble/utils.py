@@ -4,18 +4,14 @@
 """
 A common set of utility functions used throughout Bauble.
 """
+
 import datetime
-import imp
 import os
 import re
-import sys
-import textwrap
 import xml.sax.saxutils as saxutils
 
 import bauble
-from bauble.error import check, CheckConditionError
-import bauble.paths as paths
-#from bauble.utils.log import debug, warning
+from bauble.error import check
 
 
 def find_dependent_tables(table, metadata=None):
@@ -39,6 +35,7 @@ def find_dependent_tables(table, metadata=None):
         import bauble.db as db
         metadata = db.metadata
     tables = []
+
     def _impl(t2):
         for tbl in metadata.sorted_tables:
             for fk in tbl.foreign_keys:
@@ -70,7 +67,6 @@ def today_str(format=None):
     import bauble.prefs as prefs
     if not format:
         format = prefs.prefs[prefs.date_format_pref]
-    import datetime
     today = datetime.date.today()
     return today.strftime(format)
 

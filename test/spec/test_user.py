@@ -32,7 +32,7 @@ def xtest_resource(session):
     """
 
     return
-    #session = organization.get_session()
+
     db.set_session_schema(session, session.merge(organization).pg_schema)
     families = session.query(Family)
 
