@@ -40,11 +40,12 @@ def test_forgot_password(user, session):
 
     response = requests.post(api_root + "/forgot-password?email=" + user.email)
     assert response.status_code == 200, response.text
+
     session.refresh(user)
     assert user.password_reset_token is not None
     assert isinstance(user.password_reset_token, str)
     assert len(user.password_reset_token) >= 32
-    #assert user.reset_password_token_expiration is not None
+    assert user.password_reset_token_expiration is not None
 
     response = requests.post(api_root + "/reset-password",
                              headers={'content-type': 'application/json'},
@@ -53,6 +54,7 @@ def test_forgot_password(user, session):
                                  'password': 'new_password',
                                  'token': user.password_reset_token
                              }))
+
     assert response.status_code == 200, response.text
     session.refresh(user)
     assert user.password_reset_token is None

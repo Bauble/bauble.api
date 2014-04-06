@@ -74,7 +74,7 @@ class User(SystemModel):
     date_suspended = Column(types.Date)
 
     password_reset_token = Column(String)
-    #password_reset_token_expiration = Column(String)
+    password_reset_token_expiration = Column(types.DateTime)
 
     # the user->organization relationship is created as a backref on the
     # organization object

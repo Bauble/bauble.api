@@ -83,22 +83,23 @@ def default_error_handler(error):
     # TODO: only print the error when the debug flag is set
     # make sure the error is printed in the log
 
-    if response.status_code in (400, 500):
-        print(error)
+    if response.status_code >= 400 and response.status_code <= 599:
+        print('error.status: ', error.status)
+        print('error.body: ', error.body)
 
     from bauble.routes import set_cors_headers
     set_cors_headers()
     if isinstance(error, str):
         return error
-    # elif error.body:
-    #     return str(error.body)
+    elif error.body is not None:
+        return str(error.body)
     # TODO: returning exception is really that safe since we don't know what will be
     # in the response text
     # elif error.exception:
     #     return str(error.exception)
 
 
-common_errors = [400, 403, 404, 406, 409, 415, 500]
+common_errors = [400, 403, 404, 406, 409, 415, 422, 500]
 for code in common_errors:
     app.error(code)(default_error_handler)
 

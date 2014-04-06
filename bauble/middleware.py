@@ -54,16 +54,12 @@ def basic_auth(next):
         email, password = auth
         request.session = db.Session()
         request.user = request.session.query(User).filter(sa.func.lower(User.email) == email.lower()).first()
-        if not request.user or not password:
+        if (not request.user) or (not password):
             bottle.abort(401)  # not authorized
-
-        # *************
-        # TODO: make sure we have passed the access_token_expiration
-        # *************
 
         # basic_auth authorizes agains the users access token rather than the password
         # only /login uses the password
-        if request.user.access_token == password:
+        if request.user.access_token == password and datetime.datetime.now() < request.user.access_token_expiration:
             tmp_session = db.Session()
             try:
                 # update the last accessed column in a separate session so we

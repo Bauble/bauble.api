@@ -29,7 +29,7 @@ def create_access_token():
 
 
 def create_password_reset_token():
-    return create_unique_token(), datetime.now() + timedelta(weeks=2)
+    return create_unique_token(), datetime.now() + timedelta(days=1)
 
 
 @app.get(API_ROOT + "/login")
@@ -72,14 +72,13 @@ def forgot_password():
     session = None
     try:
         session = db.Session()
-        user = session.query(User).filter_by(email=user_email).one()
+        user = session.query(User).filter(sa.func.lower(User.email) == user_email.lower()).one()
+        if not user:
+            bottle.abort(422, "Could not get a user with the requested email address")
         token, expiration = create_password_reset_token()
-        # TODO: need to set the expiration
         user.password_reset_token = token
+        user.password_reset_token_expiration = expiration
         session.commit()
-    except Exception as exc:
-        print(exc)
-        bottle.abort(400, "Could not get a user with the requested email address")
     finally:
         if session:
             session.close()
@@ -125,29 +124,34 @@ def forgot_password():
 def reset_password():
     session = None
 
+    user_email = request.json['email']
     try:
         session = db.Session()
-        user = session.query(User).filter_by(email=request.json['email']).first()
-        if not user:
+        user = session.query(User).filter(sa.func.lower(User.email) == user_email.lower()).first()
+
+        if user is None:
+            print('use is None')
             # TODO: is this the correct status code?
             bottle.abort(422, 'A user could be be found with the provided email')
 
-        if request.json['token'] != user.password_reset_token:
+        if request.json['token'] != user.password_reset_token or \
+           (request.json['token'] == user.password_reset_token and user.password_reset_token_expiration < datetime.now()):
             # TODO: is this the correct status code?
             bottle.abort(422, 'Invalid password reset token')
 
         # TODO: need to set the expiration
         user.password_reset_token = None
-        #user.password_reset_token_expiration = None
+        user.password_reset_token_expiration = None
         user.password = request.json['password']
         user.access_token, user.access_token_expiration = create_access_token()
         user.last_accesseed = datetime.now()
         session.commit()
         user_json = user.json()
 
-    except Exception as exc:
-        print(exc)
-        bottle.abort(400, "Could not get a user with the requested email address")
+    # except Exception as exc:
+    #     print('type(exc): ', type(exc))
+    #     print(exc)
+    #     bottle.abort(400, "Could not get a user with the requested email address")
     finally:
         if session:
             session.close()
