@@ -108,3 +108,4 @@ from bauble.model.propagation import Propagation, PlantPropagation, PropRooted, 
 
 from bauble.model.user import User
 from bauble.model.organization import Organization
+from bauble.model.invitation import Invitation

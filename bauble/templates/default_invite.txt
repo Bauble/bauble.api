@@ -1,0 +1,11 @@
+
+
+Hi,
+You have been invited to join {organization} on Bauble - http://bauble.io.  To accept this invitation click on the following link or copy and paste it into your web brower:
+
+{app_url}/#/accept-invitation/{token}
+
+If you would like more information about this email then please contact the Bauble staff at support@bauble.io.
+
+Regards,
+The Bauble Team

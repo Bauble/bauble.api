@@ -1,11 +1,7 @@
 
-import email
-from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 import os
-import random
 import smtplib
-import string
 
 import bottle
 from bottle import request
@@ -13,16 +9,12 @@ import sqlalchemy as sa
 
 import bauble
 import bauble.db as db
+import bauble.email as email
 from bauble import app, API_ROOT
 from bauble.middleware import basic_auth
 from bauble.model import User
+from bauble.utils import create_unique_token
 
-
-def create_unique_token(size=32):
-    rand = random.SystemRandom()
-    token = ''.join([rand.choice(string.ascii_letters + string.digits)
-                     for i in range(size)])
-    return token
 
 def create_access_token():
     return create_unique_token(), datetime.now() + timedelta(weeks=2)
@@ -45,7 +37,7 @@ def login():
             bottle.abort(401)  # not authorized
 
         user.access_token, user.access_token_expiration = create_access_token()
-        user.last_accesseed = datetime.now()
+        user.last_accessed = datetime.now()
         session.commit()
         user_json = user.json()
     finally:
@@ -83,41 +75,15 @@ def forgot_password():
         if session:
             session.close()
 
-    # send the reset password email
-    use_ssl = os.environ.get("BAUBLE_SMTP_USE_SSL", "false")
-    host = os.environ.get("BAUBLE_SMTP_HOST", "")
-    port = os.environ.get("BAUBLE_SMTP_PORT", 0)
-    user = os.environ.get("BAUBLE_SMTP_USERNAME", None)
-    password = os.environ.get("BAUBLE_SMTP_PASSWORD", None)
     app_url = os.environ.get("BAUBLE_APP_URL", 'http://app.bauble.io')
-    support_email = os.environ.get("BAUBLE_SUPPORT_EMAIL", "support@bauble.io")
-
     mappings = {'token': token, 'email': user_email, 'app_url': app_url}
-    template_file = os.path.join(bauble.__path__[0], 'templates', 'reset_password.txt')
-    content = open(template_file).read().format_map(mappings)
-
-    timeout = 10  # 10 second timeout for smtp connection
-    SMTP = smtplib.SMTP_SSL if use_ssl or use_ssl.lower() == "true" else smtplib.SMTP
-
-    # **************************************************
-    # don't send the email if we're running the tests
-    # **************************************************
-    if os.environ.get("BAUBLE_TEST", "false") == "true":
-        return
 
     try:
-        message = MIMEText(content, 'plain')
-        message['subject'] = "Bauble Password Reset"
-        message['reply-to'] = "support@bauble.io"
-        with SMTP(host, port, timeout=timeout) as smtp:
-            smtp.login(user, password)
-            smtp.send_message(message, support_email, user_email)
+        email.send_template(user_email, 'Bauble Password Reset', 'reset_password.txt',
+                            mappings)
     except smtplib.SMTPException as exc:
-        # TODO: we should use logging instead of print()ing this to
-        # stdout
         print(exc)
         bottle.abort(500, 'Could not send reset password email.')
-
 
 
 @app.post(API_ROOT + "/reset-password")

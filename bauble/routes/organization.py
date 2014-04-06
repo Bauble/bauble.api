@@ -1,7 +1,9 @@
 
+from datetime import datetime, timedelta
 import json
 from multiprocessing import Process
 import os
+import smtplib
 
 import bottle
 from bottle import request, response
@@ -10,12 +12,14 @@ import sqlalchemy.orm as orm
 
 import bauble
 import bauble.db as db
+import bauble.email as email
 import bauble.imp as imp
 from bauble.model import Model
 from bauble import app, API_ROOT
 import bauble.mimetype as mimetype
 from bauble.middleware import basic_auth, accept
-from bauble.model import Organization, get_relation
+from bauble.model import Organization, Invitation, User, get_relation
+from bauble.utils import create_unique_token
 
 
 org_column_names = [col.name for col in sa.inspect(Organization).columns]
@@ -38,8 +42,24 @@ def build_embedded(embed, organization):
         return (embed, data.json() if data else {})
 
 
-@app.get(API_ROOT + "/organization")
-@basic_auth
+def org_member_only(next):
+
+    def _wrapped(*args, **kwargs):
+        if request.user not in request.organization.users:
+            bottle.abort(403, "User is not a member of this organization")
+
+        # call next middleware
+
+        return next(*args, **kwargs)
+
+    return _wrapped
+
+#
+#
+# TODO: This should be an admin only route.  Temporarily disable it for now.
+#
+# @app.get(API_ROOT + "/organization")
+# @basic_auth
 def index_organization():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
     orgs = request.session.query(Organization)
@@ -58,6 +78,7 @@ def index_organization():
 @basic_auth
 @accept(mimetype.json)
 @resolve_organization
+@org_member_only
 def get_organization(organization_id):
 
     json_data = request.organization.json()
@@ -74,6 +95,7 @@ def get_organization(organization_id):
 @app.route(API_ROOT + "/organization/<organization_id:int>", method='PATCH')
 @basic_auth
 @resolve_organization
+@org_member_only
 def patch_organization(organization_id):
 
     # create a copy of the request data with only the columns
@@ -155,6 +177,7 @@ def post_organization():
 @app.delete(API_ROOT + "/organization/<organization_id:int>")
 @basic_auth
 @resolve_organization
+@org_member_only
 def delete_organization(organization_id):
     if request.user not in request.organization.owners:
         bottle.abort('403', 'Only an organization owner may delete an organization')
@@ -165,17 +188,73 @@ def delete_organization(organization_id):
     request.session.commit()
 
 
-@app.get(API_ROOT + "/organization/<organization_id:int>/<relations:path>")
+@app.post(API_ROOT + "/organization/<organization_id:int>/invite")
 @basic_auth
 @resolve_organization
-def get_organization_relation(organization_id, relations):
-    mapper = orm.class_mapper(Organization)
-    for name in relations.split('/'):
-        mapper = getattr(mapper.relationships, name).mapper
+@org_member_only
+def send_invitation(organization_id):
 
-    query = request.session.query(Organization, mapper.class_).\
-        filter(getattr(Organization, 'id') == organization_id).\
-        join(*relations.split('/'))
+    token = create_unique_token()
+    to_email = request.json['email']
+    subject = "Bauble Invitation"
 
-    response.content_type = '; '.join((mimetype.json, "charset=utf8"))
-    return json.dumps([obj.json() for parent, obj in query])
+    # TODO: make sure the use doesn't already exist in the database
+
+    try:
+        if 'message' in request.json:
+            email.send(to_email, subject, request.json['message'])
+        else:
+            email.send_template(to_email, subject, 'default_invite.txt', {
+                'organization': request.organization.name,
+                'app_url': os.environ.get("BAUBLE_APP_URL", 'http://app.bauble.io'),
+                'token': token
+            })
+    except smtplib.SMTPException as exc:
+        print(exc)
+        bottle.abort(500, 'Could not send inviation email.')
+
+    invitation = Invitation(**{
+        'email': to_email,
+        'organization_id': request.organization.id,
+        'date_sent': datetime.now(),
+        'invited_by_id': request.user.id,
+        'message': request.json['message'] if 'message' in request.json else None,
+        'token': token,
+        'token_expiration': datetime.now() + timedelta(weeks=2)
+    })
+
+    request.session.add(invitation)
+    request.session.commit()
+
+
+
+@app.post(API_ROOT + "/invitation/<token:re:\w{32}>")
+def accept_invitation(token):
+
+    if 'password' not in request.json:
+        bottle.abort(422, "A password is required for the new user")
+
+    session = None
+    try:
+        session = db.Session()
+        invitation = session.query(Invitation).filter_by(token=token).first()
+        if not invitation:
+            bottle.abort(404)
+
+        invitation.accepted = True
+        user = User(**{
+            'email': invitation.email,
+            'organization_id': invitation.organization_id,
+            'password': request.json['password'],
+            'last_accessed': datetime.now(),
+            'access_token': create_unique_token(),
+            'access_token_expiration': datetime.now() + timedelta(weeks=2)
+        })
+        session.add(user)
+        session.commit()
+        user_json = user.json()
+    finally:
+        if session:
+            session.close()
+
+    return user_json

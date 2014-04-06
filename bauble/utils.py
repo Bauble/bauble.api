@@ -7,11 +7,20 @@ A common set of utility functions used throughout Bauble.
 
 import datetime
 import os
+import random
 import re
+import string
 import xml.sax.saxutils as saxutils
 
 import bauble
 from bauble.error import check
+
+
+def create_unique_token(size=32):
+    rand = random.SystemRandom()
+    token = ''.join([rand.choice(string.ascii_letters + string.digits)
+                     for i in range(size)])
+    return token
 
 
 def find_dependent_tables(table, metadata=None):
