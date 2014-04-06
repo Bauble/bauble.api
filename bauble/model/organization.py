@@ -2,7 +2,7 @@
 from sqlalchemy import Column, String, func
 import sqlalchemy.dialects.postgresql as pg
 import sqlalchemy.event as event
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, object_mapper
 
 import bauble.db as db
 import bauble.types as types
