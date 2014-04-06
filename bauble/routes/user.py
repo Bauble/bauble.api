@@ -26,8 +26,11 @@ def resolve_user(next):
     return _wrapped
 
 
-@app.get(API_ROOT + "/user")
-@basic_auth
+#
+# TODO: This should be an admin only route.  Temporarily disable it for now.
+#
+#@app.get(API_ROOT + "/user")
+#@basic_auth
 def index_user():
     # TODO: we're not doing any sanitization or validation...see preggy or validate.py
     orgs = request.session.query(User)
