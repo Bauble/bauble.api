@@ -1,19 +1,19 @@
 #
 # types.py
 #
-from datetime import datetime, date
+
+from datetime import datetime
 import re
 
 import dateutil.parser as date_parser
 import sqlalchemy.types as types
-import sqlalchemy.exc as exc
 
 import bauble.error as error
-import bauble.config as config
-#import bauble.prefs as prefs
-#from bauble.utils.log import debug
 
-# TODO: store all times as UTC or support timezones
+# TODO: define the _ function until we get i18n working
+def _(s):
+    return s
+
 
 class EnumError(error.BaubleError):
     """Raised when a bad value is inserted or returned from the Enum type"""
@@ -37,13 +37,13 @@ class Enum(types.TypeDecorator):
         # create the translations from the values and set those from
         # the translations argument, this way if some translations are
         # missing then the translation will be the same as value
-        self.translations = dict((v,v) for v in values)
+        self.translations = dict((v, v) for v in values)
         for key, value in translations.items():
             self.translations[key] = value
         if values is None or len(values) is 0:
             raise EnumError(_('Enum requires a list of values'))
         if empty_to_none and None not in values:
-            raise EnumError(_('You have configured empty_to_none=True but '\
+            raise EnumError(_('You have configured empty_to_none=True but '
                               'None is not in the values lists'))
         self.values = list(values)
         self.strict = strict
@@ -61,8 +61,8 @@ class Enum(types.TypeDecorator):
         if self.empty_to_none and value is '':
             value = None
         if value not in self.values:
-           raise EnumError(_('"%(value)s" not in Enum.values: %(all_values)s') %
-                           dict(value=value, all_values=self.values))
+            raise EnumError(_('"%(value)s" not in Enum.values: %(all_values)s') %
+                            dict(value=value, all_values=self.values))
         return value
 
 
@@ -105,7 +105,6 @@ class DateTime(types.TypeDecorator):
     """
     impl = types.DateTime
 
-    import re
     _rx_tz = re.compile('[+-]')
 
     def process_bind_param(self, value, dialect):
@@ -161,4 +160,3 @@ class Date(types.TypeDecorator):
 
     def __str__(self):
         return self.isoformat()
-        #return self.strftime(config.default_date_format)
