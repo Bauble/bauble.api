@@ -38,7 +38,7 @@ def test_auth(user, session):
 def test_forgot_password(user, session):
     user = session.merge(user)
 
-    response = requests.post(api_root + "/forgot_password?email=" + user.email)
+    response = requests.post(api_root + "/forgot-password?email=" + user.email)
     assert response.status_code == 200, response.text
     session.refresh(user)
     assert user.password_reset_token is not None
@@ -46,7 +46,7 @@ def test_forgot_password(user, session):
     assert len(user.password_reset_token) >= 32
     #assert user.reset_password_token_expiration is not None
 
-    response = requests.post(api_root + "/reset_password",
+    response = requests.post(api_root + "/reset-password",
                              headers={'content-type': 'application/json'},
                              data=json.dumps({
                                  'email': user.email,
