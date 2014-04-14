@@ -195,8 +195,10 @@ def delete_organization(organization_id):
 def send_invitation(organization_id):
 
     token = create_unique_token()
-    to_email = request.json['email']
-    subject = "Bauble Invitation"
+    subject = 'Bauble Invitation'
+    to_email = request.json.get('email', None)
+    if to_email is None or '@' not in to_email:
+        bottle.abort(422, "An email recipient is required.")
 
     # make sure a user with this email address doesn't already have an account
     count = request.session.query(User).filter_by(email=to_email).count()
@@ -205,17 +207,26 @@ def send_invitation(organization_id):
 
     # if a message was provided then send it else use the default message
     try:
+        print('request.json: ', request.json)
         if 'message' in request.json:
-            email.send(to_email, subject, request.json['message'])
+            email.send(request.json['message'], **{
+                'to': to_email,
+                'subject': subject,
+                'from': 'no-reply@bauble.io'
+            })
         else:
-            email.send_template(to_email, subject, 'default_invite.txt', {
+            email.send_template('default_invite.txt', {
                 'organization': request.organization.name,
                 'app_url': os.environ.get("BAUBLE_APP_URL", 'http://app.bauble.io'),
                 'token': token
+            }, **{
+                'to': request.json['email'],
+                'subject': subject,
+                'from': 'no-reply@bauble.io'
             })
     except smtplib.SMTPException as exc:
-        print(exc)
-        bottle.abort(500, 'Could not send inviation email.')
+        print('exc: ', exc)
+        bottle.abort(500, 'Could not send invitation email.')
 
     invitation = Invitation(**{
         'email': to_email,

@@ -20,9 +20,7 @@ def get_invitation(token):
         invitation = session.query(Invitation).\
             filter(Invitation.token == token, Invitation.accepted is not True,
                    Invitation.token_expiration > datetime.now()).first()
-            # filter(Invitation.token == token, Invitation.accepted is False,
-            #        Invitation.token_expiration > datetime.now()).first()
-        print('invitation: ', invitation)
+
         if not invitation:
             bottle.abort(404)
 

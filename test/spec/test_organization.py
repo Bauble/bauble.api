@@ -6,6 +6,7 @@ import requests
 import pytest
 
 import bauble.db as db
+from bauble.model import User
 import test.api as api
 from test.fixtures import organization, session, user
 
@@ -72,7 +73,7 @@ def test_invitation(invitation_setup):
     assert isinstance(invitation.token, str)
     assert isinstance(invitation.token_expiration, datetime)
 
-    response = requests.post(api.api_root + "/invitation/{}".format(invitation.token),
+    response = requests.post(api.api_root + "/invitations/{}".format(invitation.token),
                              headers={'content-type': 'application/json'},
                              data=json.dumps({
                                  'password': 'random pwd'
@@ -83,3 +84,7 @@ def test_invitation(invitation_setup):
     assert response_json['access_token'] is not None
     session.refresh(invitation)
     assert invitation.accepted is True
+
+    invited_user = session.query(User).filter_by(email=invite_email).one()
+    session.delete(invited_user)
+    session.commit()

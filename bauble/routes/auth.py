@@ -79,8 +79,11 @@ def forgot_password():
     mappings = {'token': token, 'email': user_email, 'app_url': app_url}
 
     try:
-        email.send_template(user_email, 'Bauble Password Reset', 'reset_password.txt',
-                            mappings)
+        email.send_template('reset_password.txt', mappings, **{
+            'to': user_email,
+            'from': 'no-reply@bauble.io',
+            'subject': 'Bauble Password Reset'})
+
     except smtplib.SMTPException as exc:
         print(exc)
         bottle.abort(500, 'Could not send reset password email.')
