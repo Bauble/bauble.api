@@ -421,6 +421,7 @@ class Accession(Model):
         # always embed the source in the accession
         data = super().json(*args, **kwargs)
         data['source'] = self.source.json() if self.source is not None else {}
+        data['taxon_str'] = self.taxon_str()
         return data
 
 
