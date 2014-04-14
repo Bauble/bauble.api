@@ -1,7 +1,6 @@
 import os
 
 import bottle
-from bottle import request
 
 #
 # TODO: check the permissions on this file and only read it if it's only readable

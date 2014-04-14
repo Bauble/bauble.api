@@ -21,14 +21,14 @@ def upgrade():
         Column('_created', DateTime(True), default=func.now()),
         Column('_last_updated', DateTime(True), default=func.now(),
                onupdate=func.now()),
-        Column('email', String, unique=True, nullable=False),
+        Column('email', String, nullable=False),
         Column('token', String, unique=True, index=True, nullable=False),
         Column('token_expiration', DateTime),
-        Column('date_sent', DateTime),
+        Column('date_sent', DateTime, nullable=False),
+        Column('message', String),
+        Column('accepted', Boolean, default=False),
         Column('organization_id', Integer, ForeignKey('organization.id')),
         Column('invited_by_id', Integer, ForeignKey('user.id')),
-        Column('message', String),
-        Column('accepted', Boolean)
     )
 
 

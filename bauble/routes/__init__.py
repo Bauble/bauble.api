@@ -16,6 +16,7 @@ from . import organization
 from . import search
 from . import schema
 from . import user
+from . import invitation
 
 from bauble import app, API_ROOT
 

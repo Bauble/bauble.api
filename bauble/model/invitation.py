@@ -7,12 +7,12 @@ import bauble.types as types
 
 class Invitation(SystemModel):
 
-    email = Column(String, unique=True, nullable=False)
+    email = Column(String, nullable=False)
     token = Column(String, unique=True, index=True, nullable=False)
     token_expiration = Column(types.DateTime)
     date_sent = Column(types.DateTime, nullable=False)
     message = Column(String)
-    accepted = Column(Boolean)
+    accepted = Column(Boolean, default=False)
 
     invited_by_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     invited_by = relationship('User', uselist=False,
