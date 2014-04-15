@@ -101,7 +101,7 @@ from bauble.model.family import Family, FamilyNote, FamilySynonym
 from bauble.model.genus import Genus, GenusNote
 from bauble.model.taxon import Taxon, TaxonDistribution, TaxonNote, TaxonSynonym, VernacularName
 from bauble.model.accession import Accession, AccessionNote
-from bauble.model.plant import Plant
+from bauble.model.plant import Plant, PlantChange
 from bauble.model.location import Location
 from bauble.model.source import Source, SourceDetail, Collection
 from bauble.model.propagation import Propagation, PlantPropagation, PropRooted, PropCutting, PropSeed

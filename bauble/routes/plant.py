@@ -5,7 +5,7 @@ import sqlalchemy as sa
 
 from bauble import app, API_ROOT
 from bauble.middleware import build_counts, basic_auth, filter_param, resolve_relation
-from bauble.model import Plant, get_relation
+from bauble.model import Plant, PlantChange, get_relation
 
 
 plant_column_names = [col.name for col in sa.inspect(Plant).columns]
@@ -68,11 +68,36 @@ def patch_plant(plant_id):
     if not request.json:
         bottle.abort(400, 'The request doesn\'t contain a request body')
 
+    # create the plant change
+    change = PlantChange(plant_id=request.plant.id,
+                         from_location_id=request.plant.location_id,
+                         quantity=request.plant.quantity,  # store original quantity
+                         person=request.user.fullname if request.user.fullname is not None else request.user.email,
+                         # reason=request.json['change'].get('reason', None) if 'change' in request.json else None,
+                         reason=None,
+                         date=request.json['change'].get('date', None) if 'change' in request.json else None
+
+                         )
+
+    request.session.add(change)
+
     # create a copy of the request data with only the mutable columns
     data = {col: request.json[col] for col in request.json.keys()
             if col in plant_mutable}
     for key, value in data.items():
         setattr(request.plant, key, data[key])
+
+    if change.from_location_id != request.plant.location_id:
+        # the change quantity represent the number of plants tranferred to a new location
+        change.quantity = request.plant.quantity
+        change.to_location_id = request.plant.location_id
+    elif request.plant.quantity < change.quantity:
+        # the change quantity represents the number of plants removed from a location
+        change.quantity = request.plant.quantity - change.quantity
+    else:
+        # the change quantity represents the number of plants added to a location
+        change.quantity = request.plant.quantity - change.quantity
+
     request.session.commit()
     return request.plant.json()
 
@@ -93,6 +118,19 @@ def post_plant():
     # make a copy of the data for only those fields that are columns
     plant = Plant(**data)
     request.session.add(plant)
+
+    change = PlantChange(to_location_id=plant.location_id,
+                         quantity=plant.quantity,  # store original quantity
+                         person=request.user.fullname if request.user.fullname is not None else request.user.email,
+                         #reason=request.json['change'].get('reason', None) if 'change' in request.json else None,
+                         reason=None,
+                         date=request.json['change'].get('date', None) if 'change' in request.json else None
+                         )
+    change.plant = plant
+
+    request.session.add(change)
+
+
     request.session.commit()
     response.status = 201
     return plant.json()

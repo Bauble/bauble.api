@@ -4,12 +4,6 @@
 """
 Defines the plant table and handled editing plants
 """
-import datetime
-import itertools
-import os
-import sys
-import traceback
-from random import random
 
 from sqlalchemy import *
 from sqlalchemy.orm import *
@@ -17,17 +11,14 @@ from sqlalchemy.orm.session import object_session
 from sqlalchemy.exc import DBAPIError
 
 import bauble.db as db
-from bauble.error import check, CheckConditionError
+#from bauble.error import check, CheckConditionError
 
-import bauble.paths as pathsn
 from bauble.model import Model
-from bauble.model import meta
 from bauble.model.location import Location
 from bauble.model.propagation import PlantPropagation
 import bauble.types as types
 import bauble.utils as utils
 import bauble.search as search
-#from bauble.utils.log import debug
 
 
 # TODO: do a magic attribute on plant_id that checks if a plant id
@@ -71,7 +62,7 @@ def get_next_code(acc):
     next = 1
     if codes:
         try:
-            next = max([int(code[0]) for code in codes])+1
+            next = max([int(code[0]) for code in codes]) + 1
         except Exception as e:
             return None
     return utils.utf8(next)
@@ -355,6 +346,11 @@ class Plant(Model):
 
     def __str__(self):
         return "%s%s%s" % (self.accession, self.delimiter, self.code)
+
+    def json(self, pick=None):
+        d = super().json()
+        d['changes'] = [change.json() for change in self.changes]
+        return d
 
 
     def duplicate(self, code=None, session=None):

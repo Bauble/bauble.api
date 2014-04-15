@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 import bauble.db as db
@@ -71,20 +73,61 @@ def test_server(setup):
     accession = api.create_resource('/accession',
                                     {'taxon': taxon, 'code': api.get_random_name()}, user)
     location = api.create_resource('/location', {'code': api.get_random_name()[0:9]}, user)
+    location2 = api.create_resource('/location', {'code': api.get_random_name()[0:9]}, user)
 
-    plant = api.create_resource('/plant',
-        {'accession': accession, 'location': location,
-         'code': api.get_random_name()[0:5],
-         'quantity': 10}, user)
+    plant = api.create_resource('/plant', {
+        'accession': accession, 'location': location,
+        'code': api.get_random_name()[0:5],
+        'quantity': 10}, user)
 
+
+    # update the plant, add 2
     assert 'id' in plant  # created
     plant_id = plant['id']
     plant['code'] = api.get_random_name()[0:5]
+    plant['quantity'] = plant['quantity'] + 2
+    plant['change'] = {
+        #'reason': 'No reason really.',
+        'date': datetime.now().isoformat()
+    }
     plant = api.update_resource(plant_ref(plant_id), plant, user)
     assert plant['id'] == plant_id
-
-    # get the plant
     plant = api.get_resource(plant_ref(plant['id']), user=user)
+    assert isinstance(plant['changes'], list)
+    assert plant['changes'][-1]['quantity'] == 2
+    assert plant['changes'][-1]['from_location_id'] == location['id']
+    assert plant['changes'][-1]['to_location_id'] is None
+
+    # update the plant and remove 3
+    plant['quantity'] = plant['quantity'] - 3
+    plant['change'] = {
+        #'reason': 'No reason really.',
+        'date': datetime.now().isoformat()
+    }
+    plant = api.update_resource(plant_ref(plant_id), plant, user)
+    assert plant['id'] == plant_id
+    plant = api.get_resource(plant_ref(plant['id']), user=user)
+    assert isinstance(plant['changes'], list)
+    assert plant['changes'][-1]['quantity'] == -3
+    assert plant['changes'][-1]['from_location_id'] == location['id']
+    assert plant['changes'][-1]['to_location_id'] is None
+
+
+    # move some of the plants to a new location
+    change_quantity = plant['quantity'] - 4
+    plant['quantity'] = change_quantity
+    plant['location_id'] = location2['id']
+    plant['change'] = {
+        'reason': 'No reason really.',
+        'date': datetime.now().isoformat()
+    }
+    plant = api.update_resource(plant_ref(plant_id), plant, user)
+    assert plant['id'] == plant_id
+    plant = api.get_resource(plant_ref(plant['id']), user=user)
+    assert isinstance(plant['changes'], list)
+    assert plant['changes'][-1]['quantity'] == change_quantity
+    assert plant['changes'][-1]['from_location_id'] == location['id']
+    assert plant['changes'][-1]['to_location_id'] == location2['id']
 
     # query for plants
     plants = api.query_resource('/plant', q=plant['code'], user=user)
@@ -93,6 +136,7 @@ def test_server(setup):
     # delete the created resources
     api.delete_resource('/plant/' + str(plant['id']), user)
     api.delete_resource('/location/' + str(location['id']), user)
+    api.delete_resource('/location/' + str(location2['id']), user)
     api.delete_resource('/accession/' + str(accession['id']), user)
     api.delete_resource('/taxon/' + str(taxon['id']), user)
     api.delete_resource('/genus/' + str(genus['id']), user)
