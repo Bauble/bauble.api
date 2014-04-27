@@ -39,7 +39,7 @@ def from_csv(filemap, schema):
                 current_row = row
                 rows.append({key: value if value != "" else None
                              for key, value in row.items()})
-            print('importing {} row in to {}'.format(len(rows), table_name))
+            print('importing {} rows in to {}'.format(len(rows), table_name))
             session.execute(table.insert(), rows)
 
         session.commit()

@@ -154,7 +154,6 @@ def post_organization():
         datamap = {
             'family': os.path.join(base_path, "family.txt"),
             'genus': os.path.join(base_path, 'genus.txt'),
-            'genus_synonym': os.path.join(base_path, 'genus_synonym.txt'),
             'geography': os.path.join(base_path, 'geography.txt'),
             'habit': os.path.join(base_path, 'habit.txt')
         }
