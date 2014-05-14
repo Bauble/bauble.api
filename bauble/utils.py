@@ -143,7 +143,7 @@ def delete_or_expunge(obj):
         session.delete(obj)
 
 
-def reset_sequence(column):
+def reset_sequence(column, pg_schema):
     """
     If column.sequence is not None or the column is an Integer and
     column.autoincrement is true then reset the sequence for the next
@@ -175,6 +175,8 @@ def reset_sequence(column):
     else:
         return
     conn = db.engine.connect()
+    if pg_schema is not None:
+        conn.execute("SET search_path TO {schema},public;".format(schema=pg_schema))
     trans = conn.begin()
     try:
         # the FOR UPDATE locks the table for the transaction

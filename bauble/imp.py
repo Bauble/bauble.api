@@ -25,8 +25,8 @@ def from_csv(filemap, schema):
         sorted_tables = list(filter(lambda t: t.name in filemap, Model.metadata.sorted_tables))
 
         for table in sorted_tables:
-            print('importing into {} ...'.format(table_name))
             table_name = table.name  # mostly for error reporting
+            print('importing into {} ...'.format(table_name))
             if isinstance(filemap[table_name], str):
                 import_file = open(filemap[table_name], newline='', encoding='utf-8')
             else:
@@ -47,10 +47,12 @@ def from_csv(filemap, schema):
         # reset the sequence
         for table in sorted_tables:
             for col in table.c:
-                utils.reset_sequence(col)
+                utils.reset_sequence(col, schema)
     except:
         print("Error importing into ", table_name)
         print('current_row: ', current_row)
+        if len(rows) != 0:
+            print(rows[len(rows) - 1])
         session.rollback()
         raise
     finally:

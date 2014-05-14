@@ -122,28 +122,28 @@ def post_organization():
     # into the public schema
     admin_session = db.Session()
     try:
-        # make a copy of the data for only those fields that are columns
         organization = Organization(**data)
-
         owner = admin_session.merge(request.user)
         organization.owners.append(owner)
         owner.is_org_owner = True
 
         admin_session.add(organization)
         admin_session.commit()
-        response.status = 201
+        pg_schema = organization.pg_schema
+
 
         # once the organization has been created it should have it's own
         # postgresql schema
-        if not organization.pg_schema:
+        if not pg_schema:
             bottle.abort(500, "Couldn't create the organization's schema")
 
         metadata = Model.metadata
         tables = metadata.sorted_tables
         for table in tables:
-            table.schema = organization.pg_schema
-        metadata.create_all(admin_session.get_bind(), tables=tables)
-        admin_session.commit()
+            table.schema = pg_schema
+        connection = db.engine.connect()
+        metadata.create_all(connection, tables=tables)
+        connection.close()
 
         for table in tables:
             table.schema = None
@@ -158,16 +158,22 @@ def post_organization():
             'habit': os.path.join(base_path, 'habit.txt')
         }
 
-        print("importing default data into", organization.pg_schema)
+        print("importing default data into", pg_schema)
+        imp.from_csv(datamap, organization.pg_schema)
 
+        #
+        # TODO: doing the import in a separate process was tricky...it would
+        # be idea if we could use asyncio
+        #
         # in test mode we should call imp.from_csv directly but in production
         # we should always do it asynchronously
-        if os.environ.get('BAUBLE_TEST', 'false') == 'true':
-            imp.from_csv({'geography': datamap['geography']}, organization.pg_schema)
-        else:
-            process = Process(target=imp.from_csv, args=(datamap, organization.pg_schema))
-            process.start()
+        # if os.environ.get('BAUBLE_TEST', 'false') == 'true':
+        #     imp.from_csv({'geography': datamap['geography']}, organization.pg_schema)
+        # else:
+        # process = Process(target=imp.from_csv, args=(datamap, pg_schema))
+        # process.start()
 
+        response.status = 201
         return organization.json()
     finally:
         admin_session.close()
@@ -181,8 +187,8 @@ def delete_organization(organization_id):
     if request.user not in request.organization.owners:
         bottle.abort('403', 'Only an organization owner may delete an organization')
 
-    # TODO: we should probably just disable or organization rather than delete
-    # all their date
+    # TODO: we should probably just disable an organization rather than delete
+    # all their data
     request.session.delete(request.organization)
     request.session.commit()
 

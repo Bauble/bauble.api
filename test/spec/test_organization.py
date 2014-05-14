@@ -39,6 +39,7 @@ def test_organization(setup):
     user2 = api.create_resource("/user", user2_data, user=setup.user)
     assert user2 is not None
 
+    # TODO delete all the tables and schema for the organization
     api.delete_resource('/organization/{}'.format(org_json['id']), user=setup.user)
 
 
