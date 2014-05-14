@@ -31,7 +31,6 @@ environ['test'] = dict(environ['dev'], **{
     'BAUBLE_TEST': 'true'
 })
 
-
 environ['production'] = dict(environ['all'], **{
     'BAUBLE_ENV': "development"
 })
@@ -70,10 +69,10 @@ def deploy():
 
 @baker.command
 def clean():
-    remove = lambda pattern: "find . -name {0} -type file | xargs -I rm -fr {{}}".format(pattern)
-    remove("\*~")
-    remove("\*.pyc")
-    remove("__pycache__")
+    rm = lambda pattern: shell("find . -name {0} -type file | xargs -I {{}} rm -fr {{}}".format(pattern))
+    rm("\*~")
+    rm("\*.pyc")
+    rm("__pycache__")
 
 
 @baker.command(default=True)
