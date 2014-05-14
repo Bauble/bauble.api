@@ -1,25 +1,27 @@
 #!/usr/bin/env python
 #
-# Call the /v1/admin/initdb route.
+# Populate a new empty database.  This script doesn't try to create or drop a new
+# databae so that you need to know what you're doing before you break something.
 #
-# curl -S -X POST $OPENSHIFT_PYTHON_IP:$OPENSHIFT_PYTHON_PORT/v1/admin/initdb
-#
+# To create a new database use the following command:
+# psql -c "create database $DB_NAME with owner=$DB_OWNER;"
 
-import os
-import sys
+import bauble.db as db
+from bauble.model import SystemModel
 
-import requests
-
-server = "http://localhost:9090"
-if len(sys.argv) > 1:
-    server = sys.argv[1]
-
-api_root = server + "/v1"
-url = api_root + "/admin/initdb"
-
-response = requests.post(url)
+transaction = None
 try:
-    response.raise_for_status()
+    connection = db.engine.connect()
+    transaction = connection.begin()
+    for table in SystemModel.metadata.sorted_tables:
+        if table.exists(connection):
+            raise Exception("Table already exists: {}.  Quitting...".format(table.name))
+
+    SystemModel.metadata.create_all(connection)
+    transaction.commit()
 except Exception as exc:
+    transaction.rollback()
     print(exc)
-    print("** Could not initialize the database.")
+finally:
+    if connection:
+        connection.close()
