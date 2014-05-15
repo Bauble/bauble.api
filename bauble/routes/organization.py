@@ -131,7 +131,6 @@ def post_organization():
         admin_session.commit()
         pg_schema = organization.pg_schema
 
-
         # once the organization has been created it should have it's own
         # postgresql schema
         if not pg_schema:
@@ -159,24 +158,20 @@ def post_organization():
         }
 
         print("importing default data into", pg_schema)
-        imp.from_csv(datamap, organization.pg_schema)
 
-        #
-        # TODO: doing the import in a separate process was tricky...it would
-        # be idea if we could use asyncio
-        #
         # in test mode we should call imp.from_csv directly but in production
         # we should always do it asynchronously
-        # if os.environ.get('BAUBLE_TEST', 'false') == 'true':
-        #     imp.from_csv({'geography': datamap['geography']}, organization.pg_schema)
-        # else:
-        # process = Process(target=imp.from_csv, args=(datamap, pg_schema))
-        # process.start()
+        if os.environ.get('BAUBLE_TEST', 'false') == 'true':
+            imp.from_csv(datamap, organization.pg_schema)
+        else:
+            process = Process(target=imp.from_csv, args=(datamap, pg_schema))
+            process.start()
 
         response.status = 201
         return organization.json()
     finally:
-        admin_session.close()
+        if admin_session:
+            admin_session.close()
 
 
 @app.delete(API_ROOT + "/organization/<organization_id:int>")
