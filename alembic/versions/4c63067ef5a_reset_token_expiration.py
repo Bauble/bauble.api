@@ -10,12 +10,15 @@ Create Date: 2014-04-06 11:12:35.160180
 revision = '4c63067ef5a'
 down_revision = '5465d2b606d'
 
-from alembic import op
+from alembic import context, op
 import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column('user', sa.Column('password_reset_token_expiration', sa.DateTime))
+    stmt = 'SELECT column_name FROM information_schema.columns WHERE table_name=\'user\' and column_name=\'password_reset_token_expiration\';'
+    has_column = context.get_context().bind.execute(stmt).scalar()
+    if not has_column:
+        op.add_column('user', sa.Column('password_reset_token_expiration', sa.DateTime))
 
 
 
