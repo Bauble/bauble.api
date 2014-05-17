@@ -140,32 +140,18 @@ def post_organization():
         tables = metadata.sorted_tables
         for table in tables:
             table.schema = pg_schema
-        connection = db.engine.connect()
-        metadata.create_all(connection, tables=tables)
-        connection.close()
+        metadata.create_all(admin_session.get_bind(), tables=tables)
 
         for table in tables:
             table.schema = None
 
         # import the default data
+        db.set_session_schema(admin_session, pg_schema)
         base_path = os.path.join(os.path.join(*bauble.__path__), 'data')
-
-        datamap = {
-            'family': os.path.join(base_path, "family.txt"),
-            'genus': os.path.join(base_path, 'genus.txt'),
-            'geography': os.path.join(base_path, 'geography.txt'),
-            'habit': os.path.join(base_path, 'habit.txt')
-        }
-
-        print("importing default data into", pg_schema)
-
-        # in test mode we should call imp.from_csv directly but in production
-        # we should always do it asynchronously
-        if os.environ.get('BAUBLE_TEST', 'false') == 'true':
-            imp.from_csv(datamap, organization.pg_schema)
-        else:
-            process = Process(target=imp.from_csv, args=(datamap, pg_schema))
-            process.start()
+        for sql_file in ['family.sql', 'genus.sql', 'habit.sql']:
+            sql = open(os.path.join(base_path, sql_file)).read()
+            admin_session.execute(sql)
+        admin_session.commit()
 
         response.status = 201
         return organization.json()
