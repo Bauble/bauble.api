@@ -1,25 +1,23 @@
-SQLAlchemy>=0.9.4,<1.0.a0
-alembic==0.6.4,<0.7.a0
-bottle>=0.11.6,<0.12.a0
-#distribute==0.6.34
+SQLAlchemy>=0.9.4,<1.0a0
+alembic==0.6.4,<0.7a0
 
-# on Mac you might need to add the location of the pg_config file to your $PATH for
-# psycopg2
-psycopg2==2.5.1
+# need a patched version of bottle until this gets merged:
+# https://github.com/defnull/bottle/pull/628
+bottle=git+git://github.com/brettatoms/bottle.git@release-0.12
+#bottle>=0.12.7,<0.13a0
+
+ujson>=1.33<1.4a0
+bcrypt==1.0.2
+baker>=1.3,<2.0a0
+uwsgi>=2.0,<2.1a0
 pyparsing==2.0.1
 python-dateutil==2.2
 requests>=2.2.1,<2.3.a0
-six==1.3.0
-uwsgi>=2.0,<2.1a0
 
-# for bcrypt...also requires libffi-dev
-bcrypt==1.0.2
-cffi==0.6
-pycparser==2.09.1
-
-baker>=1.3,<2.0a0
+# on Mac you might need to add the location of the pg_config file to your $PATH for
+# psycopg2, e.g PATH=$PATH:/Applications/Postgres93.app/Contents/MacOS/bin/ pip install psycopg2
+psycopg2>=2.5.3,<2.6a0
 
 # These are only for development
-#py==1.4.14
 pytest>=2.5.1,<3.0a0
 pytest-timeout>=0.3
