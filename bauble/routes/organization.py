@@ -172,6 +172,7 @@ def delete_organization(organization_id):
     # all their data
     request.session.delete(request.organization)
     request.session.commit()
+    response.status = 204
 
 
 @app.post(API_ROOT + "/organization/<organization_id:int>/invite")

@@ -61,9 +61,10 @@ def patch_family(family_id):
     if not request.json:
         bottle.abort(400, 'The request doesn\'t contain a request body')
 
-    # TODO: restrict the columns to only those that are patchable
+    # TODO: restrict the columns to only those that are patchable which might be different
+    # than the columns that a postable
 
-    # create a copy of the request data with only the columns
+    # create a copy of the request data with only the columns that are mutable
     data = {col: request.json[col] for col in request.json.keys()
             if col in family_mutable}
     for key, value in data.items():
@@ -80,11 +81,10 @@ def post_family():
     if not request.json:
         bottle.abort(400, 'The request doesn\'t contain a request body')
 
-    # create a copy of the request data with only the columns
+    # create a copy of the request data with only the mutable columns
     data = {col: request.json[col] for col in request.json.keys()
             if col in family_mutable}
 
-    # make a copy of the data for only those fields that are columns
     family = Family(**data)
     request.session.add(family)
     request.session.commit()
@@ -98,6 +98,7 @@ def post_family():
 def delete_family(family_id):
     request.session.delete(request.family)
     request.session.commit()
+    response.status = 204
 
 
 @app.get(API_ROOT + "/family/<family_id:int>/synonyms")
@@ -130,11 +131,13 @@ def add_synonym(family_id):
 @app.delete(API_ROOT + "/family/<family_id:int>/synonyms/<synonym_id:int>")
 @basic_auth
 @resolve_family
-def remove_synonym_(family_id, synonym_id):
+def remove_synonym(family_id, synonym_id):
     # synonym_id is the id of the family not the FamilySynonym object
     syn_family = request.session.query(Family).get(synonym_id)
     request.family.synonyms.remove(syn_family)
     request.session.commit()
+    response.status = 204
+
 
 
 @app.get(API_ROOT + "/family/<family_id:int>/count")

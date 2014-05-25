@@ -75,3 +75,4 @@ def post_source():
 def delete_source(source_id):
     request.session.delete(request.source)
     request.session.commit()
+    response.status = 204

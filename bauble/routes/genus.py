@@ -105,6 +105,7 @@ def post_genus():
 def delete_genus(genus_id):
     request.session.delete(request.genus)
     request.session.commit()
+    response.status = 204
 
 
 @app.get(API_ROOT + "/genus/<genus_id:int>/synonyms")
@@ -142,6 +143,7 @@ def remove_synonym_(genus_id, synonym_id):
     syn_genus = request.session.query(Genus).get(synonym_id)
     request.genus.synonyms.remove(syn_genus)
     request.session.commit()
+    response.status = 204
 
 
 @app.get(API_ROOT + "/genus/<genus_id:int>/count")

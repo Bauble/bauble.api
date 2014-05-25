@@ -183,6 +183,7 @@ def post_accession():
 def delete_accession(accession_id):
     request.session.delete(request.accession)
     request.session.commit()
+    response.status = 204
 
 
 @app.get(API_ROOT + "/accession/<accession_id:int>/count")

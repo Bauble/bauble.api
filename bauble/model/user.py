@@ -84,3 +84,7 @@ class User(SystemModel):
         """Encrypt and set the password.
         """
         self._password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode('utf-8')
+
+
+    def __str__(self):
+        return self.username if self.username else self.email

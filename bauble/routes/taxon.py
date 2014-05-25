@@ -118,7 +118,7 @@ def post_taxon():
 def delete_taxon(taxon_id):
     request.session.delete(request.taxon)
     request.session.commit()
-    #response.status = 204
+    response.status = 204
 
 
 @app.get(API_ROOT + "/taxon/<taxon_id:int>/count")
@@ -170,7 +170,7 @@ def remove_synonym_(taxon_id, synonym_id):
     syn_taxon = request.session.query(Taxon).get(synonym_id)
     request.taxon.synonyms.remove(syn_taxon)
     request.session.commit()
-    #response.status = 204
+    response.status = 204
 
 
 #############################################################
@@ -234,7 +234,7 @@ def patch_name(taxon_id, name_id):
 def remove_name(taxon_id, name_id):
     request.taxon.vernacular_names.remove(request.name)
     request.session.commit()
-    #response.status = 204
+    response.status = 204
 
 
 #############################################################
@@ -286,4 +286,4 @@ def remove_distribution(taxon_id, geography_id):
             request.taxon.distribution.remove(dist)
 
     request.session.commit()
-    #response.status = 204
+    response.status = 204

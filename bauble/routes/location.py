@@ -80,6 +80,7 @@ def post_location():
 def delete_location(location_id):
     request.session.delete(request.location)
     request.session.commit()
+    response.status = 204
 
 
 @app.get(API_ROOT + "/location/<location_id:int>/count")

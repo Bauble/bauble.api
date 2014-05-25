@@ -1,17 +1,12 @@
 #
 # Family table definition
 #
-from sqlalchemy import *
-from sqlalchemy.orm import *
-from sqlalchemy.orm.session import object_session
-from sqlalchemy.exc import DBAPIError
+
+from sqlalchemy import Column, String, Integer, Unicode, UnicodeText, ForeignKey, \
+    UniqueConstraint, func
+from sqlalchemy.orm import relation, backref
 from sqlalchemy.ext.associationproxy import association_proxy
 
-import bauble
-import bauble.db as db
-#import bauble.utils as utils
-#from bauble.utils.log import debug
-#import bauble.utils.web as web
 from bauble.model import Model
 import bauble.types as types
 import bauble.search as search

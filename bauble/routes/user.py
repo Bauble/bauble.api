@@ -99,6 +99,7 @@ def post_user():
 def delete_user(user_id):
     request.session.delete(request.user)
     request.session.commit()
+    response.status = 204
 
 
 @app.get(API_ROOT + "/user/<user_id:int>/<relations:path>")

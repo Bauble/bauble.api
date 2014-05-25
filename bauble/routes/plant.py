@@ -142,6 +142,7 @@ def post_plant():
 def delete_plant(plant_id):
     request.session.delete(request.plant)
     request.session.commit()
+    response.status = 204
 
 
 @app.get(API_ROOT + "/plant/<plant_id:int>/count")

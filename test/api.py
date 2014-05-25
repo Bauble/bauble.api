@@ -134,5 +134,5 @@ def delete_resource(ref, user=None):
 
     auth = (user.email, user.access_token) if user else None
     response = requests.delete(ref, auth=auth)
-    assert response.status_code == 200
+    assert response.status_code == 204
     return response

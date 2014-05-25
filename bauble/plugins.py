@@ -16,6 +16,7 @@ class ArgsPlugin(object):
 
     def apply(self, callback, route):
         def wrapper(*args, **kwargs):
+            # TODO: this might now be a property of the request at url_args
             request.args = request.environ['route.url_args']
             return callback(*args, **kwargs)
         return wrapper
@@ -79,6 +80,7 @@ class JSONPlugin(object):
             return obj.isoformat()
         raise TypeError
 
+
     def apply(self, callback, route):
 
         def wrapper(*args, **kwargs):
@@ -100,6 +102,8 @@ class JSONPlugin(object):
             #     #return json.dumps(response_data.json(), default=self.encoder)
             if isinstance(response_data, (list, tuple, dict)):
                 response.content_type = 'application/json'
+                # TODO: it would be nice if we didn't need out own encoder here so that
+                # we could use ujson for speed
                 return json.dumps(response_data, default=self.encoder)
             return response_data
         return wrapper
