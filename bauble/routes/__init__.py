@@ -10,6 +10,7 @@ from . import accession
 from . import source
 from . import plant
 from . import location
+from . import report
 
 from . import organization
 from . import search

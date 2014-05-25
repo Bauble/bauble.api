@@ -1,4 +1,3 @@
-import json
 
 from sqlalchemy import Column, Integer, func, inspect, schema
 from sqlalchemy.ext.declarative import declarative_base, declared_attr, DeclarativeMeta
@@ -65,6 +64,7 @@ class ModelBase:
         return super().__new__(cls)
 
 
+    # Return a dict that can be safely serialized to json.dumps()
     def json(self, pick=None):
         # TODO: we need to get all attributes, not just columns, i.e. handling
         # embedding with pick
@@ -77,6 +77,7 @@ class ModelBase:
         data = {col: getattr(self, col) for col in columns}
         if (pick and 'str' in pick) or 'str' not in self._default_omit:
             data['str'] = str(self)
+
         return data
 
 
@@ -105,6 +106,7 @@ from bauble.model.plant import Plant, PlantChange
 from bauble.model.location import Location
 from bauble.model.source import Source, SourceDetail, Collection
 from bauble.model.propagation import Propagation, PlantPropagation, PropRooted, PropCutting, PropSeed
+from bauble.model.reportdef import ReportDef
 
 from bauble.model.user import User
 from bauble.model.organization import Organization

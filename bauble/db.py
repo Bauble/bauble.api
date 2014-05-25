@@ -25,7 +25,7 @@ admin_username = "admin"
 debug = True if os.environ.get('DEBUG', 'false') == "true" else False
 db_url = os.environ['BAUBLE_DB_URL']
 engine = sa.create_engine(db_url, pool_size=20, encoding="utf-8", echo=debug)
-Session = Session = orm.sessionmaker(bind=engine)
+Session = orm.sessionmaker(bind=engine)
 
 
 def create_unique_schema():

@@ -7,6 +7,7 @@ import string
 import requests
 
 import bauble
+from bauble.model import Model
 import test
 
 # WARNING: DO NOT RUN THIS SCRIPT ON THE PRODUCTION SERVER
@@ -79,7 +80,10 @@ def update_resource(resource, data, user=None):
         resource = api_root + resource
 
     # convert data to a json string so it won't get paramaterized
-    if not isinstance(data, str):
+
+    if isinstance(data, Model):
+        data = json.dumps(data.json())
+    elif not isinstance(data, str):
         data = json.dumps(data)
 
     auth = (user.email, user.access_token) if user else None
