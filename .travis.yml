@@ -6,8 +6,8 @@ install:
   # - "pip install . --use-mirrors"
   - "virtualenv --python=python3.3 venv"
   - ". venv/bin/activate"
-  - "pip install pytest --use-mirrors"
-  - "pip install -r requirements.txt --use-mirrors"
+  - "pip install pytest"
+  - "pip install -r requirements.txt"
 # command to run tests
 script: ./bake test
 env:

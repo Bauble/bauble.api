@@ -3,7 +3,7 @@ alembic==0.6.4,<0.7a0
 
 # need a patched version of bottle until this gets merged:
 # https://github.com/defnull/bottle/pull/628
--e bottle=git+git://github.com/brettatoms/bottle.git@release-0.12
+-e git+git://github.com/brettatoms/bottle.git@release-0.12
 #bottle>=0.12.7,<0.13a0
 
 ujson>=1.33<1.4a0
