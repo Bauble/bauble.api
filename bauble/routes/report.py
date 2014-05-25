@@ -11,10 +11,6 @@ report_column_names = [col.name for col in sa.inspect(ReportDef).columns]
 report_mutable = [col for col in report_column_names
                   if col not in ['id'] and not col.startswith('_')]
 
-import logging
-logging.basicConfig()
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
-
 
 def resolve_report(next):
     def _wrapped(*args, **kwargs):
