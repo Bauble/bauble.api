@@ -17,8 +17,8 @@ import sqlalchemy as sa
 
 def upgrade():
     stmt = 'SELECT column_name FROM information_schema.columns WHERE table_name=\'user\' and column_name=\'password_reset_token\';'
-    has_column = context.get_context().bind.execute(stmt).scalar()
-    if not has_column:
+    result = context.execute(stmt)
+    if result and result.scalar():
         op.add_column('user', sa.Column('password_reset_token', sa.String))
 
 

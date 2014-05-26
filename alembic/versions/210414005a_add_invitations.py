@@ -15,10 +15,9 @@ from sqlalchemy import Column, Boolean, String, Integer, DateTime, ForeignKey, f
 
 
 def upgrade():
-    stmt = 'SELECT column_name FROM information_schema.columns WHERE table_name=\'user\' and column_name=\'password_reset_token\';'
-    stmt = 'select table_name from information_schema.tables where table_name=\'invitation\''
-    has_table = context.get_context().bind.execute(stmt).scalar()
-    if has_table:
+    stmt = "select table_name from information_schema.tables where table_name='invitation';"
+    result = context.execute(stmt)
+    if result and result.scalar():
         return
 
     op.create_table(
