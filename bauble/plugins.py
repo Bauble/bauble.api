@@ -38,7 +38,7 @@ class OptionsPlugin(object):
             @app.route(path, method="OPTIONS")
             def options_handler(*args, **kwargs):
                 """
-                All the CORS and other and other request handler are handled by request hooks
+                All the CORS headers are added by the CORSPlugin
                 """
                 pass
 

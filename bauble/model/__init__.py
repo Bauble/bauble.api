@@ -106,7 +106,7 @@ from bauble.model.plant import Plant, PlantChange
 from bauble.model.location import Location
 from bauble.model.source import Source, SourceDetail, Collection
 from bauble.model.propagation import Propagation, PlantPropagation, PropRooted, PropCutting, PropSeed
-from bauble.model.reportdef import ReportDef
+from bauble.model.report import Report
 
 from bauble.model.user import User
 from bauble.model.organization import Organization

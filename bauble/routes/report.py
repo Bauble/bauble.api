@@ -5,16 +5,16 @@ import sqlalchemy as sa
 
 from bauble import app, API_ROOT
 from bauble.middleware import basic_auth
-from bauble.model import ReportDef
+from bauble.model import Report
 
-report_column_names = [col.name for col in sa.inspect(ReportDef).columns]
+report_column_names = [col.name for col in sa.inspect(Report).columns]
 report_mutable = [col for col in report_column_names
                   if col not in ['id'] and not col.startswith('_')]
 
 
 def resolve_report(next):
     def _wrapped(*args, **kwargs):
-        request.report = request.session.query(ReportDef).get(request.args['report_id'])
+        request.report = request.session.query(Report).get(request.args['report_id'])
         if request.report is None:
             bottle.abort(404, "Report not found")
         return next(*args, **kwargs)
@@ -24,7 +24,7 @@ def resolve_report(next):
 @app.get(API_ROOT + "/report")
 @basic_auth
 def index_reports():
-    return [report.json() for report in request.session.query(ReportDef)]
+    return [report.json() for report in request.session.query(Report)]
 
 
 @app.get(API_ROOT + "/report/<report_id:int>")
@@ -45,7 +45,7 @@ def post_report():
     data = {col: request.json[col] for col in request.json.keys()
             if col in report_mutable}
 
-    report = ReportDef(**data)
+    report = Report(**data)
     request.session.add(report)
     request.session.commit()
     response.status = 201
@@ -68,7 +68,6 @@ def patch_report(report_id):
     request.session.commit()
 
     return request.report.json()
-
 
 
 @app.delete(API_ROOT + "/report/<report_id:int>")

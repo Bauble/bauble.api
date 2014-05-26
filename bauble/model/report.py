@@ -8,11 +8,11 @@ import bauble.db as db
 from bauble.model import Model
 
 #
-# ReportDef
+# Report
 #
-class ReportDef(Model):
+class Report(Model):
     """
-    :Table name: report_def
+    :Table name: report
 
     :Columns:
         *name*:
@@ -45,9 +45,6 @@ class ReportDef(Model):
     :Constraints:
         The family table has a unique constraint on family/qualifier.
     """
-    __tablename__ = 'report_def'
-    #__table_args__ = (UniqueConstraint('family', 'qualifier'),)
-    #__mapper_args__ = {'order_by': ['Family.family', 'Family.qualifier']}
 
     # columns
     name = Column(String, unique=True, nullable=False, index=True)

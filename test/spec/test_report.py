@@ -5,7 +5,7 @@ import requests
 from sqlalchemy.exc import IntegrityError
 
 import bauble.db as db
-from bauble.model import ReportDef
+from bauble.model import Report
 from test.fixtures import organization, user, session
 import test.api as api
 
@@ -22,7 +22,7 @@ def test_index(setup):
     reports = []
 
     for num in range(0, 5):
-        reports.append(ReportDef(name=api.get_random_name()))
+        reports.append(Report(name=api.get_random_name()))
     setup.session.add_all(reports)
     setup.session.commit()
 
@@ -35,10 +35,22 @@ def test_index(setup):
     setup.session.commit()
 
 
+def test_get(setup):
+    session = setup.session
+
+    report = Report(name=api.get_random_name())
+    session.add(report)
+    session.commit()
+
+    # a list request should work
+    response = api.get_resource('/report/{}'.format(report.id), user=setup.user)
+    assert response["id"] == report.id
+
+
 def test_patch(setup):
     session = setup.session
 
-    report = ReportDef(name=api.get_random_name())
+    report = Report(name=api.get_random_name())
     session.add(report)
     session.commit()
 
@@ -63,14 +75,14 @@ def test_post(setup):
     }
 
     report = api.create_resource('/report', data, setup.user)
-    session.delete(session.query(ReportDef).get(report['id']))
+    session.delete(session.query(Report).get(report['id']))
     session.commit()
 
 
 def test_delete(setup):
     session = setup.session
 
-    report = ReportDef(name=api.get_random_name())
+    report = Report(name=api.get_random_name())
     session.add(report)
     session.commit()
 
@@ -78,4 +90,4 @@ def test_delete(setup):
 
     report_id = report.id
     session.expunge(report)
-    assert session.query(ReportDef).get(report_id) is None
+    assert session.query(Report).get(report_id) is None

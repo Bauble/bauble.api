@@ -26,11 +26,11 @@ def after_request_hook(*args):
     # this can be used for debugging but any other request hooks should be setup in bauble.plugins
     pass
 
+
 @app.hook('before_request')
 def before_request_hook():
     # this can be used for debugging but any other request hooks should be setup in bauble.plugins
     pass
-
 
 
 def set_cors_headers():
