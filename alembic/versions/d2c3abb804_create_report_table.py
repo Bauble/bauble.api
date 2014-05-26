@@ -27,7 +27,8 @@ def upgrade():
     for result in db.engine.execute(stmt):
         schema = result[0]
         columns = [c.copy() for c in sa.inspect(Report).columns]
-        op.create_table("{}.report".format(schema), *columns)
+        print("creating table: {}.report".format(schema))
+        op.create_table("report", *columns, schema=schema)
 
 
 
@@ -38,4 +39,4 @@ def downgrade():
     # drop the report table on all the existing bauble schemas
     stmt = "select schema_name from information_schema.schemata where schema_name like 'bbl_%%';"
     for result in db.engine.execute(stmt):
-        op.drop_table("{}.report".format(result[0]))
+        op.drop_table("report", schema=result[0])

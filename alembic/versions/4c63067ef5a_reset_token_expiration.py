@@ -17,7 +17,7 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    if has_column(context, 'user', 'password_reset_token_expiration'):
+    if not has_column(context, 'user', 'password_reset_token_expiration'):
         op.add_column('user', sa.Column('password_reset_token_expiration', sa.DateTime))
 
 

@@ -18,7 +18,7 @@ from bauble.utils import has_column
 
 
 def upgrade():
-    if has_column(context, 'user', 'password_reset_token'):
+    if not has_column(context, 'user', 'password_reset_token'):
         op.add_column('user', sa.Column('password_reset_token', sa.String))
 
 
