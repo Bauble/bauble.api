@@ -38,4 +38,4 @@ def downgrade():
     # drop the report table on all the existing bauble schemas
     stmt = "select schema_name from information_schema.schemata where schema_name like 'bbl_%%';"
     for result in db.engine.execute(stmt):
-        op.drop_table("{}.report".format(schema))
+        op.drop_table("{}.report".format(result[0]))

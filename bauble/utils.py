@@ -16,6 +16,13 @@ import bauble
 from bauble.error import check
 
 
+def has_column(bind, table, column):
+    """Return True/False whether the column exists on the table in the database."""
+    stmt = "SELECT column_name FROM information_schema.columns WHERE table_name='{table}' and column_name='{column}';".format(table=table, column=column)
+    result = bind.execute(stmt)
+    return result and result.scalar()
+
+
 def create_unique_token(size=32):
     rand = random.SystemRandom()
     token = ''.join([rand.choice(string.ascii_letters + string.digits)

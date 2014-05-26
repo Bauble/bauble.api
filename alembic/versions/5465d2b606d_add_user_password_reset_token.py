@@ -14,13 +14,14 @@ import alembic
 from alembic import op, context
 import sqlalchemy as sa
 
+from bauble.utils import has_column
+
 
 def upgrade():
-    stmt = 'SELECT column_name FROM information_schema.columns WHERE table_name=\'user\' and column_name=\'password_reset_token\';'
-    result = context.execute(stmt)
-    if result and result.scalar():
+    if has_column(context, 'user', 'password_reset_token'):
         op.add_column('user', sa.Column('password_reset_token', sa.String))
 
 
 def downgrade():
-    op.drop_column('user', 'password_reset_token')
+    if has_column(context, 'user', 'password_reset_token'):
+        op.drop_column('user', 'password_reset_token')
