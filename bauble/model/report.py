@@ -30,20 +30,7 @@ class Report(Model):
         *column_headers
             Column_headers
 
-        *xsl_stylesheet
-            The XSL stylesheet text
 
-        *xsl_stylesheet_filename
-            The original filename of the XSL stylesheet.
-
-
-    :Properties:
-        *synonyms*:
-            An association to _synonyms that will automatically
-            convert a Family object and create the synonym.
-
-    :Constraints:
-        The family table has a unique constraint on family/qualifier.
     """
 
     # columns
@@ -82,3 +69,9 @@ class Report(Model):
     #                 settings=self.settings)
     def __str__(self):
         return self.name
+
+
+    def json(self):
+        data = super(Report, self).json()  # py2
+        data.pop('str')
+        return data
