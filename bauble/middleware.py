@@ -1,5 +1,6 @@
 
 import datetime
+from functools import wraps
 import json
 
 import bottle
@@ -45,7 +46,7 @@ def basic_auth(next):
     requests.
 
     """
-
+    @wraps(next)
     def _wrapped(*args, **kwargs):
         auth = request.auth
         if not auth:
@@ -98,7 +99,7 @@ def basic_auth(next):
 
 
 def with_session(next):
-
+    @wraps(next)
     def _wrapped(*args, **kwargs):
         request.session = db.Session()
         if hasattr(request, 'user') and request.user:
@@ -113,6 +114,7 @@ def with_session(next):
 
 def accept(mimetype):
     def _decorator(next):
+        @wraps(next)
         def _wrapped(*args, **kwargs):
             accepted = parse_accept_header()
             if mimetype not in accepted and '*/*' not in accepted:
@@ -129,6 +131,7 @@ def resolve_relation(column, relation, required=True):
     Resolve a relationship for column.
     """
     def _decorator(next):
+        @wraps(next)
         def _wrapped(*args, **kwargs):
             # if there isn't a column_id value look it up in the relation field
             if not column in request.json:
@@ -197,6 +200,7 @@ class accept2:
 
 def filter_param(mapped_class, columns):
     def _decorator(next):
+        @wraps(next)
         def _wrapped(*args, **kwargs):
             request.filter = None
             if 'filter' in request.query:
@@ -214,8 +218,8 @@ def filter_param(mapped_class, columns):
 
 
 def build_counts(mapped_class, id_param):
-
     def _decorator(next):
+        @wraps(next)
         def _wrapped(*args, **kwargs):
             relations = request.params.relation
             if isinstance(relations, str):
