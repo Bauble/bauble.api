@@ -73,6 +73,8 @@ def server(environment="local"):
     Start the server
     """
     load_env(environment)
+    print('Starting API server on {}...'.format(os.environ.get('API_BIND')))
+    shell("gunicorn -c gunicorn.cfg bauble")
 
 
 baker.run()

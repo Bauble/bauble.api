@@ -10,12 +10,9 @@ import bauble
 from bauble.model import Model
 import test
 
-# WARNING: DO NOT RUN THIS SCRIPT ON THE PRODUCTION SERVER
-server = "http://localhost:9099"
-api_root = server + "/v1"
 
-if "api.bauble.io" in server or os.environ.get('BAUBLE_ENV') != 'development':
-    print("NOT IN PRODUCTION YOU FOOL!")
+server = "http://localhost:8088"
+api_root = server + "/v1"
 
 
 def json_encoder(obj):

@@ -3,18 +3,22 @@ import pytest
 import subprocess
 import time
 
+import yaml
+
 process = None
 
 os.environ['PATH'] = os.environ['PATH'] + os.pathsep + os.getcwd()
 
 @pytest.fixture(scope="session", autouse=True)
 def start_server(request):
+    process = None
+
     def kill():
-        f = open('/tmp/bauble.uwsgi.fifo', 'w')
-        f.write('Q')
-        f.close()
+        print('stopping test server...')
         if process:
-            process.kill()
+            process.terminate()
+            print('test server stopped.')
+
     config = yaml.load(open("config.yaml"))
     environ = os.environ.copy()
     environ.update(config['test'])
@@ -24,7 +28,8 @@ def start_server(request):
         print(db_url)
         exit(1)
 
-    process = subprocess.Popen(["bake", "server", "test"], env=os.environ)
+    process = subprocess.Popen("gunicorn -c gunicorn.cfg bauble", env=environ,
+                               shell=True)
     time.sleep(1)
     request.addfinalizer(kill)
 
