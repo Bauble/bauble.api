@@ -1,3 +1,88 @@
+""".. http:get:: /family
+
+   List the families
+
+   A successful response returns a JSON aray of :ref:`model-family` objects.
+
+   :param id: The user id.
+
+   :query filter: Filter the array of families against a property on the :ref:`model-family` object.
+
+   :reqheader Authorization: Basic auth with (id, access_token)
+   :resheader Content-Type: application/json
+
+   :status 200: OK
+   :status 400: The JSON request body could not be parsed
+   :status 401: Unauthorized
+   :status 422: See the response codes for more information
+
+
+.. http:get:: /family/:id
+
+   Get a family.
+
+   A successful response returns a :ref:`model-family` JSON object.
+
+   :param id: The user id.
+
+   :reqheader Authorization: Basic auth with (id, access_token)
+   :resheader Content-Type: application/json
+
+   :status 200: OK
+   :status 400: The JSON request body could not be parsed
+   :status 401: Unauthorized
+   :status 422: See the response codes for more information
+
+
+.. http:post:: /family
+
+   Create a family.
+
+   A successful response returns a :ref:`model-family` JSON object.
+
+   :param id: The user id.
+
+   :reqheader Authorization: Basic auth with (id, access_token)
+   :resheader Content-Type: application/json
+
+   :status 201: OK
+   :status 400: The JSON request body could not be parsed
+   :status 401: Unauthorized
+   :status 422: See the response codes for more information
+
+
+.. http:patch:: /family/:id
+
+   Update a family.
+
+   A successful response returns a :ref:`model-family` JSON object.
+
+   :param id: The family id.
+
+   :reqheader Authorization: Basic auth with (id, access_token)
+   :resheader Content-Type: application/json
+
+   :status 200: OK
+   :status 400: The JSON request body could not be parsed
+   :status 401: Unauthorized
+   :status 422: See the response codes for more information
+
+
+.. http:delete:: /family/:id
+
+   Delete a family.
+
+   :param id: The family id.
+
+   :reqheader Authorization: Basic auth with (id, access_token)
+   :resheader Content-Type: application/json
+
+   :status 204: OK
+   :status 400: The JSON request body could not be parsed
+   :status 401: Unauthorized
+   :status 422: See the response codes for more information
+
+"""
 
 import bottle
 from bottle import request, response
