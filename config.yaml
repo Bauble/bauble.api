@@ -1,0 +1,86 @@
+common: &common
+
+  SMTP_USE_SSL: "true"
+  SMTP_HOST: ""
+  SMTP_PORT: "465"
+  SMTP_USERNAME: ""
+  SMTP_PASSWORD: ""
+  SUPPORT_EMAIL: ""
+  NOREPLY_EMAIL: ""
+  APP_URL: ""
+
+  BAUBLE_DB_URL: postgresql://localhost/bauble
+
+  DB_MAX_CONNECTIONS: "400"
+  DB_DEFAULT_POOL_SIZE: "100"
+
+  # The default pool size needs to be the maximum number of connections the
+  # database can maintain divided by the number of server instances/dynos
+  # running.  So for 400 max connections on 10 dynos the pool size should be
+  # 40.
+
+  GUNICORN_WORKERS: "4"
+  GUNICORN_WORKER_CLASS: "sync"
+  GUNICORN_THREAD: "4"
+  GUNICORN_TIMEOUT: "45"
+
+  # The number of tasks workers depends on memory size of the server and the
+  # number of http worker processes.  A Heroku 2x dynos has a max number of
+  # processes and threads set to 512 so if we have 100 task workers and 4 http
+  # workers that is a total of 400 worker threads per dyno.
+  NUM_TASK_WORKERS: "100"
+  PY_THREAD_STACK_SIZE: "512000"
+
+
+#
+# The test environemnt is used for the test runner and Travis build.
+#
+test:
+  <<: *common
+  BAUBLE_ENV: 'test'
+  API_BIND: 'localhost:8088'
+  POSTGRESQL_DB_URL: "postgres://localhost/nextglass_test"
+  SEND_EMAILS: "false"
+  TEST: "true"
+
+
+#
+# The local environment is for running the server on your local development
+# environment and connecting to a local database.
+#
+local:
+  <<: *common
+  BAUBLE_ENV: 'local'
+  API_BIND: 'localhost:8088'
+  DISABLE_ANALYTICS: "true"
+  GUNICORN_RELOAD: "true"
+  BAUBLE_DB_URL: "postgres://test:test@localhost/nextglass"
+  SEND_EMAILS: "false"
+
+
+#
+# The staging environment is for pushing to the staging servers for the clients
+# to test against before pushing to production.
+#
+staging:  &api_staging
+  <<: *common
+  BAUBLE_ENV: staging
+  POSTGRESQL_DB_URL: "postgres://test:test@localhost/nextglass"
+  SEND_EMAILS: "true"
+
+#
+# The dev environment is for development only and clients should never hit it.
+#
+dev:
+  <<: *api_staging
+  BAUBLE_ENV: dev
+  HEROKU_ENV: dev
+  BAUBLE_DB_URL: "postgres://test:test@localhost/nextglass"
+
+#
+# The production environment is for production servers.
+#
+production:
+  <<: *common
+  BAUBLE_ENV: production
+  BAUBLE_DB_URL: "postgres://test:test@localhost/nextglass"
