@@ -5,24 +5,15 @@
 
 import xml
 
-from sqlalchemy import *
-from sqlalchemy.orm import *
-from sqlalchemy.orm.session import object_session
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy import Column, String, Integer, Unicode, UniqueConstraint,\
+    ForeignKey, UnicodeText, func
+from sqlalchemy.orm import backref, relation
 from sqlalchemy.ext.associationproxy import association_proxy
 
-import bauble
-import bauble.db as db
 from bauble.model import Model
-#import bauble.utils as utils
-#import bauble.utils.desktop as desktop
 import bauble.types as types
-#from bauble.utils.log import debug
-import bauble.paths as paths
-#from bauble.prefs import prefs
 import bauble.search as search
-
-from bauble.model.family import Family
+import bauble.utils as utils
 
 # TODO: warn the user that a duplicate genus name is being entered
 # even if only the author or qualifier is different
@@ -172,7 +163,6 @@ class GenusSynonym(Model):
 # TODO: could probably incorporate this into the class since if we can
 # avoid using the Taxon class name in the order_by
 Genus.taxa = relation('Taxon', cascade='all, delete-orphan',
-                      #order_by=[Taxon.sp],
                       backref=backref('genus', uselist=False))
 
 
