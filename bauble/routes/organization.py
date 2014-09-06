@@ -12,6 +12,7 @@ import sqlalchemy.orm as orm
 
 import bauble
 import bauble.db as db
+import bauble.config as config
 import bauble.email as email
 import bauble.imp as imp
 from bauble.model import Model
@@ -204,7 +205,7 @@ def send_invitation(organization_id):
         else:
             email.send_template('default_invite.txt', {
                 'organization': request.organization.name,
-                'app_url': os.environ.get("BAUBLE_APP_URL", 'http://app.bauble.io'),
+                'app_url': config.get("BAUBLE_APP_URL"),
                 'token': token
             }, **{
                 'to': request.json['email'],

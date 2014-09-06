@@ -4,21 +4,22 @@ import os
 import smtplib
 
 import bauble
+import bauble.config as config
 
 
 def send(body, **headers):
-    use_ssl = os.environ.get("BAUBLE_SMTP_USE_SSL", "false")
-    host = os.environ.get("BAUBLE_SMTP_HOST", "")
-    port = os.environ.get("BAUBLE_SMTP_PORT", 0)
-    user = os.environ.get("BAUBLE_SMTP_USERNAME", None)
-    password = os.environ.get("BAUBLE_SMTP_PASSWORD", None)
+    use_ssl = config.get("SMTP_USE_SSL", "false")
+    host = config.get("SMTP_HOST", "")
+    port = config.get("SMTP_PORT", 0)
+    user = config.get("SMTP_USERNAME", None)
+    password = config.get("SMTP_PASSWORD", None)
 
     SMTP = smtplib.SMTP_SSL if use_ssl or use_ssl.lower() == "true" else smtplib.SMTP
 
     # **************************************************
     # don't send the email if we're running the tests
     # **************************************************
-    if os.environ.get("BAUBLE_TEST", "false") == "true":
+    if config.get('SEND_EMAILS') is not True:
         return
 
     timeout = 10  # 10 second timeout for smtp connection

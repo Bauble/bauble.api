@@ -1,3 +1,6 @@
+"""
+All routes in Bauble use HTTP basic auth.
+"""
 
 from datetime import datetime, timedelta
 import os
@@ -8,6 +11,7 @@ from bottle import request
 import sqlalchemy as sa
 
 import bauble
+import bauble.config as config
 import bauble.db as db
 import bauble.email as email
 from bauble import app, API_ROOT
@@ -75,7 +79,7 @@ def forgot_password():
         if session:
             session.close()
 
-    app_url = os.environ.get("BAUBLE_APP_URL", 'http://app.bauble.io')
+    app_url = config.get("BAUBLE_APP_URL")
     mappings = {'token': token, 'email': user_email, 'app_url': app_url}
 
     try:

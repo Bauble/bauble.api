@@ -8,6 +8,7 @@ common: &common
   SUPPORT_EMAIL: ""
   NOREPLY_EMAIL: ""
   APP_URL: ""
+  DEBUG: "false"
 
   BAUBLE_DB_URL: postgresql://localhost/bauble
 
