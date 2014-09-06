@@ -15,6 +15,14 @@ def start_server(request):
         f.close()
         if process:
             process.kill()
+    config = yaml.load(open("config.yaml"))
+    environ = os.environ.copy()
+    environ.update(config['test'])
+    db_url = environ.get('BAUBLE_DB_URL', os.environ.get('BAUBLE_DB_URL'))
+    if 'localhost' not in db_url:
+        print("The tests can only be run against a local database.")
+        print(db_url)
+        exit(1)
 
     process = subprocess.Popen(["bake", "server", "test"], env=os.environ)
     time.sleep(1)

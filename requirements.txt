@@ -13,6 +13,7 @@ uwsgi>=2.0,<2.1a0
 pyparsing==2.0.1
 python-dateutil==2.2
 requests>=2.2.1,<2.3.a0
+pyyaml
 
 # on Mac you might need to add the location of the pg_config file to your $PATH for
 # psycopg2, e.g PATH=$PATH:/Applications/Postgres93.app/Contents/MacOS/bin/ pip install psycopg2

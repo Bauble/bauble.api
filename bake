@@ -4,7 +4,7 @@ import os
 import sys
 import subprocess
 
-import bauble
+import yaml
 
 try:
     import baker
@@ -17,29 +17,21 @@ except Exception as e:
 os.environ['PYTHONPATH'] = os.getcwd()
 #BAUBLE_DB_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
 
-# these environments can be updated into os.environ
-environ = {}
-environ['all'] = {
+def load_env(name):
+    environ = yaml.load(open("config.yaml"))
+    os.environ.update(environ[name])
 
-}
-environ['dev'] = dict(environ['all'], **{
-    'BAUBLE_ENV': "development"
-})
-
-environ['test'] = dict(environ['dev'], **{
-    'TEST': 'true',
-    'BAUBLE_TEST': 'true'
-})
-
-environ['production'] = dict(environ['all'], **{
-    'BAUBLE_ENV': "development"
-})
-
-# all the environment variables common to all tasks
-os.environ.update(environ['all'])
 
 def shell(cmd, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr):
-    return subprocess.call(cmd, stdin=stdin, stdout=stdout, stderr=stderr, shell=True)
+    """
+    Run a shell command.
+    """
+    try:
+        return subprocess.check_call(cmd, stdin=stdin, stdout=stdout, stderr=stderr, shell=True)
+    except subprocess.CalledProcessError as exc:
+        print("** Error running command: {}".format(cmd))
+        print(exc)
+        sys.exit(exc.returncode)
 
 
 @baker.command
@@ -47,7 +39,7 @@ def test(*args):
     """
     Deploy to the production environment.
     """
-    os.environ.update(environ['test'])
+    load_env('test')
     pytest_args = ['py.test', 'test/spec'] if len(args) is 0 else ['py.test'] + list(args)
     shell(" ".join(pytest_args))
 
@@ -76,12 +68,11 @@ def clean():
 
 
 @baker.command(default=True)
-def server(environment="dev"):
+def server(environment="local"):
     """
     Start the server
     """
-    os.environ.update(environ.get(environment, {}))
-    process = shell("uwsgi --ini uwsgi.ini:{}".format(environment))
+    load_env(environment)
 
 
 baker.run()
