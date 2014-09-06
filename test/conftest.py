@@ -20,16 +20,15 @@ def start_server(request):
             print('test server stopped.')
 
     config = yaml.load(open("config.yaml"))
-    environ = os.environ.copy()
-    environ.update(config['test'])
-    db_url = environ.get('BAUBLE_DB_URL', os.environ.get('BAUBLE_DB_URL'))
+    os.environ.update(config['test'])
+    db_url = os.environ.get('BAUBLE_DB_URL')
     if 'localhost' not in db_url:
         print("The tests can only be run against a local database.")
         print(db_url)
         exit(1)
 
-    process = subprocess.Popen("gunicorn -c gunicorn.cfg bauble", env=environ,
-                               shell=True)
+    process = subprocess.Popen("gunicorn -c gunicorn.cfg bauble",
+                               env=os.environ, shell=True)
     time.sleep(1)
     request.addfinalizer(kill)
 
