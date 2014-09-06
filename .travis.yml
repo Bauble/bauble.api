@@ -12,14 +12,12 @@ addons:
 
 # command to install dependencies
 install:
-  # - "pip install . --use-mirrors"
   - "virtualenv --python=python3.3 venv"
   - ". venv/bin/activate"
   - "pip install pytest"
   - "pip install -r requirements.txt"
 
 env:
-  #- BAUBLE_DB_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
   - BAUBLE_DB_URL="postgresql://localhost/bauble"
 
 before_script:
@@ -28,7 +26,6 @@ before_script:
   - sudo service postgresql restart
   - echo "BAUBLE_ENV=travis" >> ~/.bauble.api
   - sudo adduser -disabled-password --gecos "" bauble
-  # - psql -c "create role test with createrole login password 'test\';" -U postgres
   - psql -c "create database bauble encoding 'utf8';" -U postgres
   - PYTHONPATH=. bin/initdb.py
 
