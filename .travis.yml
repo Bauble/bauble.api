@@ -1,6 +1,15 @@
 language: python
+
 python:
   - "3.3"
+
+cache:
+  directories:
+    - venv
+
+addons:
+  postgresql: "9.3"
+
 # command to install dependencies
 install:
   # - "pip install . --use-mirrors"
@@ -8,11 +17,11 @@ install:
   - ". venv/bin/activate"
   - "pip install pytest"
   - "pip install -r requirements.txt"
-# command to run tests
-script: ./bake test
+
 env:
   #- BAUBLE_DB_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
   - BAUBLE_DB_URL="postgresql://localhost/bauble"
+
 before_script:
   # disable ssl mode on postgresql
   - sudo sed -i -e 's/ssl = true/#ssl = true/' /etc/postgresql/9.1/main/postgresql.conf
@@ -20,5 +29,8 @@ before_script:
   - echo "BAUBLE_ENV=travis" >> ~/.bauble.api
   - sudo adduser -disabled-password --gecos "" bauble
   # - psql -c "create role test with createrole login password 'test\';" -U postgres
-  # - psql -c "create database bauble owner test encoding 'utf8';" -U postgres
+  - psql -c "create database bauble encoding 'utf8';" -U postgres
   - PYTHONPATH=. bin/initdb.py
+
+# command to run tests
+script: ./bake test
