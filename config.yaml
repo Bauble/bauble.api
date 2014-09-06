@@ -9,6 +9,7 @@ common: &common
   NOREPLY_EMAIL: ""
   APP_URL: ""
   DEBUG: "false"
+  API_BIND: 'localhost:8088'
 
   BAUBLE_DB_URL: 'postgresql://localhost/bauble'
 
@@ -39,7 +40,6 @@ common: &common
 test:
   <<: *common
   BAUBLE_ENV: 'test'
-  API_BIND: 'localhost:8088'
   POSTGRESQL_DB_URL: "postgres://localhost/nextglass_test"
   SEND_EMAILS: "false"
   TEST: "true"
@@ -52,7 +52,6 @@ test:
 local:
   <<: *common
   BAUBLE_ENV: 'local'
-  API_BIND: 'localhost:8088'
   DISABLE_ANALYTICS: "true"
   GUNICORN_RELOAD: "true"
   BAUBLE_DB_URL: "postgres://test:test@localhost/nextglass"
