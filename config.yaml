@@ -7,7 +7,7 @@ common: &common
   SMTP_PASSWORD: ""
   SUPPORT_EMAIL: ""
   NOREPLY_EMAIL: ""
-  APP_URL: ""
+  APP_URL: "http://127.0.0.1:9000"
   DEBUG: "false"
   API_BIND: 'localhost:8088'
 
