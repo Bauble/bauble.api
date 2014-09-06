@@ -11,20 +11,14 @@ install:
 # command to run tests
 script: ./bake test
 env:
-  - BAUBLE_DB_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
+  #- BAUBLE_DB_URL="postgresql://test:test@localhost/bauble" BAUBLE_ENV="development"
+  - BAUBLE_DB_URL="postgresql://localhost/bauble"
 before_script:
-  # the BAUBLE_DB_URL from the env: section is set when running the test script
-  - echo "BAUBLE_DB_URL=postgresql://test:test@localhost/bauble" > ~/.bauble.api
   # disable ssl mode on postgresql
   - sudo sed -i -e 's/ssl = true/#ssl = true/' /etc/postgresql/9.1/main/postgresql.conf
   - sudo service postgresql restart
   - echo "BAUBLE_ENV=travis" >> ~/.bauble.api
   - sudo adduser -disabled-password --gecos "" bauble
-  - psql -c "create role test with createrole login password 'test\';" -U postgres
-  - psql -c "create database bauble owner test encoding 'utf8';" -U postgres
-  # start the server for setting up the database
-  - ./bake server &
-  - sleep 7
+  # - psql -c "create role test with createrole login password 'test\';" -U postgres
+  # - psql -c "create database bauble owner test encoding 'utf8';" -U postgres
   - PYTHONPATH=. bin/initdb.py
-  # kill the server so we can run the tests
-  - echo "Q" > /tmp/bauble.uwsgi.fifo
