@@ -37,7 +37,7 @@ def shell(cmd, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr):
 @baker.command
 def test(*args):
     """
-    Deploy to the production environment.
+    Run tests
     """
     load_env('test')
     pytest_args = ['py.test', 'test/spec'] if len(args) is 0 else ['py.test'] + list(args)
