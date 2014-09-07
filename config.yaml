@@ -40,7 +40,7 @@ common: &common
 test:
   <<: *common
   BAUBLE_ENV: 'test'
-  POSTGRESQL_DB_URL: "postgres://localhost/nextglass_test"
+  POSTGRESQL_DB_URL: "postgres://localhost/bauble"
   SEND_EMAILS: "false"
   TEST: "true"
 
@@ -54,7 +54,7 @@ local:
   BAUBLE_ENV: 'local'
   DISABLE_ANALYTICS: "true"
   GUNICORN_RELOAD: "true"
-  BAUBLE_DB_URL: "postgres://test:test@localhost/nextglass"
+  BAUBLE_DB_URL: "postgres://test:test@localhost/bauble"
   SEND_EMAILS: "false"
 
 
@@ -65,7 +65,7 @@ local:
 staging:  &api_staging
   <<: *common
   BAUBLE_ENV: staging
-  POSTGRESQL_DB_URL: "postgres://test:test@localhost/nextglass"
+  POSTGRESQL_DB_URL: "postgres://test:test@localhost/bauble"
   SEND_EMAILS: "true"
 
 #
@@ -75,7 +75,7 @@ dev:
   <<: *api_staging
   BAUBLE_ENV: dev
   HEROKU_ENV: dev
-  BAUBLE_DB_URL: "postgres://test:test@localhost/nextglass"
+  BAUBLE_DB_URL: "postgres://test:test@localhost/bauble"
 
 #
 # The production environment is for production servers.
@@ -83,4 +83,4 @@ dev:
 production:
   <<: *common
   BAUBLE_ENV: production
-  BAUBLE_DB_URL: "postgres://test:test@localhost/nextglass"
+  BAUBLE_DB_URL: "postgres://test:test@localhost/bauble"
