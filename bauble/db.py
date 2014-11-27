@@ -1,4 +1,5 @@
 
+from contextlib import contextmanager
 import datetime
 import os
 import uuid
@@ -35,6 +36,16 @@ def create_unique_schema():
     session.close()
     return unique_name
 
+
+@contextmanager
+def session_context():
+    session = None
+    try:
+        session = Session()
+        yield session
+    finally:
+        if session:
+            session.close()
 
 
 def set_session_schema(session, schema):
