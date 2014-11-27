@@ -162,7 +162,6 @@ def reset_sequence(column, pg_schema):
     This function only works for PostgreSQL database.  It does nothing
     for other database engines.
     """
-    import bauble
     import bauble.db as db
     from sqlalchemy.types import Integer
     from sqlalchemy import schema
@@ -181,35 +180,16 @@ def reset_sequence(column, pg_schema):
         sequence_name = '{}_{}_seq'.format(column.table.name, column.name)
     else:
         return
-    conn = db.engine.connect()
-    if pg_schema is not None:
-        conn.execute("SET search_path TO {schema},public;".format(schema=pg_schema))
-    trans = conn.begin()
-    try:
-        # the FOR UPDATE locks the table for the transaction
-        stmt = "SELECT {} from {} FOR UPDATE;".format(column.name, column.table.name)
-        result = conn.execute(stmt)
-        maxid = None
-        vals = list(result)
-        if vals:
-            maxid = max(vals, key=lambda x: x[0])[0]
-        result.close()
-        if maxid is None:
-            # set the sequence to nextval()
-            stmt = "SELECT nextval('%s');" % (sequence_name)
-        else:
-            stmt = "SELECT setval('%s', max(%s)+1) from %s;" \
-                % (sequence_name, column.name, column.table.name)
 
-        conn.execute(stmt)
-    except Exception as e:
-        #warning('bauble.utils.reset_sequence(): %s' % utf8(e))
-        print('bauble.utils.reset_sequence(): {}'.format(e))
-        trans.rollback()
-    else:
-        trans.commit()
-    finally:
-        conn.close()
+    with db.session_context() as session:
+        if pg_schema is not None:
+            db.set_session_schema(session, pg_schema)
+
+        stmt = "select setval('{seq}', max({column})) from {table} "\
+               .format(seq=sequence_name, column=column.name,
+                       table=column.table.name)
+        session.execute(stmt)
+        session.commit()
 
 
 def enum_values_str(col):
