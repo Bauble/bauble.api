@@ -7,7 +7,6 @@ import bauble
 import bauble.db as db
 import bauble.search as search
 import test.api as api
-from test.fixtures import organization, session, user
 
 
 @pytest.fixture

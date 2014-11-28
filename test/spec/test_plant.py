@@ -11,7 +11,7 @@ from bauble.model.plant import Plant, PlantNote
 from bauble.model.location import Location
 
 import test.api as api
-from test.fixtures import organization, session, user
+
 
 def plant_ref(id):
     return '/plant/{}'.format(id)

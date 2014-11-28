@@ -3,7 +3,6 @@ import pytest
 import bauble.db as db
 from bauble.model.family import Family
 from bauble.model.genus import Genus, GenusSynonym, GenusNote
-from test.fixtures import organization, user, session
 import test.api as api
 
 @pytest.fixture

@@ -3,7 +3,6 @@ import bauble.db as db
 from bauble.model import Family
 import bauble.utils as utils
 
-from test.fixtures import organization, user, session
 import test.api as api
 from test.utils import random_str
 
@@ -17,4 +16,7 @@ def test_reset_sequence(session, organization):
 
     utils.reset_sequence(Family.id, organization.pg_schema)
 
-    # TODO: make sure the next value is correct
+    max_id = session.execute('select max(id) from family').scalar()
+    nextval = session.execute("select nextval('family_id_seq') from family").scalar()
+    assert nextval > max_id
+    session.close()

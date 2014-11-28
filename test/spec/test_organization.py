@@ -8,7 +8,6 @@ import pytest
 import bauble.db as db
 from bauble.model import User
 import test.api as api
-from test.fixtures import organization, session, user
 
 
 @pytest.fixture

@@ -6,7 +6,6 @@ from sqlalchemy.exc import IntegrityError
 
 import bauble.db as db
 from bauble.model import Report
-from test.fixtures import organization, user, session
 import test.api as api
 
 @pytest.fixture

@@ -6,7 +6,6 @@ from bauble.model.genus import Genus
 from bauble.model import Taxon, TaxonSynonym, TaxonNote, Geography
 
 import test.api as api
-from test.fixtures import organization, user, session
 
 
 @pytest.fixture

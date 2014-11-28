@@ -4,7 +4,7 @@ import bauble.db as db
 from bauble.model.location import Location
 
 import test.api as api
-from test.fixtures import organization, session, user
+
 
 @pytest.fixture
 def setup(organization, session):

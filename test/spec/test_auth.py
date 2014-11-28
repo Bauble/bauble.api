@@ -4,9 +4,7 @@ import json
 
 import requests
 
-from test.fixtures import user, session
 from test.api import api_root, get_random_name
-
 
 def test_auth(user, session):
 

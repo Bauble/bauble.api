@@ -1,7 +1,6 @@
 #import pytest
 #import sys
 
-from test.fixtures import organization, user, session
 import test.api as api
 #import bauble.db as db
 from bauble.model.user import User

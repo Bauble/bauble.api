@@ -9,7 +9,6 @@ from bauble.model.source import Source, SourceDetail, Collection
 from bauble.model.propagation import Propagation, PlantPropagation, PropSeed, PropCutting
 
 import test.api as test
-from test.fixtures import organization, user, session
 
 @pytest.fixture
 def setup(request, organization, session):

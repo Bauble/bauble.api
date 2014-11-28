@@ -5,7 +5,6 @@ import requests
 
 import bauble.db as db
 from bauble.model.family import Family, FamilySynonym, FamilyNote
-from test.fixtures import organization, user, session
 import test.api as api
 
 @pytest.fixture

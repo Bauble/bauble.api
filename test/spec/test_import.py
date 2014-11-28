@@ -5,7 +5,7 @@ from tempfile import mkstemp
 import bauble.db as db
 from bauble.model import Family
 from bauble.imp import from_csv
-from test.fixtures import organization, user, session
+
 
 def test_import(organization, session):
     fields = ["family"]
