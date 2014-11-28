@@ -37,3 +37,4 @@ nosetests.xml
 venv
 
 bauble.org
+.python-version
