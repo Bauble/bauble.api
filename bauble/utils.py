@@ -150,48 +150,6 @@ def delete_or_expunge(obj):
         session.delete(obj)
 
 
-def reset_sequence(column, pg_schema):
-    """
-    If column.sequence is not None or the column is an Integer and
-    column.autoincrement is true then reset the sequence for the next
-    available value for the column...if the column doesn't have a
-    sequence then do nothing and return
-
-    The SQL statements are executed directly from db.engine
-
-    This function only works for PostgreSQL database.  It does nothing
-    for other database engines.
-    """
-    import bauble.db as db
-    from sqlalchemy.types import Integer
-    from sqlalchemy import schema
-
-    if not db.engine.name == 'postgresql':
-        return
-
-    sequence_name = None
-    if hasattr(column, 'default') and isinstance(column.default, schema.Sequence):
-        sequence_name = column.default.name
-    elif (isinstance(column.type, Integer) and column.autoincrement) and \
-            (column.default is None or
-                 (isinstance(column.default, schema.Sequence) and
-                      column.default.optional)) and \
-                      len(column.foreign_keys) == 0:
-        sequence_name = '{}_{}_seq'.format(column.table.name, column.name)
-    else:
-        return
-
-    with db.session_context() as session:
-        if pg_schema is not None:
-            db.set_session_schema(session, pg_schema)
-
-        stmt = "select setval('{seq}', max({column})) from {table} "\
-               .format(seq=sequence_name, column=column.name,
-                       table=column.table.name)
-        session.execute(stmt)
-        session.commit()
-
-
 def enum_values_str(col):
     """
     :param col: a string if table.col where col is an enum type

@@ -44,10 +44,6 @@ def from_csv(filemap, schema):
 
         session.commit()
 
-        # reset the sequence
-        for table in sorted_tables:
-            for col in table.c:
-                utils.reset_sequence(col, schema)
     except:
         print("Error importing into ", table_name)
         print('current_row: ', current_row)

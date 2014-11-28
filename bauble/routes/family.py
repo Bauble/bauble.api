@@ -117,7 +117,7 @@ def build_embedded(embed, family):
 @basic_auth
 @filter_param(Family, family_column_names)
 def index_family():
-    # TODO: we're not doing any sanitization or validation...see preggy or validate.py
+    # TODO: we're not doing any sanitization or validation...see preggy or valipdate.py
 
     families = request.filter if request.filter else request.session.query(Family)
     return [family.json() for family in families]
