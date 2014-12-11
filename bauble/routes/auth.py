@@ -68,7 +68,9 @@ def forgot_password():
     session = None
     try:
         session = db.Session()
-        user = session.query(User).filter(sa.func.lower(User.email) == user_email.lower()).one()
+        user = session.query(User)\
+                      .filter(sa.func.lower(User.email) == user_email.lower())\
+                      .first()
         if not user:
             bottle.abort(422, "Could not get a user with the requested email address")
         token, expiration = create_password_reset_token()
