@@ -1,3 +1,5 @@
+## This repo has been put out to pasture.  For the future of Bauble on the web
+   see the [Bauble/bauble.web](https://github.com/Bauble/bauble.web).
 
 # Bauble API
 
